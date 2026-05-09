@@ -1,19 +1,19 @@
-import { GameProvider } from '@/application/components/GameProvider'
 import { useSetPhase } from '@/application/hooks/useSetPhase'
-import { GameService } from '@/application/services/GameService'
+import type { IGameService } from '@/shared/game-service'
 import type { SceneKey } from '@/shared/scene-key'
 import { useRouteContext } from '@tanstack/react-router'
-import { useEffect, useRef, useState } from 'react'
+import { type ReactNode, useEffect, useRef, useState } from 'react'
 
 interface GameCanvasProps {
   sceneKey: SceneKey
+  children?: (service: IGameService) => ReactNode
 }
 
-function GameCanvas({ sceneKey }: GameCanvasProps) {
+function GameCanvas({ sceneKey, children }: GameCanvasProps) {
   const { onCanvasReady } = useRouteContext({ from: '__root__' })
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const setPhase = useSetPhase()
-  const [service, setService] = useState<GameService | null>(null)
+  const [service, setService] = useState<IGameService | null>(null)
   const [engineError, setEngineError] = useState<string | null>(null)
 
   // onCanvasReady must be stable (defined outside any component). If it is
@@ -58,11 +58,7 @@ function GameCanvas({ sceneKey }: GameCanvasProps) {
   return (
     <>
       <canvas ref={canvasRef} className="block w-full h-full" />
-      {service && (
-        <GameProvider service={service}>
-          {null}
-        </GameProvider>
-      )}
+      {service && children?.(service)}
     </>
   )
 }

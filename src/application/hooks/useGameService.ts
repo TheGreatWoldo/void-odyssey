@@ -1,8 +1,8 @@
 import { GameContext } from '@/application/context/GameContext'
-import { GameService } from '@/application/services/GameService'
+import type { IGameService } from '@/shared/game-service'
 import { useContext } from 'react'
 
-export function useGameService(): GameService {
+export function useGameService(): IGameService {
   const service = useContext(GameContext)
 
   if (!service)

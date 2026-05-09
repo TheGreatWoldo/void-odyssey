@@ -23,11 +23,17 @@ export const HueForSizeStrategy = (
     colorArgs.minSaturation,
     colorArgs.maxSaturation
   );
-  const lightness = getRandomInRange(
-    colorArgs.minLightness,
-    colorArgs.maxLightness
-  );
-  const alpha = getRandomInRange(colorArgs.minAlpha, colorArgs.maxAlpha);
+  // Smaller actors are further away — map lightness and alpha from min→max by size.
+  // A small random jitter keeps variation within the parallax band.
+  const lightnessBase = getFactorInRange(colorArgs.minLightness, colorArgs.maxLightness, sizeFactor);
+  const lightnessJitter = (colorArgs.maxLightness - colorArgs.minLightness) * 0.15;
+  const lightness = Math.max(colorArgs.minLightness,
+    Math.min(colorArgs.maxLightness, lightnessBase + getRandomInRange(-lightnessJitter, lightnessJitter)));
+
+  const alphaBase = getFactorInRange(colorArgs.minAlpha, colorArgs.maxAlpha, sizeFactor);
+  const alphaJitter = (colorArgs.maxAlpha - colorArgs.minAlpha) * 0.15;
+  const alpha = Math.max(colorArgs.minAlpha,
+    Math.min(colorArgs.maxAlpha, alphaBase + getRandomInRange(-alphaJitter, alphaJitter)));
 
   return Color.fromHSL(hue, saturation, lightness, alpha);
 };

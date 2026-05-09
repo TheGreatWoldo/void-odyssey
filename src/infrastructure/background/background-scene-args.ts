@@ -15,6 +15,8 @@ export interface IBackgroundSceneArgs extends SizeArgs, SpeedArgs {
   backgroundColor: ColorArgs;
   angleBase: number;
   angleTolerance: number;
+  /** How often a new actor spawns (ms). Lower = more actors on screen. Default: 300. */
+  spawnIntervalMs: number;
 }
 
 export class BackgroundSceneArgs implements IBackgroundSceneArgs {
@@ -26,6 +28,7 @@ export class BackgroundSceneArgs implements IBackgroundSceneArgs {
   maxSize: number;
   angleBase: number;
   angleTolerance: number;
+  spawnIntervalMs: number;
 
   constructor(options: Partial<IBackgroundSceneArgs> = {}) {
     this.actorColor = options.actorColor ?? new ColorArgs();
@@ -36,5 +39,6 @@ export class BackgroundSceneArgs implements IBackgroundSceneArgs {
     this.maxSize = options.maxSize ?? 0;
     this.angleBase = options.angleBase ?? 0;
     this.angleTolerance = options.angleTolerance ?? 0;
+    this.spawnIntervalMs = options.spawnIntervalMs ?? 300;
   }
 }

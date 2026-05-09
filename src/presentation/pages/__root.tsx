@@ -1,9 +1,5 @@
-import { GameService } from '@/application/services/GameService'
+import type { RouterContext } from '@/shared/router-context'
 import { Outlet, createRootRouteWithContext } from '@tanstack/react-router'
-
-export interface RouterContext {
-  onCanvasReady: (canvas: HTMLCanvasElement) => Promise<GameService>
-}
 
 export const Route = createRootRouteWithContext<RouterContext>()({
   component: () => <Outlet />,

@@ -1,4 +1,4 @@
-import type { RouterContext } from '@/presentation/pages/__root'
+import type { RouterContext } from '@/shared/router-context'
 import { createRouter } from '@tanstack/react-router'
 import { routeTree } from './routeTree.gen'
 

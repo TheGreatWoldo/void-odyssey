@@ -9,34 +9,59 @@ export function getRandomColorArgs(): ColorArgs {
   return backgroundColorArgsCatalog[randomKey];
 }
 
+// HSL values (hue 0–1) derived from Tailwind v4's OKLCH palette.
+// Hue conversions: red≈0, orange≈0.07, amber≈0.10, yellow≈0.13,
+// emerald≈0.45, cyan≈0.53, blue≈0.63, violet≈0.73, fuchsia≈0.81, rose≈0.97
 export const backgroundColorArgsCatalog = {
-  red: new ColorArgs({ minHue: 0.0, maxHue: 0.0, minSaturation: 1, maxSaturation: 1, minLightness: 0.5, maxLightness: 0.5 }),
-  redOrange: new ColorArgs({ minHue: 0.05, maxHue: 0.05, minSaturation: 1, maxSaturation: 1, minLightness: 0.5, maxLightness: 0.5 }),
-  orange: new ColorArgs({ minHue: 0.1, maxHue: 0.1, minSaturation: 1, maxSaturation: 1, minLightness: 0.5, maxLightness: 0.5 }),
-  yellowOrange: new ColorArgs({ minHue: 0.15, maxHue: 0.15, minSaturation: 1, maxSaturation: 1, minLightness: 0.5, maxLightness: 0.5 }),
-  yellow: new ColorArgs({ minHue: 0.16, maxHue: 0.16, minSaturation: 1, maxSaturation: 1, minLightness: 0.5, maxLightness: 0.5 }),
-  yellowGreen: new ColorArgs({ minHue: 0.23, maxHue: 0.23, minSaturation: 1, maxSaturation: 1, minLightness: 0.5, maxLightness: 0.5 }),
-  green: new ColorArgs({ minHue: 0.33, maxHue: 0.33, minSaturation: 1, maxSaturation: 1, minLightness: 0.5, maxLightness: 0.5 }),
-  greenCyan: new ColorArgs({ minHue: 0.43, maxHue: 0.43, minSaturation: 1, maxSaturation: 1, minLightness: 0.5, maxLightness: 0.5 }),
-  cyan: new ColorArgs({ minHue: 0.5, maxHue: 0.5, minSaturation: 1, maxSaturation: 1, minLightness: 0.5, maxLightness: 0.5 }),
-  cyanBlue: new ColorArgs({ minHue: 0.56, maxHue: 0.56, minSaturation: 1, maxSaturation: 1, minLightness: 0.5, maxLightness: 0.5 }),
-  blue: new ColorArgs({ minHue: 0.66, maxHue: 0.66, minSaturation: 1, maxSaturation: 1, minLightness: 0.5, maxLightness: 0.5 }),
-  bluePurple: new ColorArgs({ minHue: 0.72, maxHue: 0.72, minSaturation: 1, maxSaturation: 1, minLightness: 0.5, maxLightness: 0.5 }),
-  purple: new ColorArgs({ minHue: 0.77, maxHue: 0.77, minSaturation: 1, maxSaturation: 1, minLightness: 0.5, maxLightness: 0.5 }),
-  purpleMagenta: new ColorArgs({ minHue: 0.8, maxHue: 0.8, minSaturation: 1, maxSaturation: 1, minLightness: 0.5, maxLightness: 0.5 }),
-  magenta: new ColorArgs({ minHue: 0.83, maxHue: 0.83, minSaturation: 1, maxSaturation: 1, minLightness: 0.5, maxLightness: 0.5 }),
-  magentaPink: new ColorArgs({ minHue: 0.87, maxHue: 0.87, minSaturation: 1, maxSaturation: 1, minLightness: 0.5, maxLightness: 0.5 }),
-  pink: new ColorArgs({ minHue: 0.9, maxHue: 0.9, minSaturation: 1, maxSaturation: 1, minLightness: 0.5, maxLightness: 0.5 }),
-  pinkRed: new ColorArgs({ minHue: 0.95, maxHue: 0.95, minSaturation: 1, maxSaturation: 1, minLightness: 0.5, maxLightness: 0.5 }),
-  white: new ColorArgs({ minHue: 0.0, maxHue: 1.0, minSaturation: 0, maxSaturation: 0, minLightness: 1, maxLightness: 1 }),
-  black: new ColorArgs({ minHue: 0.0, maxHue: 1.0, minSaturation: 0, maxSaturation: 0, minLightness: 0, maxLightness: 0 }),
-  grayDark: new ColorArgs({ minHue: 0.0, maxHue: 1.0, minSaturation: 0, maxSaturation: 0, minLightness: 0.2, maxLightness: 0.3 }),
-  gray: new ColorArgs({ minHue: 0.0, maxHue: 1.0, minSaturation: 0, maxSaturation: 0, minLightness: 0.5, maxLightness: 0.5 }),
-  grayLight: new ColorArgs({ minHue: 0.0, maxHue: 1.0, minSaturation: 0, maxSaturation: 0, minLightness: 0.7, maxLightness: 0.8 }),
-  mainRed: new ColorArgs({ minHue: 0.97, maxHue: 0.03, minSaturation: 0.9, maxSaturation: 1, minLightness: 0.45, maxLightness: 0.55 }),
-  mainYellow: new ColorArgs({ minHue: 0.13, maxHue: 0.19, minSaturation: 0.9, maxSaturation: 1, minLightness: 0.45, maxLightness: 0.55 }),
-  mainGreen: new ColorArgs({ minHue: 0.3, maxHue: 0.36, minSaturation: 0.9, maxSaturation: 1, minLightness: 0.15, maxLightness: 0.85 }),
-  mainCyan: new ColorArgs({ minHue: 0.47, maxHue: 0.53, minSaturation: 0.9, maxSaturation: 1, minLightness: 0.45, maxLightness: 0.55 }),
-  mainBlue: new ColorArgs({ minHue: 0.63, maxHue: 0.69, minSaturation: 0.9, maxSaturation: 1, minLightness: 0.25, maxLightness: 0.75 }),
-  mainMagenta: new ColorArgs({ minHue: 0.8, maxHue: 0.86, minSaturation: 0.9, maxSaturation: 1, minLightness: 0.45, maxLightness: 0.55 }),
+  // ── Foreground / particle colors ──────────────────────────────────────────
+
+  // amber-400 → amber-500  warm golden glow
+  twAmber: new ColorArgs({ minHue: 0.094, maxHue: 0.108, minSaturation: 0.90, maxSaturation: 0.97, minLightness: 0.52, maxLightness: 0.65, minAlpha: 0.75, maxAlpha: 1.0 }),
+
+  // yellow-300 → yellow-400
+  twYellow: new ColorArgs({ minHue: 0.127, maxHue: 0.140, minSaturation: 0.92, maxSaturation: 0.97, minLightness: 0.55, maxLightness: 0.67, minAlpha: 0.75, maxAlpha: 1.0 }),
+
+  // orange-400 → orange-500
+  twOrange: new ColorArgs({ minHue: 0.061, maxHue: 0.075, minSaturation: 0.90, maxSaturation: 0.97, minLightness: 0.48, maxLightness: 0.60, minAlpha: 0.75, maxAlpha: 1.0 }),
+
+  // rose-400 → rose-500  (hue wraps near 1.0)
+  twRose: new ColorArgs({ minHue: 0.960, maxHue: 0.985, minSaturation: 0.85, maxSaturation: 0.95, minLightness: 0.54, maxLightness: 0.67, minAlpha: 0.75, maxAlpha: 1.0 }),
+
+  // cyan-300 → cyan-400
+  twCyan: new ColorArgs({ minHue: 0.522, maxHue: 0.540, minSaturation: 0.78, maxSaturation: 0.88, minLightness: 0.52, maxLightness: 0.65, minAlpha: 0.75, maxAlpha: 1.0 }),
+
+  // fuchsia-400 → fuchsia-500
+  twFuchsia: new ColorArgs({ minHue: 0.806, maxHue: 0.819, minSaturation: 0.82, maxSaturation: 0.92, minLightness: 0.54, maxLightness: 0.67, minAlpha: 0.75, maxAlpha: 1.0 }),
+
+  // emerald-300 → emerald-400
+  twEmerald: new ColorArgs({ minHue: 0.445, maxHue: 0.456, minSaturation: 0.60, maxSaturation: 0.76, minLightness: 0.50, maxLightness: 0.64, minAlpha: 0.75, maxAlpha: 1.0 }),
+
+  // violet-400 → violet-500
+  twViolet: new ColorArgs({ minHue: 0.719, maxHue: 0.733, minSaturation: 0.68, maxSaturation: 0.82, minLightness: 0.50, maxLightness: 0.62, minAlpha: 0.75, maxAlpha: 1.0 }),
+
+  // slate-300 → slate-400  cool silvery debris
+  twSlate: new ColorArgs({ minHue: 0.614, maxHue: 0.622, minSaturation: 0.10, maxSaturation: 0.18, minLightness: 0.55, maxLightness: 0.72, minAlpha: 0.70, maxAlpha: 0.95 }),
+
+  // ── Background / fill colors ───────────────────────────────────────────────
+
+  // slate-950  near-black with blue tint
+  twSlate950: new ColorArgs({ minHue: 0.614, maxHue: 0.620, minSaturation: 0.40, maxSaturation: 0.48, minLightness: 0.04, maxLightness: 0.06, minAlpha: 1.0, maxAlpha: 1.0 }),
+
+  // violet-950  deep purple-black
+  twViolet950: new ColorArgs({ minHue: 0.726, maxHue: 0.733, minSaturation: 0.58, maxSaturation: 0.70, minLightness: 0.10, maxLightness: 0.16, minAlpha: 1.0, maxAlpha: 1.0 }),
+
+  // rose-950  deep crimson-black
+  twRose950: new ColorArgs({ minHue: 0.969, maxHue: 0.978, minSaturation: 0.58, maxSaturation: 0.70, minLightness: 0.10, maxLightness: 0.16, minAlpha: 1.0, maxAlpha: 1.0 }),
+
+  // blue-950  deep navy
+  twBlue950: new ColorArgs({ minHue: 0.625, maxHue: 0.636, minSaturation: 0.52, maxSaturation: 0.65, minLightness: 0.10, maxLightness: 0.16, minAlpha: 1.0, maxAlpha: 1.0 }),
+
+  // orange-900 → orange-950  burnt dark orange
+  twOrange950: new ColorArgs({ minHue: 0.069, maxHue: 0.078, minSaturation: 0.78, maxSaturation: 0.88, minLightness: 0.12, maxLightness: 0.20, minAlpha: 1.0, maxAlpha: 1.0 }),
+
+  // emerald-950  deep forest
+  twEmerald950: new ColorArgs({ minHue: 0.445, maxHue: 0.456, minSaturation: 0.55, maxSaturation: 0.68, minLightness: 0.09, maxLightness: 0.15, minAlpha: 1.0, maxAlpha: 1.0 }),
+
+  // fuchsia-950  deep magenta-black
+  twFuchsia950: new ColorArgs({ minHue: 0.806, maxHue: 0.814, minSaturation: 0.60, maxSaturation: 0.72, minLightness: 0.10, maxLightness: 0.16, minAlpha: 1.0, maxAlpha: 1.0 }),
 };

@@ -8,11 +8,11 @@ import { defaultBackgroundActorArgs } from '../actors/background-actor-args';
 import { BackgroundSceneArgs } from '../background-scene-args';
 import type { BackgroundStrategies } from '../strategies/background-strategies';
 
-const SPAWN_INTERVAL_MS = 300;
 const PRESEED_WINDOW_MS = 60_000;
 
 export class BackgroundScene extends Scene {
   private elapsed = 0;
+  private spawnIntervalMs: number;
   protected sceneArgs: BackgroundSceneArgs;
   protected readonly strategies: BackgroundStrategies;
 
@@ -20,9 +20,15 @@ export class BackgroundScene extends Scene {
     super();
     this.sceneArgs = sceneArgs;
     this.strategies = strategies;
+    this.spawnIntervalMs = sceneArgs.spawnIntervalMs;
   }
 
   override onInitialize(): void {
+    this.backgroundColor = this.strategies.backgroundColorStrategy(
+      this.sceneArgs.backgroundColor,
+      this.sceneArgs,
+      defaultBackgroundActorArgs()
+    );
     this.camera.pos = new Vector(
       this.engine.drawWidth / 2,
       this.engine.drawHeight / 2
@@ -33,7 +39,7 @@ export class BackgroundScene extends Scene {
   override onPreUpdate(_engine: Engine, delta: number): void {
     this.elapsed += delta;
 
-    if (this.elapsed >= SPAWN_INTERVAL_MS) {
+    if (this.elapsed >= this.spawnIntervalMs) {
       this.elapsed = 0;
       this.spawnActor();
     }
@@ -44,6 +50,7 @@ export class BackgroundScene extends Scene {
       .filter((a) => a instanceof BackgroundActor)
       .forEach((a) => a.kill());
     this.sceneArgs = sceneArgs;
+    this.spawnIntervalMs = sceneArgs.spawnIntervalMs;
     this.backgroundColor = this.strategies.backgroundColorStrategy(
       this.sceneArgs.backgroundColor,
       this.sceneArgs,
@@ -55,10 +62,10 @@ export class BackgroundScene extends Scene {
   }
 
   private preSeed(): void {
-    const steps = Math.floor(PRESEED_WINDOW_MS / SPAWN_INTERVAL_MS);
+    const steps = Math.floor(PRESEED_WINDOW_MS / this.spawnIntervalMs);
 
     for (let i = 1; i <= steps; i++) {
-      this.spawnActor(i * SPAWN_INTERVAL_MS);
+      this.spawnActor(i * this.spawnIntervalMs);
     }
   }
 

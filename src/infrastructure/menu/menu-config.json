@@ -1,0 +1,131 @@
+{
+  "sceneKey": "orangeOnBlack",
+  "items": [
+    {
+      "id": "play",
+      "label": "Play",
+      "leadingIcons": [{ "icon": "Rocket" }],
+      "sceneKey": "cyanOnRed",
+      "children": [
+        {
+          "id": "new-game",
+          "label": "New Game",
+          "leadingIcons": [{ "icon": "Play" }],
+          "event": "game:new"
+        },
+        {
+          "id": "continue",
+          "label": "Continue",
+          "leadingIcons": [{ "icon": "SkipForward" }],
+          "event": "game:continue"
+        }
+      ]
+    },
+    {
+      "id": "hangar",
+      "label": "Hangar",
+      "leadingIcons": [{ "icon": "Warehouse" }],
+      "sceneKey": "blackOnOrange",
+      "children": [
+        {
+          "id": "ships",
+          "label": "Ships",
+          "leadingIcons": [{ "icon": "Orbit" }],
+          "event": "hangar:ships"
+        },
+        {
+          "id": "upgrades",
+          "label": "Upgrades",
+          "leadingIcons": [{ "icon": "Wrench" }],
+          "event": "hangar:upgrades"
+        }
+      ]
+    },
+    {
+      "id": "missions",
+      "label": "Missions",
+      "leadingIcons": [{ "icon": "Map" }],
+      "sceneKey": "yellowOnPurple",
+      "children": [
+        {
+          "id": "active",
+          "label": "Active",
+          "leadingIcons": [{ "icon": "Crosshair" }],
+          "event": "missions:active"
+        },
+        {
+          "id": "completed",
+          "label": "Completed",
+          "leadingIcons": [{ "icon": "CheckCircle" }],
+          "event": "missions:completed"
+        }
+      ]
+    },
+    {
+      "id": "crew",
+      "label": "Crew",
+      "leadingIcons": [{ "icon": "Users" }],
+      "sceneKey": "orangeOnBlue",
+      "children": [
+        {
+          "id": "roster",
+          "label": "Roster",
+          "leadingIcons": [{ "icon": "UserRound" }],
+          "event": "crew:roster"
+        },
+        {
+          "id": "recruit",
+          "label": "Recruit",
+          "leadingIcons": [{ "icon": "UserPlus" }],
+          "event": "crew:recruit"
+        }
+      ]
+    },
+    {
+      "id": "codex",
+      "label": "Codex",
+      "leadingIcons": [{ "icon": "BookOpen" }],
+      "sceneKey": "greenOnBlack",
+      "children": [
+        {
+          "id": "lore",
+          "label": "Lore",
+          "leadingIcons": [{ "icon": "ScrollText" }],
+          "event": "codex:lore"
+        },
+        {
+          "id": "bestiary",
+          "label": "Bestiary",
+          "leadingIcons": [{ "icon": "Bug" }],
+          "event": "codex:bestiary"
+        }
+      ]
+    },
+    {
+      "id": "settings",
+      "label": "Settings",
+      "leadingIcons": [{ "icon": "Settings" }],
+      "sceneKey": "magentaOnBlack",
+      "children": [
+        {
+          "id": "audio",
+          "label": "Audio",
+          "leadingIcons": [{ "icon": "Volume2" }],
+          "event": "settings:audio"
+        },
+        {
+          "id": "video",
+          "label": "Video",
+          "leadingIcons": [{ "icon": "Monitor" }],
+          "event": "settings:video"
+        }
+      ]
+    },
+    {
+      "id": "quit",
+      "label": "Quit",
+      "leadingIcons": [{ "icon": "X" }],
+      "event": "app:quit"
+    }
+  ]
+}

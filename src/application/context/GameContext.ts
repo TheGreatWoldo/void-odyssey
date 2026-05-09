@@ -1,4 +1,4 @@
-import { GameService } from '@/application/services/GameService'
+import type { IGameService } from '@/shared/game-service'
 import { createContext } from 'react'
 
-export const GameContext = createContext<GameService | null>(null)
+export const GameContext = createContext<IGameService | null>(null)

@@ -1,7 +1,8 @@
 import type { IGameEngineFacade } from '@/domain/services/IGameEngineFacade'
+import type { IGameService } from '@/shared/game-service'
 import type { SceneKey } from '@/shared/scene-key'
 
-export class GameService {
+export class GameService implements IGameService {
   private started = false
   private disposed = false
 
