@@ -36,6 +36,10 @@ describe('createProductionModule', () => {
       expect(() => createProductionModule('m1', 'M', powerRecipe, { type: ModuleId.ReactorCore, initialCondition: 0 })).not.toThrow();
       expect(() => createProductionModule('m2', 'M', powerRecipe, { type: ModuleId.ReactorCore, initialCondition: 1 })).not.toThrow();
     });
+
+    it('throws when rampRate is negative', () => {
+      expect(() => createProductionModule('m', 'M', powerRecipe, { type: ModuleId.ReactorCore, rampRate: -1 })).toThrow();
+    });
   });
 
   describe('initial state', () => {
@@ -153,6 +157,13 @@ describe('createProductionModule', () => {
 
         expect(m.throttle).toBe(0.6);
       });
+
+      it('falls back to normal clamp when maxOutput < 1', () => {
+        const m = createProductionModule('m', 'M', scanRecipe, { type: ModuleId.SensorArray, snapOutputToInteger: true, maxOutput: 0.5 });
+        m.setThrottle(0.6);
+
+        expect(m.throttle).toBe(0.6);
+      });
     });
   });
 
@@ -195,6 +206,27 @@ describe('createProductionModule', () => {
     });
   });
 
+  describe('setCondition', () => {
+    it('throws when value is below 0', () => {
+      const m = createProductionModule('m', 'M', powerRecipe, { type: ModuleId.ReactorCore });
+
+      expect(() => m.setCondition(-0.1)).toThrow();
+    });
+
+    it('throws when value is above 1', () => {
+      const m = createProductionModule('m', 'M', powerRecipe, { type: ModuleId.ReactorCore });
+
+      expect(() => m.setCondition(1.1)).toThrow();
+    });
+
+    it('accepts boundary values 0 and 1', () => {
+      const m = createProductionModule('m', 'M', powerRecipe, { type: ModuleId.ReactorCore });
+
+      expect(() => m.setCondition(0)).not.toThrow();
+      expect(() => m.setCondition(1)).not.toThrow();
+    });
+  });
+
   describe('addUpgrade', () => {
     it('throws when the upgrade targets a resource the module does not produce', () => {
       const m = createProductionModule('m', 'M', powerRecipe, { type: ModuleId.ReactorCore });
@@ -223,6 +255,22 @@ describe('createProductionModule', () => {
     });
   });
 
+  describe('setUpgradeEnabled', () => {
+    it('throws when the upgrade id does not exist', () => {
+      const m = createProductionModule('m', 'M', powerRecipe, { type: ModuleId.ReactorCore });
+
+      expect(() => m.setUpgradeEnabled('nonexistent', true)).toThrow();
+    });
+
+    it('toggles an installed upgrade', () => {
+      const m = createProductionModule('m', 'M', powerRecipe, { type: ModuleId.ReactorCore });
+      m.addUpgrade({ id: 'u1', name: 'U1', costFactor: 0.8, targetResourceType: velocityUpgradeType, enabled: true });
+      m.setUpgradeEnabled('u1', false);
+
+      expect(m.upgrades[0].enabled).toBe(false);
+    });
+  });
+
   describe('costMultiplier', () => {
     it('returns 1 with no upgrades', () => {
       const m = createProductionModule('m', 'M', powerRecipe, { type: ModuleId.ReactorCore });
@@ -235,6 +283,15 @@ describe('createProductionModule', () => {
       m.addUpgrade({ id: 'u1', name: 'U1', costFactor: 0.8, targetResourceType: velocityUpgradeType, enabled: true });
 
       expect(m.costMultiplier).toBeCloseTo(0.8);
+    });
+
+    it('stacks multiple upgrade costFactors additively', () => {
+      const m = createProductionModule('m', 'M', powerRecipe, { type: ModuleId.ReactorCore });
+      m.addUpgrade({ id: 'u1', name: 'U1', costFactor: 0.8, targetResourceType: velocityUpgradeType, enabled: true });
+      m.addUpgrade({ id: 'u2', name: 'U2', costFactor: 0.7, targetResourceType: velocityUpgradeType, enabled: true });
+
+      // additive: 1 + (0.8 - 1) + (0.7 - 1) = 0.5
+      expect(m.costMultiplier).toBeCloseTo(0.5);
     });
 
     it('skips disabled upgrades', () => {

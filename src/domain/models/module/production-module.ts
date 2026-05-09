@@ -20,7 +20,8 @@ export interface ProductionModuleOptions {
   /**
    * When true, setThrottle() snaps the requested value to the nearest throttle
    * position that produces an integer steady-state primary output.
-   * Only meaningful when maxOutput is a whole number.
+   * Only meaningful when maxOutput >= 1. When maxOutput < 1, snapping is silently skipped
+   * and the value is clamped to [0, 1] normally.
    */
   snapOutputToInteger?: boolean;
 }
@@ -55,6 +56,11 @@ export interface ProductionModule {
   setUpgradeEnabled(upgradeId: string, enabled: boolean): void;
   setCondition(value: number): void;
   readonly costMultiplier: number;
+  /**
+   * Returns true when the module is enabled and condition > 0.
+   * Does not check throttle — a module at throttle 0 is still operational.
+   * Callers should check this before invoking produce().
+   */
   isOperational(): boolean;
   setThrottle(value: number): void;
   /** Advances actualThrottle toward throttle by rampRate * deltaTime. */
@@ -92,6 +98,9 @@ export function createProductionModule(
 
   if (isBlank(type))
     throw new Error('ProductionModule type is required');
+
+  if (rampRate < 0)
+    throw new Error(`ProductionModule rampRate must be >= 0, got ${rampRate}`);
 
   type MutableModuleUpgrade = { -readonly [K in keyof ModuleUpgrade]: ModuleUpgrade[K] };
   const upgradeMap = new Map<string, MutableModuleUpgrade>();
@@ -200,8 +209,10 @@ export function createProductionModule(
     enable,
     disable,
     stepRamp,
-    produce: (deltaTime, sources) =>
-      producer.produce(deltaTime, sources, actualThrottle, computeCostMultiplier(), maxOutput),
+    produce: (deltaTime, sources) => {
+      if (!enabled) return;
+      producer.produce(deltaTime, sources, actualThrottle, computeCostMultiplier(), maxOutput);
+    },
     drain: (targets) => producer.drain(targets),
     reset: () => producer.reset(),
   };
