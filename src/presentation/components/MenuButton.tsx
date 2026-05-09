@@ -5,7 +5,9 @@ import * as LucideIcons from 'lucide-react'
 
 function resolveIcon(name: string): LucideIcon | null {
   const icon = (LucideIcons as Record<string, unknown>)[name]
-  return typeof icon === 'function' ? (icon as LucideIcon) : null
+  return icon != null && (typeof icon === 'function' || typeof icon === 'object')
+    ? (icon as LucideIcon)
+    : null
 }
 
 interface IconSlot {
