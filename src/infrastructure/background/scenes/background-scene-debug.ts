@@ -1,4 +1,4 @@
-import { Color, ExcaliburGraphicsContext, vec } from 'excalibur';
+import { Color, type ExcaliburGraphicsContext, vec } from 'excalibur';
 import { defaultBackgroundActorArgs } from '../actors/background-actor-args';
 import { getPositionDebugInfoForArgs } from '../strategies/position-strategy';
 import { BackgroundScene } from './background-scene';

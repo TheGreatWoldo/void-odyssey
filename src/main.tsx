@@ -1,10 +1,11 @@
 import { GameService } from '@/application/services/GameService'
 import { ExcaliburEngineFacade } from '@/infrastructure/engine/engine'
 import { initI18n } from '@/infrastructure/lib/i18n'
+import { createAppRouter } from '@/infrastructure/router/router'
 import '@/presentation/styles/global.css'
+import { RouterProvider } from '@tanstack/react-router'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import App from './App'
 
 try {
   await initI18n()
@@ -22,8 +23,10 @@ async function onCanvasReady(canvas: HTMLCanvasElement): Promise<GameService> {
   return service
 }
 
+const router = createAppRouter({ onCanvasReady })
+
 createRoot(root).render(
   <StrictMode>
-    <App onCanvasReady={onCanvasReady} />
+    <RouterProvider router={router} />
   </StrictMode>,
 )

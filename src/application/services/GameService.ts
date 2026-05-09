@@ -1,4 +1,4 @@
-import { IGameEngineFacade } from '@/domain/services/IGameEngineFacade'
+import type { IGameEngineFacade } from '@/domain/services/IGameEngineFacade'
 
 export class GameService {
   private started = false
