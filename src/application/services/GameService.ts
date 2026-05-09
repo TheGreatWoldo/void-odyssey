@@ -15,15 +15,23 @@ export class GameService {
   }
 
   async start(): Promise<void> {
-    if (this.started || this.disposed) return
+    if (this.disposed) {
+      console.warn('GameService.start() called after dispose — ignoring')
+      return
+    }
+    if (this.started) return
     this.started = true
-    await this.engine.startEngine()
+    try {
+      await this.engine.startEngine()
+    } catch (e) {
+      this.started = false
+      throw e
+    }
   }
 
   dispose(): void {
     if (this.disposed) return
     this.disposed = true
-    this.started = false
     this.engine.dispose()
   }
 }

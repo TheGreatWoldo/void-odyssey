@@ -12,7 +12,6 @@ function App({ onCanvasReady }: AppProps) {
   const setPhase = useSetPhase()
   const [service, setService] = useState<GameService | null>(null)
   const [engineError, setEngineError] = useState<string | null>(null)
-  const serviceRef = useRef<GameService | null>(null)
 
   // onCanvasReady must be stable (defined outside any component). If it is
   // ever moved inside a component, wrap it with useCallback to prevent the
@@ -21,15 +20,16 @@ function App({ onCanvasReady }: AppProps) {
     if (!canvasRef.current) return
 
     let cancelled = false
+    let svc: GameService | null = null
 
     onCanvasReady(canvasRef.current)
-      .then((svc) => {
+      .then((s) => {
         if (cancelled) {
-          svc.dispose()
+          s.dispose()
           return
         }
-        serviceRef.current = svc
-        setService(svc)
+        svc = s
+        setService(s)
         setPhase('menu')
       })
       .catch((err: unknown) => {
@@ -39,8 +39,7 @@ function App({ onCanvasReady }: AppProps) {
 
     return () => {
       cancelled = true
-      serviceRef.current?.dispose()
-      serviceRef.current = null
+      svc?.dispose()
     }
   }, [onCanvasReady, setPhase])
 
