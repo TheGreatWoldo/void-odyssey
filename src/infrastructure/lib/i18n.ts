@@ -17,5 +17,6 @@ export async function initI18n(): Promise<void> {
   })
 }
 
-export { i18next as i18n }
+/** Translate a key. Use this instead of importing the raw i18next instance. */
+export const t = i18next.t.bind(i18next)
 

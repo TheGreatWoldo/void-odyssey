@@ -1,7 +1,8 @@
-import { BackgroundSceneKey, IGameEngineFacade } from '@/domain/repositories/IGameEngineFacade'
+import { IGameEngineFacade } from '@/domain/services/IGameEngineFacade'
 
 export class GameService {
   private started = false
+  private disposed = false
 
   constructor(private readonly engine: IGameEngineFacade) {}
 
@@ -9,37 +10,20 @@ export class GameService {
     return this.engine.canvas
   }
 
-  setBackground(key: BackgroundSceneKey): void {
-    this.engine.setBackground(key)
-  }
-
-  goToShipConfiguration(shipId: string): void {
-    this.engine.goToShipConfiguration(shipId)
-  }
-
-  goToNavigation(): void {
-    this.engine.goToNavigation()
-  }
-
-  goToRouteNavigation(): void {
-    this.engine.goToRouteNavigation()
-  }
-
-  goToBackground(): void {
-    this.engine.goToBackground()
-  }
-
   setCanvasInteractive(interactive: boolean): void {
     this.engine.setCanvasInteractive(interactive)
   }
 
-  start(): void {
-    if (this.started) return
+  async start(): Promise<void> {
+    if (this.started || this.disposed) return
     this.started = true
-    this.engine.startEngine()
+    await this.engine.startEngine()
   }
 
   dispose(): void {
+    if (this.disposed) return
+    this.disposed = true
+    this.started = false
     this.engine.dispose()
   }
 }

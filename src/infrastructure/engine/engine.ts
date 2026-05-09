@@ -1,33 +1,34 @@
+import type { IGameEngineFacade } from '@/domain/services/IGameEngineFacade'
 import { Color, DisplayMode, Engine } from 'excalibur'
 
-let engine: Engine | null = null
+// Set to false when audio unlock via the Excalibur play button is needed.
+const SUPPRESS_PLAY_BUTTON = true
 
-export function getEngine(): Engine {
-  if (!engine) {
-    throw new Error('Engine has not been initialized. Call initEngine() first.')
+export class ExcaliburEngineFacade implements IGameEngineFacade {
+  private readonly engine: Engine
+
+  constructor(canvas: HTMLCanvasElement) {
+    this.engine = new Engine({
+      canvasElement: canvas,
+      displayMode: DisplayMode.FitContainerAndFill,
+      backgroundColor: Color.fromHex('#000000'),
+      suppressPlayButton: SUPPRESS_PLAY_BUTTON,
+    })
   }
-  return engine
-}
 
-export function initEngine(canvas: HTMLCanvasElement): Engine {
-  if (engine) {
-    throw new Error('Engine has already been initialized. Call resetEngine() before reinitializing.')
+  get canvas(): HTMLCanvasElement {
+    return this.engine.canvas
   }
 
-  engine = new Engine({
-    canvasElement: canvas,
-    displayMode: DisplayMode.FitContainerAndFill,
-    backgroundColor: Color.fromHex('#000000'),
-    suppressPlayButton: true,
-  })
+  setCanvasInteractive(interactive: boolean): void {
+    this.engine.canvas.style.pointerEvents = interactive ? 'auto' : 'none'
+  }
 
-  return engine
-}
+  startEngine(): Promise<void> {
+    return this.engine.start()
+  }
 
-export function startEngine(): Promise<void> {
-  return getEngine().start()
-}
-
-export function resetEngine(): void {
-  engine = null
+  dispose(): void {
+    this.engine.dispose()
+  }
 }
