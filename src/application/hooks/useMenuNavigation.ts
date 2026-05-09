@@ -5,6 +5,7 @@ import { useCallback, useState } from 'react'
 interface MenuFrame {
   items: MenuItem[]
   sceneKey: SceneKey
+  title: string | null
 }
 
 export interface MenuNavigation {
@@ -12,6 +13,8 @@ export interface MenuNavigation {
   currentItems: MenuItem[]
   /** Background scene for the current level */
   currentSceneKey: SceneKey
+  /** Label of the parent item, or null at the root */
+  currentTitle: string | null
   /** Whether the user can go back (depth > 0) */
   canGoBack: boolean
   /** Navigate into a submenu item's children */
@@ -22,7 +25,7 @@ export interface MenuNavigation {
 
 export function useMenuNavigation(config: MenuConfig): MenuNavigation {
   const [stack, setStack] = useState<MenuFrame[]>([
-    { items: config.items, sceneKey: config.sceneKey },
+    { items: config.items, sceneKey: config.sceneKey, title: config.title },
   ])
 
   const current = stack[stack.length - 1]
@@ -31,7 +34,7 @@ export function useMenuNavigation(config: MenuConfig): MenuNavigation {
     if (!item.children?.length || !item.sceneKey) return
     setStack((prev) => [
       ...prev,
-      { items: item.children!, sceneKey: item.sceneKey! },
+      { items: item.children!, sceneKey: item.sceneKey!, title: item.label },
     ])
   }, [])
 
@@ -42,6 +45,7 @@ export function useMenuNavigation(config: MenuConfig): MenuNavigation {
   return {
     currentItems: current.items,
     currentSceneKey: current.sceneKey,
+    currentTitle: current.title,
     canGoBack: stack.length > 1,
     pushItem,
     pop,

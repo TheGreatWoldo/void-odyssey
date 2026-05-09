@@ -40,5 +40,7 @@ export interface MenuItem {
 export interface MenuConfig {
   /** SceneKey for the top-level menu screen */
   readonly sceneKey: SceneKey
+  /** Title shown in the top bar at the root level */
+  readonly title: string
   readonly items: MenuItem[]
 }

@@ -1,5 +1,6 @@
 {
   "sceneKey": "orangeOnBlack",
+  "title": "Main",
   "items": [
     {
       "id": "play",
@@ -22,9 +23,9 @@
       ]
     },
     {
-      "id": "hangar",
-      "label": "Hangar",
-      "leadingIcons": [{ "icon": "Warehouse" }],
+      "id": "edit",
+      "label": "Edit",
+      "leadingIcons": [{ "icon": "Pencil" }],
       "sceneKey": "blackOnOrange",
       "children": [
         {
@@ -38,46 +39,18 @@
           "label": "Upgrades",
           "leadingIcons": [{ "icon": "Wrench" }],
           "event": "hangar:upgrades"
-        }
-      ]
-    },
-    {
-      "id": "missions",
-      "label": "Missions",
-      "leadingIcons": [{ "icon": "Map" }],
-      "sceneKey": "yellowOnPurple",
-      "children": [
-        {
-          "id": "active",
-          "label": "Active",
-          "leadingIcons": [{ "icon": "Crosshair" }],
-          "event": "missions:active"
         },
         {
-          "id": "completed",
-          "label": "Completed",
-          "leadingIcons": [{ "icon": "CheckCircle" }],
-          "event": "missions:completed"
-        }
-      ]
-    },
-    {
-      "id": "crew",
-      "label": "Crew",
-      "leadingIcons": [{ "icon": "Users" }],
-      "sceneKey": "orangeOnBlue",
-      "children": [
+          "id": "missions",
+          "label": "Missions",
+          "leadingIcons": [{ "icon": "Map" }],
+          "event": "missions:view"
+        },
         {
           "id": "roster",
           "label": "Roster",
           "leadingIcons": [{ "icon": "UserRound" }],
           "event": "crew:roster"
-        },
-        {
-          "id": "recruit",
-          "label": "Recruit",
-          "leadingIcons": [{ "icon": "UserPlus" }],
-          "event": "crew:recruit"
         }
       ]
     },
