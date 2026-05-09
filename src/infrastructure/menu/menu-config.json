@@ -1,6 +1,6 @@
 {
   "sceneKey": "orangeOnBlack",
-  "title": "Main",
+  "title": "Void Odyssey",
   "items": [
     {
       "id": "play",
@@ -12,13 +12,13 @@
           "id": "new-game",
           "label": "New Game",
           "leadingIcons": [{ "icon": "Play" }],
-          "event": "game:new"
+          "event": "play:new-game"
         },
         {
           "id": "continue",
           "label": "Continue",
           "leadingIcons": [{ "icon": "SkipForward" }],
-          "event": "game:continue"
+          "event": "play:continue"
         }
       ]
     },
@@ -32,25 +32,31 @@
           "id": "ships",
           "label": "Ships",
           "leadingIcons": [{ "icon": "Orbit" }],
-          "event": "hangar:ships"
+          "event": "edit:ships"
+        },
+        {
+          "id": "modules",
+          "label": "Modules",
+          "leadingIcons": [{ "icon": "Cpu" }],
+          "event": "edit:modules"
         },
         {
           "id": "upgrades",
           "label": "Upgrades",
           "leadingIcons": [{ "icon": "Wrench" }],
-          "event": "hangar:upgrades"
-        },
-        {
-          "id": "missions",
-          "label": "Missions",
-          "leadingIcons": [{ "icon": "Map" }],
-          "event": "missions:view"
+          "event": "edit:upgrades"
         },
         {
           "id": "roster",
           "label": "Roster",
           "leadingIcons": [{ "icon": "UserRound" }],
-          "event": "crew:roster"
+          "event": "edit:roster"
+        },
+        {
+          "id": "missions",
+          "label": "Missions",
+          "leadingIcons": [{ "icon": "Map" }],
+          "event": "edit:missions"
         }
       ]
     },

@@ -36,19 +36,19 @@ export const backgroundSceneArgsCatalog = {
     maxSize: 70,
     angleBase: 180,
     angleTolerance: 25,
-    spawnIntervalMs: 160,
+    spawnIntervalMs: 90,
   }),
   // Play — "Solar Flare": electric cyan on deep crimson, high energy
   cyanOnRed: new BackgroundSceneArgs({
     actorColor: backgroundColorArgsCatalog.twCyan,
     backgroundColor: backgroundColorArgsCatalog.twRose950,
-    minSpeed: 40,
-    maxSpeed: 220,
+    minSpeed: 25,
+    maxSpeed: 140,
     minSize: 5,
     maxSize: 55,
     angleBase: 270,
     angleTolerance: 30,
-    spawnIntervalMs: 110,
+    spawnIntervalMs: 80,
   }),
   // Crew — "Deep Current": orange on deep navy, complementary pair
   orangeOnBlue: new BackgroundSceneArgs({
@@ -72,7 +72,7 @@ export const backgroundSceneArgsCatalog = {
     maxSize: 90,
     angleBase: 45,
     angleTolerance: 15,
-    spawnIntervalMs: 200,
+    spawnIntervalMs: 120,
   }),
   // Codex — "Bioluminescence": emerald on deep forest, slow organic drift
   greenOnBlack: new BackgroundSceneArgs({
@@ -84,6 +84,6 @@ export const backgroundSceneArgsCatalog = {
     maxSize: 75,
     angleBase: 315,
     angleTolerance: 35,
-    spawnIntervalMs: 450,
+    spawnIntervalMs: 220,
   }),
 };
