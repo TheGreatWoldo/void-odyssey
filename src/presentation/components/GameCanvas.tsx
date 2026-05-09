@@ -1,10 +1,15 @@
 import { GameProvider } from '@/application/components/GameProvider'
 import { useSetPhase } from '@/application/hooks/useSetPhase'
 import { GameService } from '@/application/services/GameService'
+import type { SceneKey } from '@/shared/scene-key'
 import { useRouteContext } from '@tanstack/react-router'
 import { useEffect, useRef, useState } from 'react'
 
-function GameCanvas() {
+interface GameCanvasProps {
+  sceneKey: SceneKey
+}
+
+function GameCanvas({ sceneKey }: GameCanvasProps) {
   const { onCanvasReady } = useRouteContext({ from: '__root__' })
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const setPhase = useSetPhase()
@@ -21,11 +26,12 @@ function GameCanvas() {
     let svc: GameService | null = null
 
     onCanvasReady(canvasRef.current)
-      .then((s) => {
+      .then(async (s) => {
         if (cancelled) {
           s.dispose()
           return
         }
+        await s.goToScene(sceneKey)
         svc = s
         setService(s)
         setPhase('menu')
@@ -51,7 +57,7 @@ function GameCanvas() {
 
   return (
     <>
-      <canvas ref={canvasRef} style={{ display: 'block', width: '100%', height: '100%' }} />
+      <canvas ref={canvasRef} className="block w-full h-full" />
       {service && (
         <GameProvider service={service}>
           {null}

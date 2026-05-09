@@ -1,5 +1,5 @@
 import { Vector } from 'excalibur';
-import { BackgroundActorArgs } from '../actors/background-actor-args';
+import type { BackgroundActorArgs } from '../actors/background-actor-args';
 import { BackgroundSceneArgs } from '../background-scene-args';
 
 const SIZE_TO_SPEED_SCALE = 2;

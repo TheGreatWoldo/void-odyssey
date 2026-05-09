@@ -1,4 +1,5 @@
 import type { IGameEngineFacade } from '@/domain/services/IGameEngineFacade'
+import type { SceneKey } from '@/shared/scene-key'
 
 export class GameService {
   private started = false
@@ -33,5 +34,9 @@ export class GameService {
     if (this.disposed) return
     this.disposed = true
     this.engine.dispose()
+  }
+
+  goToScene(key: SceneKey): Promise<void> {
+    return this.engine.goToScene(key)
   }
 }
