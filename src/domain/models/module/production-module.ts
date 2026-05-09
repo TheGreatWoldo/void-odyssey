@@ -2,8 +2,8 @@ import { createProducer } from '@/domain/models/production/producer';
 import type { Recipe } from '@/domain/models/production/recipe';
 import type { ContainerMap } from '@/domain/models/production/resource-container';
 import { isBlank } from '@/shared/string-utils';
-import type { ModuleId } from './module-id';
-import type { ModuleUpgrade } from './module-upgrade';
+import type { ModuleId } from './production-module-id';
+import type { ModuleUpgrade } from './production-module-upgrade';
 
 export interface ProductionModuleOptions {
   /** Initial and maximum condition in [0, 1]. Default: 1. */

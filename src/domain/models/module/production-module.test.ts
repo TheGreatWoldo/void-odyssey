@@ -1,8 +1,8 @@
 import { createRecipe } from '@/domain/models/production/recipe';
 import { createResource, ResourceType } from '@/domain/models/production/resource';
 import { describe, expect, it } from 'vitest';
-import { ModuleId } from './module-id';
 import { createProductionModule } from './production-module';
+import { ModuleId } from './production-module-id';
 
 const powerRecipe = createRecipe({
   name: 'TestReactor',
