@@ -9,7 +9,7 @@ import type { SceneKey } from '@/shared/scene-key'
 import { Color, DisplayMode, Engine } from 'excalibur'
 
 // Compile-time check: SceneKey must match backgroundSceneArgsCatalog keys exactly.
-type _AssertSceneKeyMatchesCatalog =
+export type _AssertSceneKeyMatchesCatalog =
   keyof typeof backgroundSceneArgsCatalog extends SceneKey
     ? SceneKey extends keyof typeof backgroundSceneArgsCatalog
       ? true

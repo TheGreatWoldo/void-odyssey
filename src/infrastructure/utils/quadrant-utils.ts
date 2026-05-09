@@ -1,12 +1,13 @@
 import { BoundingBox, Vector } from 'excalibur';
 
-export enum Quadrant {
-  NONE = 'NONE',
-  FIRST = 'FIRST',
-  SECOND = 'SECOND',
-  THIRD = 'THIRD',
-  FOURTH = 'FOURTH',
-}
+export const Quadrant = {
+  NONE: 'NONE',
+  FIRST: 'FIRST',
+  SECOND: 'SECOND',
+  THIRD: 'THIRD',
+  FOURTH: 'FOURTH',
+} as const;
+export type Quadrant = (typeof Quadrant)[keyof typeof Quadrant];
 
 export function getQuadrantForVelocity(velocity: Vector): Quadrant {
   if (velocity.x >= 0 && velocity.y <= 0) return Quadrant.FIRST;

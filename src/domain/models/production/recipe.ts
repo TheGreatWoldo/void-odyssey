@@ -1,4 +1,5 @@
-import { Resource, ResourceType, StatType } from './resource';
+import type { Resource, ResourceType } from './resource';
+import { StatType } from './resource';
 
 /**
  * Defines a continuous production process.

@@ -5,8 +5,11 @@ import type { SceneKey } from '@/shared/scene-key'
 export class GameService implements IGameService {
   private started = false
   private disposed = false
+  private readonly engine: IGameEngineFacade
 
-  constructor(private readonly engine: IGameEngineFacade) {}
+  constructor(engine: IGameEngineFacade) {
+    this.engine = engine
+  }
 
   get canvas(): HTMLCanvasElement {
     return this.engine.canvas

@@ -1,5 +1,6 @@
 import { generateId } from '@/shared/utils';
-import { Resource, ResourceSizes, ResourceType } from './resource';
+import type { Resource } from './resource';
+import { ResourceSizes, ResourceType } from './resource';
 
 /**
  * A map from resource type to the container that holds it.

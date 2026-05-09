@@ -23,7 +23,7 @@ function GameCanvas({ sceneKey, children }: GameCanvasProps) {
     if (!canvasRef.current) return
 
     let cancelled = false
-    let svc: GameService | null = null
+    let svc: IGameService | null = null
 
     onCanvasReady(canvasRef.current)
       .then(async (s) => {
