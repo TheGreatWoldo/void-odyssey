@@ -16,3 +16,4 @@ export async function initI18n(): Promise<void> {
 }
 
 export { i18next as i18n }
+

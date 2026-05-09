@@ -1,4 +1,4 @@
-import { Engine, DisplayMode, Color } from 'excalibur'
+import { Color, DisplayMode, Engine } from 'excalibur'
 
 let engine: Engine | null = null
 

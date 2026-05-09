@@ -1,7 +1,7 @@
-import { useEffect, useRef } from 'react'
-import { initI18n } from '@/infrastructure/lib/i18n'
-import { initEngine, startEngine } from '@/infrastructure/engine/engine'
 import { useGameStore } from '@/application/store/gameStore'
+import { initEngine, startEngine } from '@/infrastructure/engine/engine'
+import { initI18n } from '@/infrastructure/lib/i18n'
+import { useEffect, useRef } from 'react'
 
 await initI18n()
 
