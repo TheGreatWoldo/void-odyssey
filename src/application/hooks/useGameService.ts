@@ -1,5 +1,5 @@
+import { GameContext } from '@/application/context/GameContext'
 import { GameService } from '@/application/services/GameService'
-import { GameContext } from '@/presentation/components/GameContext'
 import { useContext } from 'react'
 
 export function useGameService(): GameService {

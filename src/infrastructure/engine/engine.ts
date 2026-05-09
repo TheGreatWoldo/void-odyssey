@@ -10,6 +10,10 @@ export function getEngine(): Engine {
 }
 
 export function initEngine(canvas: HTMLCanvasElement): Engine {
+  if (engine) {
+    throw new Error('Engine has already been initialized. Call resetEngine() before reinitializing.')
+  }
+
   engine = new Engine({
     canvasElement: canvas,
     displayMode: DisplayMode.FitContainerAndFill,
@@ -22,4 +26,8 @@ export function initEngine(canvas: HTMLCanvasElement): Engine {
 
 export function startEngine(): Promise<void> {
   return getEngine().start()
+}
+
+export function resetEngine(): void {
+  engine = null
 }
