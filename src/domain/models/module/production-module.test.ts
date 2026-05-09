@@ -1,0 +1,247 @@
+import { createRecipe } from '@/domain/models/production/recipe';
+import { createResource, ResourceType } from '@/domain/models/production/resource';
+import { describe, expect, it } from 'vitest';
+import { ModuleId } from './module-id';
+import { createProductionModule } from './production-module';
+
+const powerRecipe = createRecipe({
+  name: 'TestReactor',
+  primaryOutput: ResourceType.Power,
+  costsPerSecond: [createResource(ResourceType.Fuel, 1)],
+});
+
+const velocityUpgradeType = ResourceType.Power; // produced by powerRecipe
+
+describe('createProductionModule', () => {
+  describe('validation', () => {
+    it('throws when id is blank', () => {
+      expect(() => createProductionModule('', 'Module', powerRecipe, { type: ModuleId.ReactorCore })).toThrow();
+      expect(() => createProductionModule('  ', 'Module', powerRecipe, { type: ModuleId.ReactorCore })).toThrow();
+    });
+
+    it('throws when name is blank', () => {
+      expect(() => createProductionModule('m1', '', powerRecipe, { type: ModuleId.ReactorCore })).toThrow();
+      expect(() => createProductionModule('m1', '  ', powerRecipe, { type: ModuleId.ReactorCore })).toThrow();
+    });
+
+    it('throws when condition is below 0', () => {
+      expect(() => createProductionModule('m1', 'Module', powerRecipe, { type: ModuleId.ReactorCore, initialCondition: -0.1 })).toThrow();
+    });
+
+    it('throws when condition is above 1', () => {
+      expect(() => createProductionModule('m1', 'Module', powerRecipe, { type: ModuleId.ReactorCore, initialCondition: 1.1 })).toThrow();
+    });
+
+    it('accepts condition = 0 and condition = 1', () => {
+      expect(() => createProductionModule('m1', 'M', powerRecipe, { type: ModuleId.ReactorCore, initialCondition: 0 })).not.toThrow();
+      expect(() => createProductionModule('m2', 'M', powerRecipe, { type: ModuleId.ReactorCore, initialCondition: 1 })).not.toThrow();
+    });
+  });
+
+  describe('initial state', () => {
+    it('exposes id, name, and condition', () => {
+      const m = createProductionModule('reactor', 'Reactor', powerRecipe, { type: ModuleId.ReactorCore, initialCondition: 0.8 });
+
+      expect(m.id).toBe('reactor');
+      expect(m.name).toBe('Reactor');
+      expect(m.condition).toBe(0.8);
+    });
+
+    it('defaults throttle and actualThrottle to 1', () => {
+      const m = createProductionModule('m', 'M', powerRecipe, { type: ModuleId.ReactorCore });
+
+      expect(m.throttle).toBe(1);
+      expect(m.actualThrottle).toBe(1);
+    });
+
+    it('defaults enabled to true', () => {
+      expect(createProductionModule('m', 'M', powerRecipe, { type: ModuleId.ReactorCore }).enabled).toBe(true);
+    });
+  });
+
+  describe('isOperational', () => {
+    it('returns true when condition > 0', () => {
+      expect(createProductionModule('m', 'M', powerRecipe, { type: ModuleId.ReactorCore, initialCondition: 0.1 }).isOperational()).toBe(true);
+    });
+
+    it('returns false when condition = 0', () => {
+      expect(createProductionModule('m', 'M', powerRecipe, { type: ModuleId.ReactorCore, initialCondition: 0 }).isOperational()).toBe(false);
+    });
+
+    it('returns false when enabled is false', () => {
+      const m = createProductionModule('m', 'M', powerRecipe, { type: ModuleId.ReactorCore });
+      m.disable();
+
+      expect(m.isOperational()).toBe(false);
+    });
+  });
+
+  describe('setThrottle', () => {
+    it('clamps to 0 when given a negative value', () => {
+      const m = createProductionModule('m', 'M', powerRecipe, { type: ModuleId.ReactorCore });
+      m.setThrottle(-1);
+
+      expect(m.throttle).toBe(0);
+    });
+
+    it('clamps to 1 when given a value above 1', () => {
+      const m = createProductionModule('m', 'M', powerRecipe, { type: ModuleId.ReactorCore });
+      m.setThrottle(2);
+
+      expect(m.throttle).toBe(1);
+    });
+
+    it('sets a value within [0, 1]', () => {
+      const m = createProductionModule('m', 'M', powerRecipe, { type: ModuleId.ReactorCore });
+      m.setThrottle(0.4);
+
+      expect(m.throttle).toBe(0.4);
+    });
+
+    describe('snapOutputToInteger', () => {
+      const scanRecipe = createRecipe({
+        name: 'Scan',
+        primaryOutput: ResourceType.ScanRange,
+        costsPerSecond: [],
+      });
+
+      it('snaps throttle to nearest integer output (0.6 → 0.5, maxN=2)', () => {
+        const m = createProductionModule('m', 'M', scanRecipe, { type: ModuleId.SensorArray, snapOutputToInteger: true, maxOutput: 2 });
+        m.setThrottle(0.6);
+
+        expect(m.throttle).toBeCloseTo(0.5);
+      });
+
+      it('snaps throttle to nearest integer output (0.8 → 1.0, maxN=2)', () => {
+        const m = createProductionModule('m', 'M', scanRecipe, { type: ModuleId.SensorArray, snapOutputToInteger: true, maxOutput: 2 });
+        m.setThrottle(0.8);
+
+        expect(m.throttle).toBeCloseTo(1.0);
+      });
+
+      it('snaps to maxN/maxN=1.0 when maxOutput is non-integer (e.g. 2.5 → maxN=2)', () => {
+        const m = createProductionModule('m', 'M', scanRecipe, { type: ModuleId.SensorArray, snapOutputToInteger: true, maxOutput: 2.5 });
+        m.setThrottle(0.9);
+
+        expect(m.throttle).toBeCloseTo(1.0);
+      });
+
+      it('range 2 at 100% when maxOutput=2.5', () => {
+        const m = createProductionModule('m', 'M', scanRecipe, { type: ModuleId.SensorArray, snapOutputToInteger: true, maxOutput: 2.5 });
+        m.setThrottle(0.8);
+
+        expect(m.throttle).toBeCloseTo(1.0);
+      });
+
+      it('clamps snapped value to 1 when it would exceed 1', () => {
+        const m = createProductionModule('m', 'M', scanRecipe, { type: ModuleId.SensorArray, snapOutputToInteger: true, maxOutput: 2 });
+        m.setThrottle(1.5);
+
+        expect(m.throttle).toBe(1);
+      });
+
+      it('clamps snapped value to 0 when given a negative', () => {
+        const m = createProductionModule('m', 'M', scanRecipe, { type: ModuleId.SensorArray, snapOutputToInteger: true, maxOutput: 2 });
+        m.setThrottle(-0.1);
+
+        expect(m.throttle).toBe(0);
+      });
+
+      it('does not snap when snapOutputToInteger is false', () => {
+        const m = createProductionModule('m', 'M', scanRecipe, { type: ModuleId.SensorArray });
+        m.setThrottle(0.6);
+
+        expect(m.throttle).toBe(0.6);
+      });
+    });
+  });
+
+  describe('enable / disable', () => {
+    it('toggles the enabled flag', () => {
+      const m = createProductionModule('m', 'M', powerRecipe, { type: ModuleId.ReactorCore });
+      m.disable();
+
+      expect(m.enabled).toBe(false);
+
+      m.enable();
+
+      expect(m.enabled).toBe(true);
+    });
+  });
+
+  describe('stepRamp', () => {
+    it('with Infinity rampRate, snaps actualThrottle to throttle immediately', () => {
+      const m = createProductionModule('m', 'M', powerRecipe, { type: ModuleId.ReactorCore, rampRate: Infinity });
+      m.setThrottle(0.3);
+      m.stepRamp(1);
+
+      expect(m.actualThrottle).toBe(0.3);
+    });
+
+    it('with finite rampRate, advances actualThrottle by rampRate × deltaTime', () => {
+      const m = createProductionModule('m', 'M', powerRecipe, { type: ModuleId.ReactorCore, rampRate: 0.5 });
+      m.setThrottle(0);
+      m.stepRamp(1);
+
+      expect(m.actualThrottle).toBeCloseTo(0.5);
+    });
+
+    it('does not overshoot the target throttle', () => {
+      const m = createProductionModule('m', 'M', powerRecipe, { type: ModuleId.ReactorCore, rampRate: 10 });
+      m.setThrottle(0);
+      m.stepRamp(1);
+
+      expect(m.actualThrottle).toBe(0);
+    });
+  });
+
+  describe('addUpgrade', () => {
+    it('throws when the upgrade targets a resource the module does not produce', () => {
+      const m = createProductionModule('m', 'M', powerRecipe, { type: ModuleId.ReactorCore });
+
+      expect(() =>
+        m.addUpgrade({
+          id: 'u1', name: 'U1',
+          costFactor: 1,
+          targetResourceType: ResourceType.Food,
+          enabled: true,
+        })
+      ).toThrow();
+    });
+
+    it('accepts an upgrade that targets a produced resource type', () => {
+      const m = createProductionModule('m', 'M', powerRecipe, { type: ModuleId.ReactorCore });
+
+      expect(() =>
+        m.addUpgrade({
+          id: 'u1', name: 'U1',
+          costFactor: 0.8,
+          targetResourceType: velocityUpgradeType,
+          enabled: true,
+        })
+      ).not.toThrow();
+    });
+  });
+
+  describe('costMultiplier', () => {
+    it('returns 1 with no upgrades', () => {
+      const m = createProductionModule('m', 'M', powerRecipe, { type: ModuleId.ReactorCore });
+
+      expect(m.costMultiplier).toBe(1);
+    });
+
+    it('accumulates upgrade cost multipliers', () => {
+      const m = createProductionModule('m', 'M', powerRecipe, { type: ModuleId.ReactorCore });
+      m.addUpgrade({ id: 'u1', name: 'U1', costFactor: 0.8, targetResourceType: velocityUpgradeType, enabled: true });
+
+      expect(m.costMultiplier).toBeCloseTo(0.8);
+    });
+
+    it('skips disabled upgrades', () => {
+      const m = createProductionModule('m', 'M', powerRecipe, { type: ModuleId.ReactorCore });
+      m.addUpgrade({ id: 'u1', name: 'U1', costFactor: 0.5, targetResourceType: velocityUpgradeType, enabled: false });
+
+      expect(m.costMultiplier).toBe(1);
+    });
+  });
+});
