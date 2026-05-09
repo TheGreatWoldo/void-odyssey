@@ -1,4 +1,5 @@
 import i18next from 'i18next'
+import en from './locales/en.json'
 
 export async function initI18n(): Promise<void> {
   if (i18next.isInitialized) return
@@ -8,7 +9,7 @@ export async function initI18n(): Promise<void> {
     fallbackLng: 'en',
     resources: {
       en: {
-        translation: {},
+        translation: en,
       },
     },
     interpolation: {
