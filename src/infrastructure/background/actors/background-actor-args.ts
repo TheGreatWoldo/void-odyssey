@@ -18,9 +18,4 @@ export function defaultBackgroundActorArgs(): BackgroundActorArgs {
   };
 }
 
-export type ViewportCache = {
-  camX: number;
-  camY: number;
-  halfWidth: number;
-  halfHeight: number;
-};
+

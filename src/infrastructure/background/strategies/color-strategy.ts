@@ -4,9 +4,9 @@ import {
     getRandomInRange,
 } from '@/shared/math-utils';
 import { Color } from 'excalibur';
-import { BackgroundActorArgs } from '../actors/background-actor-args';
-import { ColorArgs } from '../args/color-args';
-import { SizeArgs } from '../background-scene-args';
+import type { BackgroundActorArgs } from '../actors/background-actor-args';
+import type { ColorArgs } from '../args/color-args';
+import type { SizeArgs } from '../background-scene-args';
 
 export const HueForSizeStrategy = (
   colorArgs: ColorArgs,

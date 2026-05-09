@@ -5,18 +5,18 @@ import { BackgroundScene } from './background-scene';
 
 export class BackgroundSceneDebug extends BackgroundScene {
   private deltaTime: number = 0;
-  private nextInterval: number = 100;
   private angleOffset: number = 0;
+
+  private static readonly DEBUG_INTERVAL_MS = 100;
 
   override onPreDraw(ctx: ExcaliburGraphicsContext, delta: number): void {
     this.deltaTime += delta;
     this.angleOffset += delta / 1000;
 
     if (this.actors.length > 120) return;
-    if (this.deltaTime < this.nextInterval) return;
+    if (this.deltaTime < BackgroundSceneDebug.DEBUG_INTERVAL_MS) return;
 
     this.deltaTime = 0;
-    this.nextInterval = 100;
 
     const debugArgs = {
       ...this.sceneArgs,
@@ -33,7 +33,7 @@ export class BackgroundSceneDebug extends BackgroundScene {
       );
     actorArgs.size = this.strategies.sizeStrategy(debugArgs, actorArgs);
     actorArgs.color = [
-      this.strategies.colorStrategy(debugArgs.actorColor, debugArgs, actorArgs),
+      this.strategies.actorColorStrategy(debugArgs.actorColor, debugArgs, actorArgs),
     ];
     actorArgs.velocity = this.strategies.velocityStrategy(debugArgs, actorArgs);
 

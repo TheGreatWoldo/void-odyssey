@@ -4,45 +4,12 @@ import {
 } from '@/infrastructure/graphics/color-utils';
 import { BoundingBox, Color, Engine, Scene, Vector } from 'excalibur';
 import { BackgroundActor } from '../actors/background-actor';
-import type { BackgroundActorArgs } from '../actors/background-actor-args';
 import { defaultBackgroundActorArgs } from '../actors/background-actor-args';
-import { ColorArgs } from '../args/color-args';
-import type { SizeArgs } from '../background-scene-args';
 import { BackgroundSceneArgs } from '../background-scene-args';
-import type { PositionResult } from '../strategies/position-strategy';
+import type { BackgroundStrategies } from '../strategies/background-strategies';
 
 const SPAWN_INTERVAL_MS = 300;
 const PRESEED_WINDOW_MS = 60_000;
-
-type SizeStrategy = (
-  scene: BackgroundSceneArgs,
-  actor: BackgroundActorArgs
-) => number;
-type ColorStrategy = (
-  colorArgs: ColorArgs,
-  sizeArgs: SizeArgs,
-  actor: BackgroundActorArgs
-) => Color;
-type VelocityStrategy = (
-  scene: BackgroundSceneArgs,
-  actor: BackgroundActorArgs
-) => Vector;
-type PositionStrategy = (
-  scene: BackgroundSceneArgs,
-  actor: BackgroundActorArgs
-) => PositionResult;
-
-export interface BackgroundStrategies {
-  sizeStrategy: SizeStrategy;
-  backgroundColorStrategy: ColorStrategy;
-  colorStrategy: ColorStrategy;
-  velocityStrategy: VelocityStrategy;
-  positionStrategy: PositionStrategy;
-}
-
-export interface IBackgroundScene {
-  setSceneArgs(sceneArgs: BackgroundSceneArgs): void;
-}
 
 export class BackgroundScene extends Scene {
   private elapsed = 0;
@@ -82,7 +49,9 @@ export class BackgroundScene extends Scene {
       this.sceneArgs,
       defaultBackgroundActorArgs()
     );
-    this.preSeed();
+    if (this.isInitialized) {
+      this.preSeed();
+    }
   }
 
   private preSeed(): void {
@@ -104,7 +73,7 @@ export class BackgroundScene extends Scene {
     args.viewport = cameraViewport;
     args.size = this.strategies.sizeStrategy(this.sceneArgs, args);
     args.color = [
-      this.strategies.colorStrategy(
+      this.strategies.actorColorStrategy(
         this.sceneArgs.actorColor,
         this.sceneArgs,
         args

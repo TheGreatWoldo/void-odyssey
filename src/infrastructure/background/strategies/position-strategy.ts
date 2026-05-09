@@ -12,8 +12,8 @@ import {
     Quadrant,
 } from '@/infrastructure/utils/quadrant-utils';
 import { Vector } from 'excalibur';
-import { BackgroundActorArgs } from '../actors/background-actor-args';
-import { BackgroundSceneArgs } from '../background-scene-args';
+import type { BackgroundActorArgs } from '../actors/background-actor-args';
+import type { BackgroundSceneArgs } from '../background-scene-args';
 
 export type PositionResult = {
   startingPosition: Vector;
@@ -50,6 +50,10 @@ function computePosition(
     result.velocityQuadrant,
     actorArgs.viewport
   );
+
+  if (result.cornerPoints.length < 2) {
+    return result;
+  }
 
   const lineOne = lineThroughPointParallelToVector(
     result.cornerPoints[0],

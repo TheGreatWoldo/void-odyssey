@@ -1,17 +1,20 @@
 import { Actor, Circle } from 'excalibur';
-import { BackgroundActorArgs } from './background-actor-args';
+import type { BackgroundActorArgs } from './background-actor-args';
 
 export class BackgroundActor extends Actor {
+  private readonly options: BackgroundActorArgs;
+  private hasBeenSeen = false;
+
   public get size(): number {
     return this.options.size;
   }
-  private hasBeenSeen = false;
 
-  constructor(private options: BackgroundActorArgs) {
+  constructor(options: BackgroundActorArgs) {
     super({
       pos: options.position,
       radius: options.size,
     });
+    this.options = options;
     this.vel = options.velocity;
     this.z = options.size;
     const color =
