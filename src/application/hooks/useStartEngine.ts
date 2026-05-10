@@ -1,14 +1,12 @@
 import { useGameStore } from '@/application/store/gameStore'
+import { startEngine } from '@/application/useCases/StartEngineUseCase'
 import type { IGameService } from '@/shared/game-service'
 import type { SceneKey } from '@/shared/scene-key'
 import { useCallback } from 'react'
 
 /**
- * Returns a stable callback that starts the engine on a given canvas, navigates
- * to the initial scene, and transitions the game phase to 'menu'.
- *
- * Encapsulates the phase transition in the application layer so that presentation
- * components (GameCanvas) do not make application-state decisions.
+ * Returns a stable callback that delegates to {@link startEngine} and keeps the
+ * hook free of orchestration logic.
  */
 export function useStartEngine(
   onCanvasReady: (canvas: HTMLCanvasElement) => Promise<IGameService>
@@ -16,12 +14,8 @@ export function useStartEngine(
   const setPhase = useGameStore((s) => s.setPhase)
 
   return useCallback(
-    async (canvas: HTMLCanvasElement, sceneKey: SceneKey): Promise<IGameService> => {
-      const service = await onCanvasReady(canvas)
-      await service.goToScene(sceneKey)
-      setPhase('menu')
-      return service
-    },
+    (canvas: HTMLCanvasElement, sceneKey: SceneKey) =>
+      startEngine(canvas, sceneKey, onCanvasReady, setPhase),
     [onCanvasReady, setPhase]
   )
 }
