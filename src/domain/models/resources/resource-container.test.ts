@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { createResource, ResourceType } from '../resources/resource';
-import { createResourceContainer } from '../resources/resource-container';
+import { createResource, ResourceType } from './resource';
+import { createResourceContainer } from './resource-container';
 
 describe('createResourceContainer', () => {
   describe('add / get / freeSpace', () => {

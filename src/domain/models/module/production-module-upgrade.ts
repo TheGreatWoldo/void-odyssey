@@ -1,6 +1,7 @@
 import type { ResourceType } from '@/domain/models/resources/resource';
+import type { Storable } from '@/domain/models/storage/storable';
 
-export interface ModuleUpgrade {
+export interface ModuleUpgrade extends Storable {
   readonly id: string;
   readonly name: string;
   readonly costFactor: number;

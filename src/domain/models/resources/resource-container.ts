@@ -1,3 +1,4 @@
+import type { IStorageNode } from '@/domain/models/storage/storage-node';
 import { generateId } from '@/shared/utils';
 import type { Resource } from './resource';
 import { ResourceSizes, ResourceType } from './resource';
@@ -26,7 +27,7 @@ export interface ResourceContainerOptions {
  * removeContainer()— removes a previously added child container, freeing its capacity.
  * getContainers()  — returns all nested child containers.
  */
-export interface ResourceContainer {
+export interface ResourceContainer extends IStorageNode {
   readonly id: string;
   readonly labelKey: string;
   readonly capacity: number;
@@ -47,6 +48,8 @@ export interface ResourceContainer {
   addContainer(container: ResourceContainer): boolean;
   removeContainer(container: ResourceContainer): void;
   getContainers(): readonly ResourceContainer[];
+  /** IStorageNode — returns nested ResourceContainers as IStorageNode[]. */
+  getStorageNodes(): readonly IStorageNode[];
 }
 
 export function createResourceContainer(
@@ -200,6 +203,10 @@ export function createResourceContainer(
     return children;
   }
 
+  function getStorageNodes(): readonly IStorageNode[] {
+    return children;
+  }
+
   function accepts(id: ResourceType): boolean {
     return isAllowed(id);
   }
@@ -224,5 +231,6 @@ export function createResourceContainer(
     addContainer,
     removeContainer,
     getContainers,
+    getStorageNodes,
   };
 }
