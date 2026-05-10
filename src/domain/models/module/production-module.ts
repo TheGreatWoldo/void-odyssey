@@ -1,9 +1,12 @@
 import { createProducer } from '@/domain/models/production/producer';
 import type { Recipe } from '@/domain/models/production/recipe';
 import type { ContainerMap } from '@/domain/models/resources/resource-container';
+import type { Storable } from '@/domain/models/storage/storable';
+import { err, ok, type Result } from '@/shared/result';
 import { isNullOrWhiteSpace } from '@/shared/string-utils';
 
 import type { ModuleId } from './production-module-id';
+import { ModuleSlotCosts } from './production-module-id';
 import type { ModuleUpgrade } from './production-module-upgrade';
 
 
@@ -32,7 +35,7 @@ export interface ProductionModuleOptions {
   snapOutputToInteger?: boolean;
 }
 
-export interface ProductionModule {
+export interface ProductionModule extends Storable {
   readonly id: string;
 
   /** Stable module type — invariant across instances (e.g. ModuleId.ReactorCore for all reactor cores). */
@@ -67,9 +70,9 @@ export interface ProductionModule {
    */
   readonly maxOutput: number;
 
-  addUpgrade(upgrade: ModuleUpgrade): void;
-  setUpgradeEnabled(upgradeId: string, enabled: boolean): void;
-  setCondition(value: number): void;
+  addUpgrade(upgrade: ModuleUpgrade): Result<void, string>;
+  setUpgradeEnabled(upgradeId: string, enabled: boolean): Result<void, string>;
+  setCondition(value: number): Result<void, string>;
 
   readonly costMultiplier: number;
 
@@ -100,7 +103,7 @@ export function createProductionModule(
   name: string,
   recipe: Recipe,
   options: ProductionModuleOptions
-): ProductionModule {
+): Result<ProductionModule, string> {
   const {
     initialCondition = 1,
     rampRate = Infinity,
@@ -110,16 +113,16 @@ export function createProductionModule(
   } = options;
 
   if (isNullOrWhiteSpace(id))
-    throw new Error('ProductionModule id must be a non-empty string');
+    return err('ProductionModule id must be a non-empty string');
 
   if (isNullOrWhiteSpace(name))
-    throw new Error('ProductionModule name must be a non-empty string');
+    return err('ProductionModule name must be a non-empty string');
 
   if (initialCondition < 0 || initialCondition > 1)
-    throw new Error(`ProductionModule condition must be in [0, 1], got ${initialCondition}`);
+    return err(`ProductionModule condition must be in [0, 1], got ${initialCondition}`);
 
   if (rampRate < 0)
-    throw new Error(`ProductionModule rampRate must be >= 0, got ${rampRate}`);
+    return err(`ProductionModule rampRate must be >= 0, got ${rampRate}`);
 
   type MutableModuleUpgrade = { -readonly [K in keyof ModuleUpgrade]: ModuleUpgrade[K] };
 
@@ -136,9 +139,9 @@ export function createProductionModule(
   let actualThrottle = 1;
   let enabled = true;
 
-  function addUpgrade(upgrade: ModuleUpgrade): void {
+  function addUpgrade(upgrade: ModuleUpgrade): Result<void, string> {
     if (!outputTypes.has(upgrade.targetResourceType)) {
-      throw new Error(
+      return err(
         `Upgrade '${upgrade.id}' targets '${upgrade.targetResourceType}' but module '${id}' does not produce it`
       );
     }
@@ -146,16 +149,20 @@ export function createProductionModule(
     upgradeMap.set(upgrade.id, { ...upgrade });
     cachedCostMultiplier = null;
     cachedUpgrades = null;
+
+    return ok(undefined);
   }
 
-  function setUpgradeEnabled(upgradeId: string, upgEnabled: boolean): void {
+  function setUpgradeEnabled(upgradeId: string, upgEnabled: boolean): Result<void, string> {
     const upgrade = upgradeMap.get(upgradeId);
 
-    if (!upgrade) throw new Error(`Upgrade '${upgradeId}' not found on module '${id}'`);
+    if (!upgrade) return err(`Upgrade '${upgradeId}' not found on module '${id}'`);
 
     upgrade.enabled = upgEnabled;
     cachedCostMultiplier = null;
     cachedUpgrades = null;
+
+    return ok(undefined);
   }
 
   function computeCostMultiplier(): number {
@@ -189,11 +196,13 @@ export function createProductionModule(
     throttle = Math.max(0, Math.min(1, value));
   }
 
-  function setCondition(value: number): void {
+  function setCondition(value: number): Result<void, string> {
     if (value < 0 || value > 1)
-      throw new Error(`ProductionModule condition must be in [0, 1], got ${value}`);
+      return err(`ProductionModule condition must be in [0, 1], got ${value}`);
 
     condition = value;
+
+    return ok(undefined);
   }
 
   function enable(): void {
@@ -221,10 +230,12 @@ export function createProductionModule(
 
   const producer = createProducer(id, recipe);
 
-  return {
+  return ok({
     id,
     type,
     name,
+    storableType: 'module' as const,
+    slotCost: ModuleSlotCosts[type],
 
     get condition() { return condition; },
 
@@ -260,5 +271,5 @@ export function createProductionModule(
 
     drain: (targets) => producer.drain(targets),
     reset: () => producer.reset(),
-  };
+  });
 }

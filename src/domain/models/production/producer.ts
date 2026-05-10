@@ -1,6 +1,6 @@
-import type { Resource, ResourceType } from '../resources/resource';
-import type { ContainerMap } from '../resources/resource-container';
-import { createResourceContainer } from '../resources/resource-container';
+import type { Resource, ResourceType } from '@/domain/models/resources/resource';
+import type { ContainerMap } from '@/domain/models/resources/resource-container';
+import { createResourceContainer } from '@/domain/models/resources/resource-container';
 import type { Recipe } from './recipe';
 
 export const ProductionState = {

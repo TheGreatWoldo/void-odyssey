@@ -1,5 +1,5 @@
-import type { Resource, ResourceType } from '../resources/resource';
-import { StatType } from '../resources/resource';
+import type { Resource, ResourceType } from '@/domain/models/resources/resource';
+import { StatType } from '@/domain/models/resources/resource';
 
 /**
  * Defines a continuous production process.

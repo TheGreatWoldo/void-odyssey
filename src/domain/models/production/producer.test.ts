@@ -1,6 +1,6 @@
+import { createResource, ResourceType, StatType } from '@/domain/models/resources/resource';
+import { createResourceContainer } from '@/domain/models/resources/resource-container';
 import { describe, expect, it } from 'vitest';
-import { createResource, ResourceType, StatType } from '../resources/resource';
-import { createResourceContainer } from '../resources/resource-container';
 import { createProducer, ProductionState } from './producer';
 import { createRecipe } from './recipe';
 

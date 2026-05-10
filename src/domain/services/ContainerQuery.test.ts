@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest';
 
 import { createResource, ResourceType } from '@/domain/models/resources/resource';
 import { createResourceContainer } from '@/domain/models/resources/resource-container';
-import { containersHolding, hasTotalOf, totalOf } from './ContainerQuery';
+import { createItemContainer } from '@/domain/models/storage/item-container';
+import type { Storable } from '@/domain/models/storage/storable';
+import { allItems, containersHolding, hasTotalOf, itemsOfType, totalOf } from './ContainerQuery';
 
 function makeContainer(capacity = 100) {
   return createResourceContainer({ capacity });
@@ -170,6 +172,86 @@ describe('ContainerQuery', () => {
       parent.addContainer(child);
 
       expect(hasTotalOf(ResourceType.Fuel, 4, [parent])).toBe(true);
+    });
+  });
+});
+
+function makeItemContainer(capacity = 100) {
+  return createItemContainer({ capacity });
+}
+
+function makeItem(id: string, storableType: Storable['storableType'], slotCost = 4): Storable & { readonly id: string } {
+  return { id, storableType, slotCost };
+}
+
+describe('ContainerQuery — items', () => {
+  describe('allItems', () => {
+    it('returns empty array when no item containers exist', () => {
+      const rc = makeContainer();
+
+      expect(allItems([rc])).toHaveLength(0);
+    });
+
+    it('returns items from a standalone ItemContainer', () => {
+      const ic = makeItemContainer();
+      const item = makeItem('m1', 'module');
+      ic.store(item);
+
+      expect(allItems([ic])).toContain(item);
+    });
+
+    it('returns items from an ItemContainer nested inside a ResourceContainer', () => {
+      const rc = makeContainer();
+      const ic = makeItemContainer(20);
+      const item = makeItem('m1', 'module');
+      ic.store(item);
+      rc.addContainer(ic);
+
+      expect(allItems([rc])).toContain(item);
+    });
+
+    it('aggregates items across multiple item containers', () => {
+      const ic1 = makeItemContainer();
+      const ic2 = makeItemContainer();
+      const a = makeItem('a', 'module');
+      const b = makeItem('b', 'upgrade');
+      ic1.store(a);
+      ic2.store(b);
+
+      const result = allItems([ic1, ic2]);
+
+      expect(result).toContain(a);
+      expect(result).toContain(b);
+    });
+  });
+
+  describe('itemsOfType', () => {
+    it('returns only items matching the requested storableType', () => {
+      const ic = makeItemContainer();
+      const mod = makeItem('m1', 'module');
+      const upg = makeItem('u1', 'upgrade');
+      ic.store(mod);
+      ic.store(upg);
+
+      expect(itemsOfType('module', [ic])).toContain(mod);
+      expect(itemsOfType('module', [ic])).not.toContain(upg);
+    });
+
+    it('returns empty array when no items of that type exist', () => {
+      const ic = makeItemContainer();
+      ic.store(makeItem('m1', 'module'));
+
+      expect(itemsOfType('upgrade', [ic])).toHaveLength(0);
+    });
+
+    it('traverses nested item containers', () => {
+      const rc = makeContainer();
+      const ic = makeItemContainer(20);
+      const item = makeItem('m1', 'module');
+      ic.store(item);
+      rc.addContainer(ic);
+
+      expect(itemsOfType('module', [rc])).toContain(item);
     });
   });
 });
