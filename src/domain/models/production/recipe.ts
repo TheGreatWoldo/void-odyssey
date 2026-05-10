@@ -27,7 +27,7 @@ export interface Recipe {
   readonly powerCostPerSecond: number;
   /**
    * Returns true when all non-Power inputs are fully available.
-   * Power is excluded — it is managed by the ship's grid before produce() is called.
+   * Power is excluded — it is filtered out of `nonPowerCosts` at recipe creation time.
    */
   canExecute(
     amounts: ReadonlyMap<ResourceType, number>,
@@ -36,7 +36,7 @@ export interface Recipe {
   ): boolean;
   /**
    * Returns 1 if all non-Power inputs are available, 0 otherwise.
-   * Power is excluded from this check — it is debited by the ship grid before produce() runs.
+   * Power is excluded from this check — it is filtered out of `nonPowerCosts` at recipe creation time.
    */
   calculateFraction(
     amounts: ReadonlyMap<ResourceType, number>,
@@ -63,7 +63,7 @@ export function createRecipe(data: RecipeData): Recipe {
     deltaTime: number,
     costMultiplier: number
   ): number {
-    // Power is excluded — it is debited by the ship grid before produce() runs.
+    // Power is excluded — filtered out of nonPowerCosts at recipe creation time.
     for (const r of nonPowerCosts) {
       const needed = r.amount * costMultiplier * deltaTime;
       const available = amounts.get(r.id) ?? 0;

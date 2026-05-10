@@ -16,6 +16,12 @@ export const ResourceType = {
   JumpRange:    'JumpRange',
   Comms:        'Comms',
   CrewCapacity: 'CrewCapacity',
+
+  // Kinetic weapon ammunition — each variant is a separate physical inventory pool
+  AmmoStandard: 'AmmoStandard',
+  AmmoPoison:   'AmmoPoison',
+  AmmoFire:     'AmmoFire',
+  AmmoCold:     'AmmoCold',
 } as const;
 
 export type ResourceType = (typeof ResourceType)[keyof typeof ResourceType];
@@ -50,8 +56,8 @@ export function createResource(id: ResourceType, amount: number): Resource {
  * Slots occupied per unit of each resource type that occupies physical space.
  * Power has a slot cost because it is stored in finite battery containers
  * (1 Power unit = 1 slot).
- * Intangible types have no slot cost — their limits are enforced via
- * per-type capacity caps on the container.
+ * Intangible types are absent from this map and fall back to a slot cost of 1
+ * in the container. Their effective limits come from per-type capacity caps.
  */
 export const ResourceSizes: Partial<Record<ResourceType, number>> = {
   [ResourceType.Fuel]:  2,
@@ -59,4 +65,10 @@ export const ResourceSizes: Partial<Record<ResourceType, number>> = {
   [ResourceType.Water]: 1,
   [ResourceType.Oxygen]: 1,
   [ResourceType.Power]: 1,
+
+  // Ammo — 1 slot per round
+  [ResourceType.AmmoStandard]: 1,
+  [ResourceType.AmmoPoison]:   1,
+  [ResourceType.AmmoFire]:     1,
+  [ResourceType.AmmoCold]:     1,
 };

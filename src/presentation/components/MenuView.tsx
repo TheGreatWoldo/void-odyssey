@@ -1,7 +1,7 @@
 import { useMenuNavigation } from '@/application/hooks/useMenuNavigation'
-import type { MenuConfig } from '@/domain/models/menu/menu'
 import { MenuButton } from '@/presentation/components/MenuButton'
 import type { IGameService } from '@/shared/game-service'
+import type { MenuConfig } from '@/shared/menu'
 import { useEffect } from 'react'
 
 interface MenuViewProps {

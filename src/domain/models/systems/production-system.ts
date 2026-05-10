@@ -1,9 +1,7 @@
-import type { Inventory, InventoryOptions } from '@/domain/models/inventory/inventory';
-import { createInventory } from '@/domain/models/inventory/inventory';
 import type { ProductionModule } from '@/domain/models/module/production-module';
 import { ModuleId } from '@/domain/models/module/production-module-id';
 import { createResource, ResourceType, TransientResourceTypes } from '@/domain/models/resources/resource';
-import type { ContainerMap } from '@/domain/models/resources/resource-container';
+import type { ContainerMap, ResourceContainer } from '@/domain/models/resources/resource-container';
 import type { ItemContainerOptions } from '@/domain/models/storage/item-container';
 import { createItemContainer } from '@/domain/models/storage/item-container';
 import { generateId } from '@/shared/utils';
@@ -14,8 +12,8 @@ export interface ProductionSystemOptions {
   /** Options forwarded to the internal ItemContainer that holds installed modules. */
   modules?: ItemContainerOptions;
 
-  /** Options forwarded to the inventory (items + resources). */
-  inventory?: InventoryOptions;
+  /** Shared resource container owned by the parent (e.g. ship). All produced and consumed resources flow through this. */
+  resources: ResourceContainer;
 }
 
 /**
@@ -52,9 +50,6 @@ export interface ProductionSystem {
   /** Read-only inspection view of installed modules. Mutate via `installModule` / `removeModule`. */
   readonly modules: InstalledModules;
 
-  /** Shared resource + item inventory for all modules in this system. */
-  readonly inventory: Inventory;
-
   /**
    * Installs a module into the system.
    * Returns false if the module container has insufficient space.
@@ -77,22 +72,20 @@ export interface ProductionSystem {
 }
 
 export function createProductionSystem(
-  options: ProductionSystemOptions = {}
+  options: ProductionSystemOptions
 ): ProductionSystem {
   const {
     id = generateId(),
     modules: moduleOptions = {},
-    inventory: inventoryOptions = {},
+    resources,
   } = options;
 
   const modules = createItemContainer({ ...moduleOptions, allowedTypes: ['module'] });
 
-  const inventory = createInventory(inventoryOptions);
-
-  // Build ContainerMap once — all ResourceTypes point at the single resource container.
+  // Build ContainerMap once — all ResourceTypes point at the injected resource container.
   // This is the contract expected by ProductionModule.produce() and .drain().
   const containerMap: ContainerMap = new Map(
-    (Object.values(ResourceType) as ResourceType[]).map(type => [type, inventory.resources])
+    (Object.values(ResourceType) as ResourceType[]).map(type => [type, resources])
   );
 
   // Sorted tick list — maintained at install/remove time so tick never needs to sort.
@@ -131,8 +124,8 @@ export function createProductionSystem(
     // Reset transient resources before any module produces — they represent
     // instantaneous rates (shield output, thrust, etc.) not persistent pools.
     for (const type of TransientResourceTypes) {
-      const current = inventory.resources.get(type);
-      if (current > 0) inventory.resources.destroy(createResource(type, current));
+      const current = resources.get(type);
+      if (current > 0) resources.destroy(createResource(type, current));
     }
 
     for (const module of tickOrder) {
@@ -155,5 +148,5 @@ export function createProductionSystem(
     list: () => modules.list() as readonly ProductionModule[],
   };
 
-  return { id, modules: installedModules, inventory, installModule, removeModule, tick };
+  return { id, modules: installedModules, installModule, removeModule, tick };
 }

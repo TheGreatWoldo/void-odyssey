@@ -1,5 +1,5 @@
-import type { MenuConfig } from '@/domain/models/menu/menu'
 import type { IMenuRepository } from '@/domain/repositories/IMenuRepository'
+import type { MenuConfig } from '@/shared/menu'
 
 /**
  * Loads the menu configuration from the given repository.

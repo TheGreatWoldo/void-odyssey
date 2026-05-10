@@ -1,4 +1,4 @@
-import type { MenuConfig } from '@/domain/models/menu/menu'
+import type { MenuConfig } from '@/shared/menu'
 
 /**
  * Repository port for loading the menu configuration.

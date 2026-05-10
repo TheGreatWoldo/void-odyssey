@@ -26,10 +26,8 @@ export type ProductionState = (typeof ProductionState)[keyof typeof ProductionSt
  * Call drain() to push accumulated outputs into pre-resolved target containers.
  * Sources and targets are resolved once at module install time — not on every tick.
  *
- * Power is excluded from the consume loop — it is debited by the ship grid
- * (via drawFromBatteries) before produce() is called. costMultiplier and
- * outputMultiplier are pre-scaled by the grid fraction so all inputs run at
- * the same effective rate.
+ * Power is excluded from the consume loop — it is filtered out of
+ * `nonPowerCosts` at recipe creation time and never appears in source lookups.
  */
 export interface Producer {
   readonly id: string;
@@ -40,7 +38,7 @@ export interface Producer {
   getStock(id: ResourceType): number;
   /**
    * Runs one tick of production.
-   * @param effectiveThrottle — 0-1, combined ramp + grid fraction.
+   * @param effectiveThrottle — ramped throttle in [0, 1].
    * @param upgradeCostMult   — cost multiplier from installed upgrades (default 1).
    * @param maxOutput         — module's rated ceiling for its primary output.
    */
@@ -124,7 +122,7 @@ export function createProducer(id: string, recipe: Recipe): Producer {
 
     const nonPowerCosts = recipe.nonPowerCosts;
 
-    // Consume all non-Power inputs. Power is debited externally by the ship grid.
+    // Consume all non-Power inputs. Power is excluded at recipe creation time (nonPowerCosts).
     for (let i = 0; i < nonPowerCosts.length; i++) {
       const r = nonPowerCosts[i];
       costBuffers[i].amount = r.amount * upgradeCostMult * effectiveThrottle * deltaTime;

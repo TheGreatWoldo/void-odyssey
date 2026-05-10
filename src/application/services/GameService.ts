@@ -1,4 +1,4 @@
-import type { IGameEngineFacade } from '@/application/ports/IGameEngineFacade'
+import type { IGameEngineFacade } from '@/shared/game-engine-facade'
 import type { IGameService } from '@/shared/game-service'
 import type { SceneKey } from '@/shared/scene-key'
 

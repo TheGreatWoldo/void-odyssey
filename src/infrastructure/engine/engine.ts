@@ -1,10 +1,10 @@
-import type { IGameEngineFacade } from '@/application/ports/IGameEngineFacade'
 import { backgroundSceneArgsCatalog } from '@/infrastructure/background/catalogs/background-scene-args-catalog'
 import { BackgroundScene } from '@/infrastructure/background/scenes/background-scene'
 import { HueForSizeStrategy } from '@/infrastructure/background/strategies/color-strategy'
 import { getPositionForArgs } from '@/infrastructure/background/strategies/position-strategy'
 import { getSizeForArgs } from '@/infrastructure/background/strategies/size-strategy'
 import { getVelocityForArgs } from '@/infrastructure/background/strategies/velocity-strategy'
+import type { IGameEngineFacade } from '@/shared/game-engine-facade'
 import type { SceneKey } from '@/shared/scene-key'
 import { Color, DisplayMode, Engine } from 'excalibur'
 

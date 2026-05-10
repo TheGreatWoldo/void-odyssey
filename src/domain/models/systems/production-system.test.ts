@@ -3,6 +3,7 @@ import { createProductionModule } from '@/domain/models/module/production-module
 import { ModuleId } from '@/domain/models/module/production-module-id';
 import { createRecipe } from '@/domain/models/production/recipe';
 import { createResource, ResourceType } from '@/domain/models/resources/resource';
+import { createResourceContainer } from '@/domain/models/resources/resource-container';
 import { describe, expect, it } from 'vitest';
 import { createProductionSystem } from './production-system';
 
@@ -41,13 +42,13 @@ const oxygenRecipe = createRecipe({
 describe('createProductionSystem', () => {
   describe('module installation', () => {
     it('starts with an empty module list', () => {
-      const system = createProductionSystem();
+      const system = createProductionSystem({ resources: createResourceContainer() });
 
       expect(system.modules.list()).toHaveLength(0);
     });
 
     it('accepts a module via installModule()', () => {
-      const system = createProductionSystem({ modules: { capacity: 100 } });
+      const system = createProductionSystem({ modules: { capacity: 100 }, resources: createResourceContainer() });
       const reactor = makeModule('reactor-1', 'Reactor', reactorRecipe, { type: ModuleId.ReactorCore, maxOutput: 10 });
 
       const stored = system.installModule(reactor);
@@ -57,7 +58,7 @@ describe('createProductionSystem', () => {
     });
 
     it('rejects a module with an incompatible storableType (allowedTypes enforcement)', () => {
-      const system = createProductionSystem({ modules: { capacity: 100 } });
+      const system = createProductionSystem({ modules: { capacity: 100 }, resources: createResourceContainer() });
 
       // Cast a fake storable with storableType !== 'module' to bypass TypeScript's
       // structural check and verify that the container's runtime whitelist rejects it.
@@ -68,7 +69,7 @@ describe('createProductionSystem', () => {
     });
 
     it('removes a module via removeModule()', () => {
-      const system = createProductionSystem({ modules: { capacity: 100 } });
+      const system = createProductionSystem({ modules: { capacity: 100 }, resources: createResourceContainer() });
       const reactor = makeModule('reactor-1', 'Reactor', reactorRecipe, { type: ModuleId.ReactorCore, maxOutput: 10 });
 
       system.installModule(reactor);
@@ -79,9 +80,10 @@ describe('createProductionSystem', () => {
     });
 
     it('removed module is no longer ticked', () => {
+      const resources = createResourceContainer({ capacity: 1000 });
       const system = createProductionSystem({
         modules: { capacity: 100 },
-        inventory: { resources: { capacity: 1000 } },
+        resources,
       });
 
       const lifeSupport = makeModule('ls1', 'Life Support', oxygenRecipe, {
@@ -91,25 +93,26 @@ describe('createProductionSystem', () => {
 
       system.installModule(lifeSupport);
       system.tick(1);
-      expect(system.inventory.getResource(ResourceType.Oxygen)).toBeCloseTo(3);
+      expect(resources.get(ResourceType.Oxygen)).toBeCloseTo(3);
 
       system.removeModule('ls1');
       system.tick(1);
 
       // Oxygen should not have increased after removal
-      expect(system.inventory.getResource(ResourceType.Oxygen)).toBeCloseTo(3);
+      expect(resources.get(ResourceType.Oxygen)).toBeCloseTo(3);
     });
   });
 
   describe('tick — reactor only', () => {
     it('accumulates Power in inventory when reactor has Fuel', () => {
+      const resources = createResourceContainer({ capacity: 1000 });
       const system = createProductionSystem({
         modules: { capacity: 100 },
-        inventory: { resources: { capacity: 1000 } },
+        resources,
       });
 
       // Pre-load Fuel so the reactor can run
-      system.inventory.addResource(createResource(ResourceType.Fuel, 10));
+      resources.add(createResource(ResourceType.Fuel, 10));
 
       const reactor = makeModule('r1', 'Reactor', reactorRecipe, {
         type: ModuleId.ReactorCore,
@@ -120,14 +123,15 @@ describe('createProductionSystem', () => {
       system.tick(1);
 
       // Reactor produces 5 Power/s × 1s; Fuel cost is 1/s × 1s = 1 Fuel consumed
-      expect(system.inventory.getResource(ResourceType.Power)).toBeCloseTo(5);
-      expect(system.inventory.getResource(ResourceType.Fuel)).toBeCloseTo(9);
+      expect(resources.get(ResourceType.Power)).toBeCloseTo(5);
+      expect(resources.get(ResourceType.Fuel)).toBeCloseTo(9);
     });
 
     it('produces nothing when Fuel is absent', () => {
+      const resources = createResourceContainer({ capacity: 1000 });
       const system = createProductionSystem({
         modules: { capacity: 100 },
-        inventory: { resources: { capacity: 1000 } },
+        resources,
       });
 
       const reactor = makeModule('r1', 'Reactor', reactorRecipe, {
@@ -138,15 +142,16 @@ describe('createProductionSystem', () => {
       system.installModule(reactor);
       system.tick(1);
 
-      expect(system.inventory.getResource(ResourceType.Power)).toBe(0);
+      expect(resources.get(ResourceType.Power)).toBe(0);
     });
   });
 
   describe('tick — non-reactor producer only', () => {
     it('accumulates Oxygen in inventory (no input cost)', () => {
+      const resources = createResourceContainer({ capacity: 1000 });
       const system = createProductionSystem({
         modules: { capacity: 100 },
-        inventory: { resources: { capacity: 1000 } },
+        resources,
       });
 
       const lifeSupport = makeModule('ls1', 'Life Support', oxygenRecipe, {
@@ -157,7 +162,7 @@ describe('createProductionSystem', () => {
       system.installModule(lifeSupport);
       system.tick(1);
 
-      expect(system.inventory.getResource(ResourceType.Oxygen)).toBeCloseTo(3);
+      expect(resources.get(ResourceType.Oxygen)).toBeCloseTo(3);
     });
   });
 
@@ -170,8 +175,8 @@ describe('createProductionSystem', () => {
       // Without reactor-first sorting, the consumer would run first, find 0 Oxygen, and idle.
       // With reactor-first sorting, the reactor runs first, drains Oxygen, then the consumer runs.
       //
-      // Note: Power is excluded from the produce/consume hot path by design (debited by the
-      // external ship grid), so we use Oxygen and Water to test ordering instead.
+      // Note: Power is excluded from the input-cost check by design (filtered out of
+      // nonPowerCosts at recipe creation time), so Oxygen and Water are used here instead.
       const oxygenSourceRecipe = createRecipe({
         name: 'OxygenSource',
         primaryOutput: ResourceType.Oxygen,
@@ -184,9 +189,10 @@ describe('createProductionSystem', () => {
         costsPerSecond: [createResource(ResourceType.Oxygen, 1)],
       });
 
+      const resources = createResourceContainer({ capacity: 1000 });
       const system = createProductionSystem({
         modules: { capacity: 100 },
-        inventory: { resources: { capacity: 1000 } },
+        resources,
       });
 
       const reactor = makeModule('r1', 'Reactor', oxygenSourceRecipe, {
@@ -208,16 +214,17 @@ describe('createProductionSystem', () => {
 
       // Reactor produced 5 Oxygen, drained into inventory.
       // Consumer consumed 1 Oxygen and produced 2 Water.
-      expect(system.inventory.getResource(ResourceType.Water)).toBeCloseTo(2);
-      expect(system.inventory.getResource(ResourceType.Oxygen)).toBeCloseTo(4); // 5 - 1
+      expect(resources.get(ResourceType.Water)).toBeCloseTo(2);
+      expect(resources.get(ResourceType.Oxygen)).toBeCloseTo(4); // 5 - 1
     });
   });
 
   describe('tick — disabled module', () => {
     it('skips a disabled module without accumulating output', () => {
+      const resources = createResourceContainer({ capacity: 1000 });
       const system = createProductionSystem({
         modules: { capacity: 100 },
-        inventory: { resources: { capacity: 1000 } },
+        resources,
       });
 
       const lifeSupport = makeModule('ls1', 'Life Support', oxygenRecipe, {
@@ -229,15 +236,16 @@ describe('createProductionSystem', () => {
       system.installModule(lifeSupport);
       system.tick(1);
 
-      expect(system.inventory.getResource(ResourceType.Oxygen)).toBe(0);
+      expect(resources.get(ResourceType.Oxygen)).toBe(0);
     });
   });
 
   describe('tick — zero-condition module', () => {
     it('skips a module with condition = 0', () => {
+      const resources = createResourceContainer({ capacity: 1000 });
       const system = createProductionSystem({
         modules: { capacity: 100 },
-        inventory: { resources: { capacity: 1000 } },
+        resources,
       });
 
       const lifeSupport = makeModule('ls1', 'Life Support', oxygenRecipe, {
@@ -249,7 +257,7 @@ describe('createProductionSystem', () => {
       system.installModule(lifeSupport);
       system.tick(1);
 
-      expect(system.inventory.getResource(ResourceType.Oxygen)).toBe(0);
+      expect(resources.get(ResourceType.Oxygen)).toBe(0);
     });
   });
 });
