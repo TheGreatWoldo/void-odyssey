@@ -4,7 +4,7 @@ import { createResource, ResourceType } from '@/domain/models/resources/resource
 import { createResourceContainer } from '@/domain/models/resources/resource-container';
 import { createItemContainer } from '@/domain/models/storage/item-container';
 import type { Storable } from '@/domain/models/storage/storable';
-import { allItems, containersHolding, hasTotalOf, itemsOfType, totalOf } from './ContainerQuery';
+import { allItems, containersHolding, hasTotalOf, itemsOfType, totalOf } from './container-query';
 
 function makeContainer(capacity = 100) {
   return createResourceContainer({ capacity });

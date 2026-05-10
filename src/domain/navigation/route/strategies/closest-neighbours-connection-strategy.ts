@@ -1,3 +1,4 @@
+import { fisherYatesShuffle } from '@/shared/math-utils';
 import { RouteConnection, RouteNode } from '@/domain/navigation/route/route-node';
 import { NodeConnectionStrategy } from '@/domain/navigation/route/strategies/node-connection-strategy';
 
@@ -72,21 +73,10 @@ export class ClosestNeighboursConnectionStrategy implements NodeConnectionStrate
       else byLayer.set(node.layer, [node]);
     }
 
-    // Shuffle helper — Fisher-Yates in-place
-    const shuffle = <T>(arr: T[]): T[] => {
-      for (let i = arr.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-
-        [arr[i], arr[j]] = [arr[j], arr[i]];
-      }
-
-      return arr;
-    };
-
     // Process layers in random order within each layer so no positional
     // bias accumulates (e.g. top nodes always claiming top targets first).
     for (const layerNodes of byLayer.values()) {
-      const shuffled = shuffle([...layerNodes]);
+      const shuffled = fisherYatesShuffle([...layerNodes]);
 
       for (const node of shuffled) {
         const nextLayer = byLayer.get(node.layer + 1);

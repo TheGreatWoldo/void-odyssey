@@ -1,15 +1,6 @@
+import { fisherYatesShuffle } from '@/shared/math-utils';
 import { NodeType } from '@/domain/navigation/node-type';
 import { PositionedNodeStub } from '@/domain/navigation/route/strategies/node-type-strategy';
-
-function fisherYatesShuffle<T>(arr: T[]): T[] {
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-
-    [arr[i], arr[j]] = [arr[j], arr[i]];
-  }
-
-  return arr;
-}
 
 /**
  * Base class for all type allocation strategies used by LayeredAllocationStrategy.
