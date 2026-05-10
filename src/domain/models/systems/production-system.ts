@@ -33,7 +33,7 @@ export interface InstalledModules {
 /**
  * Aggregate that wires a set of production modules to a shared inventory.
  *
- * `modules` is a read-only inspection view (restricted to `storableType === 'module'`).
+ * `modules` is a read-only inspection view of installed modules.
  * Install a module via `installModule(module)`.
  * Remove  a module via `removeModule(id)`.
  *
