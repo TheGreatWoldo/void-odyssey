@@ -5,9 +5,7 @@ import * as LucideIcons from 'lucide-react'
 
 function resolveIcon(name: string): LucideIcon | null {
   const icon = (LucideIcons as Record<string, unknown>)[name]
-  return icon != null && (typeof icon === 'function' || typeof icon === 'object')
-    ? (icon as LucideIcon)
-    : null
+  return typeof icon === 'function' ? (icon as LucideIcon) : null
 }
 
 interface IconSlot {
@@ -87,7 +85,7 @@ export function MenuButton({
     <Button
       onClick={onClick}
       variant="outline"
-      className="relative h-16 w-full min-w-64 border-white/30 bg-black/70 px-4 text-lg font-semibold tracking-wide text-white backdrop-blur-[2px] hover:bg-black/90 hover:border-white/60"
+      className="relative h-16 w-full min-w-64 border-white/30 bg-black/70 px-4 text-3xl font-semibold tracking-wide text-white backdrop-blur-[2px] hover:bg-black/90 hover:border-white/60"
     >
       {/* Leading icons — absolute left so label stays truly centered */}
       {hasLeading && (

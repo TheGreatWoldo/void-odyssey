@@ -97,6 +97,34 @@
           "label": "Video",
           "leadingIcons": [{ "icon": "Monitor" }],
           "event": "settings:video"
+        },
+        {
+          "id": "font",
+          "label": "Font",
+          "leadingIcons": [{ "icon": "Type" }],
+          "sceneKey": "magentaOnBlack",
+          "children": [
+            {
+              "id": "font-orbitron",
+              "label": "Orbitron",
+              "event": "settings:font:orbitron"
+            },
+            {
+              "id": "font-exo2",
+              "label": "Exo 2",
+              "event": "settings:font:exo-2"
+            },
+            {
+              "id": "font-audiowide",
+              "label": "Audiowide",
+              "event": "settings:font:audiowide"
+            },
+            {
+              "id": "font-oxanium",
+              "label": "Oxanium",
+              "event": "settings:font:oxanium"
+            }
+          ]
         }
       ]
     },

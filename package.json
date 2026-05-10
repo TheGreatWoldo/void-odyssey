@@ -11,6 +11,10 @@
   },
   "dependencies": {
     "@base-ui/react": "^1.4.1",
+    "@fontsource/audiowide": "^5.2.7",
+    "@fontsource/exo-2": "^5.2.8",
+    "@fontsource/orbitron": "^5.2.8",
+    "@fontsource/oxanium": "^5.2.8",
     "@tanstack/react-router": "^1.169.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

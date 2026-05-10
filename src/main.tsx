@@ -3,6 +3,10 @@ import { loadMenuConfig } from '@/application/useCases/LoadMenuConfigUseCase'
 import { initI18n } from '@/infrastructure/lib/i18n'
 import { JsonMenuRepository } from '@/infrastructure/menu/JsonMenuRepository'
 import '@/presentation/styles/global.css'
+import '@fontsource/audiowide'
+import '@fontsource/exo-2'
+import '@fontsource/orbitron'
+import '@fontsource/oxanium'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './App'
@@ -18,6 +22,7 @@ try {
   useGameStore.getState().setMenuConfig(config)
 } catch (err) {
   console.error('Failed to load menu config:', err)
+  throw err
 }
 
 const root = document.getElementById('root')
