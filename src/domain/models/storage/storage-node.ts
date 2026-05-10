@@ -5,6 +5,7 @@
  */
 export interface IStorageNode {
   readonly id: string;
+  readonly kind: 'resource' | 'item';
   readonly capacity: number;
   freeSpace(): number;
   getStorageNodes(): readonly IStorageNode[];

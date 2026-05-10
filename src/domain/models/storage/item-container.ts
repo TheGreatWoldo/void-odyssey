@@ -1,6 +1,6 @@
 import { generateId } from '@/shared/utils';
 
-import type { Storable } from './storable';
+import type { Storable, StorableType } from './storable';
 import type { IStorageNode } from './storage-node';
 
 export interface ItemContainerOptions {
@@ -8,6 +8,8 @@ export interface ItemContainerOptions {
   id?: string;
   labelKey?: string;
   capacity?: number;
+  /** When set, only items whose storableType is in this list will be accepted by store(). */
+  allowedTypes?: StorableType[];
 }
 
 /**
@@ -21,6 +23,7 @@ export interface ItemContainerOptions {
  */
 export interface ItemContainer extends IStorageNode {
   readonly labelKey: string;
+  readonly kind: 'item';
   store(item: Storable & { readonly id: string }): boolean;
   take(id: string): (Storable & { readonly id: string }) | undefined;
   has(id: string): boolean;
@@ -34,8 +37,10 @@ export function createItemContainer(
     id = generateId(),
     labelKey = 'item-container',
     capacity = Infinity,
+    allowedTypes,
   } = options;
 
+  const whitelist = allowedTypes ? new Set(allowedTypes) : null;
   const items = new Map<string, Storable & { readonly id: string }>();
   let usedSpace = 0;
 
@@ -44,6 +49,7 @@ export function createItemContainer(
   }
 
   function store(item: Storable & { readonly id: string }): boolean {
+    if (whitelist !== null && !whitelist.has(item.storableType)) return false;
     if (item.slotCost > freeSpace()) return false;
 
     items.set(item.id, item);
@@ -76,6 +82,7 @@ export function createItemContainer(
 
   return {
     id,
+    kind: 'item' as const,
     labelKey,
     capacity,
     freeSpace,
