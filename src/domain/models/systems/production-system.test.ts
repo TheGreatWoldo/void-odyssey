@@ -1,3 +1,4 @@
+import type { ProductionModule } from '@/domain/models/module/production-module';
 import { createProductionModule } from '@/domain/models/module/production-module';
 import { ModuleId } from '@/domain/models/module/production-module-id';
 import { createRecipe } from '@/domain/models/production/recipe';
@@ -55,14 +56,13 @@ describe('createProductionSystem', () => {
       expect(system.modules.has('reactor-1')).toBe(true);
     });
 
-    it('rejects a non-module storable (allowedTypes enforcement)', () => {
+    it('rejects a module with an incompatible storableType (allowedTypes enforcement)', () => {
       const system = createProductionSystem({ modules: { capacity: 100 } });
 
-      // Attempt to install an item with storableType !== 'module'
-      // TypeScript prevents passing an incompatible type to installModule(), so we
-      // verify the underlying container's whitelist via a direct store() call.
-      const fakeItem = { id: 'item-1', storableType: 'upgrade' as const, slotCost: 1 };
-      const stored = system.modules.store(fakeItem);
+      // Cast a fake storable with storableType !== 'module' to bypass TypeScript's
+      // structural check and verify that the container's runtime whitelist rejects it.
+      const fakeModule = { id: 'item-1', storableType: 'upgrade', slotCost: 1 } as unknown as ProductionModule;
+      const stored = system.installModule(fakeModule);
 
       expect(stored).toBe(false);
     });

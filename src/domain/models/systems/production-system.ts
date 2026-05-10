@@ -2,30 +2,38 @@ import type { Inventory, InventoryOptions } from '@/domain/models/inventory/inve
 import { createInventory } from '@/domain/models/inventory/inventory';
 import type { ProductionModule } from '@/domain/models/module/production-module';
 import { ModuleId } from '@/domain/models/module/production-module-id';
-import { ResourceType, TransientResourceTypes } from '@/domain/models/resources/resource';
+import { createResource, ResourceType, TransientResourceTypes } from '@/domain/models/resources/resource';
 import type { ContainerMap } from '@/domain/models/resources/resource-container';
-import type { ItemContainer, ItemContainerOptions } from '@/domain/models/storage/item-container';
+import type { ItemContainerOptions } from '@/domain/models/storage/item-container';
 import { createItemContainer } from '@/domain/models/storage/item-container';
 import { generateId } from '@/shared/utils';
 
 export interface ProductionSystemOptions {
   id?: string;
 
-  /**
-   * Options forwarded to the internal ItemContainer that holds installed modules.
-   * `allowedTypes` is excluded from this type — it is always forced to `['module']` internally.
-   */
-  modules?: Omit<ItemContainerOptions, 'allowedTypes'>;
+  /** Options forwarded to the internal ItemContainer that holds installed modules. */
+  modules?: ItemContainerOptions;
 
   /** Options forwarded to the inventory (items + resources). */
   inventory?: InventoryOptions;
 }
 
 /**
+ * Read-only inspection view of the installed module container.
+ * Mutation is intentionally excluded — use `installModule` / `removeModule` on the
+ * `ProductionSystem` to maintain tick-order consistency.
+ */
+export interface InstalledModules {
+  readonly capacity: number;
+  freeSpace(): number;
+  has(id: string): boolean;
+  list(): readonly ProductionModule[];
+}
+
+/**
  * Aggregate that wires a set of production modules to a shared inventory.
  *
- * `modules` is a read-only ItemContainer (restricted to `storableType === 'module'`)
- * used for inspection (`list`, `has`, `freeSpace`).
+ * `modules` is a read-only inspection view (restricted to `storableType === 'module'`).
  * Install a module via `installModule(module)`.
  * Remove  a module via `removeModule(id)`.
  *
@@ -41,12 +49,8 @@ export interface ProductionSystemOptions {
 export interface ProductionSystem {
   readonly id: string;
 
-  /**
-   * Installed module container — use for inspection only (`list`, `has`, `freeSpace`).
-   * Mutate via `installModule` / `removeModule`; calling `store` or `take` directly
-   * bypasses tick-order tracking and will produce incorrect production results.
-   */
-  readonly modules: ItemContainer;
+  /** Read-only inspection view of installed modules. Mutate via `installModule` / `removeModule`. */
+  readonly modules: InstalledModules;
 
   /** Shared resource + item inventory for all modules in this system. */
   readonly inventory: Inventory;
@@ -56,13 +60,13 @@ export interface ProductionSystem {
    * Returns false if the module container has insufficient space.
    * Reactors are always sorted before other modules in the tick order.
    */
-  installModule(module: ProductionModule & { readonly id: string }): boolean;
+  installModule(module: ProductionModule): boolean;
 
   /**
    * Removes an installed module by id.
    * Returns the removed module, or undefined if not found.
    */
-  removeModule(id: string): (ProductionModule & { readonly id: string }) | undefined;
+  removeModule(id: string): ProductionModule | undefined;
 
   /**
    * Runs one production tick across all installed modules.
@@ -93,9 +97,9 @@ export function createProductionSystem(
 
   // Sorted tick list — maintained at install/remove time so tick never needs to sort.
   // Reactors occupy the front; all others are appended in install order.
-  const tickOrder: (ProductionModule & { readonly id: string })[] = [];
+  const tickOrder: ProductionModule[] = [];
 
-  function installModule(module: ProductionModule & { readonly id: string }): boolean {
+  function installModule(module: ProductionModule): boolean {
     if (!modules.store(module)) return false;
 
     if (module.type === ModuleId.ReactorCore) {
@@ -113,8 +117,8 @@ export function createProductionSystem(
     return true;
   }
 
-  function removeModule(moduleId: string): (ProductionModule & { readonly id: string }) | undefined {
-    const removed = modules.take(moduleId) as (ProductionModule & { readonly id: string }) | undefined;
+  function removeModule(moduleId: string): ProductionModule | undefined {
+    const removed = modules.take(moduleId) as ProductionModule | undefined;
     if (!removed) return undefined;
 
     const idx = tickOrder.findIndex(m => m.id === moduleId);
@@ -128,7 +132,7 @@ export function createProductionSystem(
     // instantaneous rates (shield output, thrust, etc.) not persistent pools.
     for (const type of TransientResourceTypes) {
       const current = inventory.resources.get(type);
-      if (current > 0) inventory.resources.destroy({ id: type, amount: current });
+      if (current > 0) inventory.resources.destroy(createResource(type, current));
     }
 
     for (const module of tickOrder) {
@@ -144,5 +148,12 @@ export function createProductionSystem(
     }
   }
 
-  return { id, modules, inventory, installModule, removeModule, tick };
+  const installedModules: InstalledModules = {
+    get capacity() { return modules.capacity; },
+    freeSpace: () => modules.freeSpace(),
+    has: (id) => modules.has(id),
+    list: () => modules.list() as readonly ProductionModule[],
+  };
+
+  return { id, modules: installedModules, inventory, installModule, removeModule, tick };
 }
