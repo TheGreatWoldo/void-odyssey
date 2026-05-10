@@ -1,6 +1,6 @@
 import { createProducer } from '@/domain/models/production/producer';
 import type { Recipe } from '@/domain/models/production/recipe';
-import type { ContainerMap } from '@/domain/models/production/resource-container';
+import type { ContainerMap } from '@/domain/models/resources/resource-container';
 import { isNullOrWhiteSpace } from '@/shared/string-utils';
 
 import type { ModuleId } from './production-module-id';

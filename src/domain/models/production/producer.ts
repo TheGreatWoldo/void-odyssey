@@ -1,7 +1,7 @@
+import type { Resource, ResourceType } from '../resources/resource';
+import type { ContainerMap } from '../resources/resource-container';
+import { createResourceContainer } from '../resources/resource-container';
 import type { Recipe } from './recipe';
-import type { Resource, ResourceType } from './resource';
-import type { ContainerMap } from './resource-container';
-import { createResourceContainer } from './resource-container';
 
 export const ProductionState = {
   Idle: 'idle',

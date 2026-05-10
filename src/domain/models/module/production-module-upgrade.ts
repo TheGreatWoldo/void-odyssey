@@ -1,4 +1,4 @@
-import type { ResourceType } from '@/domain/models/production/resource';
+import type { ResourceType } from '@/domain/models/resources/resource';
 
 export interface ModuleUpgrade {
   readonly id: string;

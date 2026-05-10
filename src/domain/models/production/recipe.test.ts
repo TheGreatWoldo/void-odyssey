@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import { createResource, ResourceType, StatType } from '../resources/resource';
 import { createRecipe } from './recipe';
-import { createResource, ResourceType, StatType } from './resource';
 
 function makeSources(entries: { id: ResourceType; amount: number }[]) {
   const map = new Map<ResourceType, number>();

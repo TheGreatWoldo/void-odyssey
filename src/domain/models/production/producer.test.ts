@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
+import { createResource, ResourceType, StatType } from '../resources/resource';
+import { createResourceContainer } from '../resources/resource-container';
 import { createProducer, ProductionState } from './producer';
 import { createRecipe } from './recipe';
-import { createResource, ResourceType, StatType } from './resource';
-import { createResourceContainer } from './resource-container';
 
 const fuelToVelocityRecipe = createRecipe({
   name: 'Test',

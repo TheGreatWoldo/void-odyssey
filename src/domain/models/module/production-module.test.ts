@@ -1,6 +1,6 @@
 import { createRecipe } from '@/domain/models/production/recipe';
-import { createResource, ResourceType } from '@/domain/models/production/resource';
-import { createResourceContainer } from '@/domain/models/production/resource-container';
+import { createResource, ResourceType } from '@/domain/models/resources/resource';
+import { createResourceContainer } from '@/domain/models/resources/resource-container';
 import { describe, expect, it } from 'vitest';
 import { createProductionModule } from './production-module';
 import { ModuleId } from './production-module-id';
@@ -326,6 +326,19 @@ describe('createProductionModule', () => {
       const targets = makeContainerMap([ResourceType.Power]);
 
       // Seed fuel so the module would produce if enabled
+      sources.get(ResourceType.Fuel)!.add(createResource(ResourceType.Fuel, 100));
+
+      m.produce(1, sources);
+      m.drain(targets);
+
+      expect(targets.get(ResourceType.Power)!.get(ResourceType.Power)).toBe(0);
+    });
+
+    it('does not accumulate output when condition is 0', () => {
+      const m = createProductionModule('m', 'M', powerRecipe, { type: ModuleId.ReactorCore, initialCondition: 0 });
+      const sources = makeContainerMap([ResourceType.Fuel]);
+      const targets = makeContainerMap([ResourceType.Power]);
+
       sources.get(ResourceType.Fuel)!.add(createResource(ResourceType.Fuel, 100));
 
       m.produce(1, sources);
