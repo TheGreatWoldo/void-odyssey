@@ -1,4 +1,4 @@
-import { NodeType } from '@/domain/navigation/node-type';
+import { NodeType } from '@/domain/models/navigation/node-type';
 
 export interface RouteNode {
   id: string;
@@ -13,8 +13,6 @@ export interface RouteNode {
   baseWx: number;
   baseWy: number;
   type: NodeType;
-  label: string;
-  description: string;
 }
 
 export interface RouteConnection {

@@ -1,5 +1,5 @@
-import { NodeType } from '@/domain/navigation/node-type';
-import { NodeTypeContext, NodeTypeStrategy } from '@/domain/navigation/route/strategies/node-type-strategy';
+import { NodeType } from '@/domain/models/navigation/node-type';
+import { NodeTypeContext, NodeTypeStrategy } from '@/domain/models/navigation/route/strategies/node-type-strategy';
 
 /**
  * The default weighted pool used when no custom pool is supplied.

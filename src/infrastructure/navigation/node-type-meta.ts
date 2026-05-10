@@ -1,4 +1,4 @@
-import { NodeType } from '@/domain/navigation/node-type';
+import { NodeType } from '@/domain/models/navigation/node-type';
 
 export interface NodeTypeMeta {
   label: string;

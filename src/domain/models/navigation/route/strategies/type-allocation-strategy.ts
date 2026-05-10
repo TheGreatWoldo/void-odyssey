@@ -1,5 +1,5 @@
-import { NodeType } from '@/domain/navigation/node-type';
-import { PositionedNodeStub } from '@/domain/navigation/route/strategies/node-type-strategy';
+import { NodeType } from '@/domain/models/navigation/node-type';
+import { PositionedNodeStub } from '@/domain/models/navigation/route/strategies/node-type-strategy';
 import { fisherYatesShuffle } from '@/shared/math-utils';
 
 /**

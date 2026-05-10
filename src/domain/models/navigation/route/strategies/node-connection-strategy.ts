@@ -1,4 +1,4 @@
-import { RouteConnection, RouteNode } from '@/domain/navigation/route/route-node';
+import { RouteConnection, RouteNode } from '@/domain/models/navigation/route/route-node';
 
 export interface NodeConnectionStrategy {
   buildConnections(nodes: RouteNode[]): RouteConnection[];

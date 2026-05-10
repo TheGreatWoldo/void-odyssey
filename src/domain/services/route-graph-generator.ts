@@ -1,11 +1,10 @@
-import { NodeType } from '@/domain/navigation/node-type';
-import { NODE_TYPE_META } from '@/domain/navigation/node-type-meta';
-import { NodePositionStrategy } from '@/domain/navigation/route/node-position-strategy';
-import { RouteConnection, RouteGraph, RouteNode } from '@/domain/navigation/route/route-node';
-import { ClosestNeighboursConnectionStrategy } from '@/domain/navigation/route/strategies/closest-neighbours-connection-strategy';
-import { NodeConnectionStrategy } from '@/domain/navigation/route/strategies/node-connection-strategy';
-import { NodeTypeStrategy, PositionedNodeStub } from '@/domain/navigation/route/strategies/node-type-strategy';
-import { WeightedRandomNodeTypeStrategy } from '@/domain/navigation/route/strategies/weighted-random-node-type-strategy';
+import { NodeType } from '@/domain/models/navigation/node-type';
+import { NodePositionStrategy } from '@/domain/models/navigation/route/node-position-strategy';
+import { RouteConnection, RouteGraph, RouteNode } from '@/domain/models/navigation/route/route-node';
+import { ClosestNeighboursConnectionStrategy } from '@/domain/models/navigation/route/strategies/closest-neighbours-connection-strategy';
+import { NodeConnectionStrategy } from '@/domain/models/navigation/route/strategies/node-connection-strategy';
+import { NodeTypeStrategy, PositionedNodeStub } from '@/domain/models/navigation/route/strategies/node-type-strategy';
+import { WeightedRandomNodeTypeStrategy } from '@/domain/models/navigation/route/strategies/weighted-random-node-type-strategy';
 
 /**
  * Generates a neural-network-style directed graph:
@@ -77,16 +76,12 @@ export function generateRouteGraph(
     graphWidth,
     graphHeight,
   });
-  const { label: startLabel, description: startDesc } = NODE_TYPE_META[NodeType.Start];
-
   addNode({
     id: 'node-l0-i0',
     layer: 0,
     indexInLayer: 0,
     ...startPos,
     type: NodeType.Start,
-    label: startLabel,
-    description: startDesc,
   });
 
   // Position all intermediate nodes (type assignment comes after)
@@ -124,9 +119,8 @@ export function generateRouteGraph(
 
     for (const stub of intermediateStubs) {
       const type = typeMap.get(stub.id) ?? NodeType.Empty;
-      const { label, description } = NODE_TYPE_META[type];
 
-      addNode({ ...stub, type, label, description });
+      addNode({ ...stub, type });
     }
   } else if (typeStrategy.resolveType) {
     for (const stub of intermediateStubs) {
@@ -135,9 +129,8 @@ export function generateRouteGraph(
         assignedNodes: nodes,
         totalLayers,
       });
-      const { label, description } = NODE_TYPE_META[type];
 
-      addNode({ ...stub, type, label, description });
+      addNode({ ...stub, type });
     }
   }
 
@@ -152,7 +145,6 @@ export function generateRouteGraph(
     graphWidth,
     graphHeight,
   });
-  const { label: endLabel, description: endDesc } = NODE_TYPE_META[NodeType.End];
 
   addNode({
     id: `node-l${endLayer}-i0`,
@@ -160,8 +152,6 @@ export function generateRouteGraph(
     indexInLayer: 0,
     ...endPos,
     type: NodeType.End,
-    label: endLabel,
-    description: endDesc,
   });
 
   const connections: RouteConnection[] = connectionStrategy.buildConnections(nodes);

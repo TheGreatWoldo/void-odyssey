@@ -1,6 +1,6 @@
-import { NodeType } from '@/domain/navigation/node-type';
-import { NodeTypeStrategy, PositionedNodeStub } from '@/domain/navigation/route/strategies/node-type-strategy';
-import { TypeAllocationStrategy } from '@/domain/navigation/route/strategies/type-allocation-strategy';
+import { NodeType } from '@/domain/models/navigation/node-type';
+import { NodeTypeStrategy, PositionedNodeStub } from '@/domain/models/navigation/route/strategies/node-type-strategy';
+import { TypeAllocationStrategy } from '@/domain/models/navigation/route/strategies/type-allocation-strategy';
 
 /**
  * Assigns node types by visiting each TypeAllocationStrategy in priority order

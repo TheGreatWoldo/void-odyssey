@@ -1,4 +1,4 @@
-import { RouteConnection } from '@/domain/navigation/route/route-node';
+import { RouteConnection } from '@/domain/models/navigation/route/route-node';
 
 /**
  * Returns true if `target` is reachable from `start` in at most `steps`

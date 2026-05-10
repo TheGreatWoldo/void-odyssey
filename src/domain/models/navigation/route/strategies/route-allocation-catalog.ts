@@ -1,4 +1,4 @@
-import { NodeType } from '@/domain/navigation/node-type';
+import { NodeType } from '@/domain/models/navigation/node-type';
 import {
     combatEligibleLayer,
     eventEligibleLayer,
@@ -6,12 +6,12 @@ import {
     relicEligibleLayer,
     shipyardEligibleLayer,
     storeEligibleLayer,
-} from '@/domain/navigation/route/strategies/eligible-layer-rules';
-import { LayeredAllocationStrategy } from '@/domain/navigation/route/strategies/layered-allocation-strategy';
+} from '@/domain/models/navigation/route/strategies/eligible-layer-rules';
+import { LayeredAllocationStrategy } from '@/domain/models/navigation/route/strategies/layered-allocation-strategy';
 import {
     AbsoluteTypeAllocation,
     ProbabilisticTypeAllocation,
-} from '@/domain/navigation/route/strategies/type-allocation-strategy';
+} from '@/domain/models/navigation/route/strategies/type-allocation-strategy';
 
 export interface RouteAllocationPreset {
   label: string;
