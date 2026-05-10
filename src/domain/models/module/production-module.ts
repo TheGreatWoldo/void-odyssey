@@ -1,7 +1,7 @@
 import { createProducer } from '@/domain/models/production/producer';
 import type { Recipe } from '@/domain/models/production/recipe';
 import type { ContainerMap } from '@/domain/models/production/resource-container';
-import { isBlank } from '@/shared/string-utils';
+import { isNullOrWhiteSpace } from '@/shared/string-utils';
 import type { ModuleId } from './production-module-id';
 import type { ModuleUpgrade } from './production-module-upgrade';
 
@@ -87,17 +87,14 @@ export function createProductionModule(
     snapOutputToInteger = false,
   } = options;
 
-  if (isBlank(id))
+  if (isNullOrWhiteSpace(id))
     throw new Error('ProductionModule id must be a non-empty string');
 
-  if (isBlank(name))
+  if (isNullOrWhiteSpace(name))
     throw new Error('ProductionModule name must be a non-empty string');
 
   if (initialCondition < 0 || initialCondition > 1)
     throw new Error(`ProductionModule condition must be in [0, 1], got ${initialCondition}`);
-
-  if (isBlank(type))
-    throw new Error('ProductionModule type is required');
 
   if (rampRate < 0)
     throw new Error(`ProductionModule rampRate must be >= 0, got ${rampRate}`);
@@ -141,6 +138,8 @@ export function createProductionModule(
       if (!u.enabled) continue;
       cost += u.costFactor - 1;
     }
+    // Clamp to 0: additive stacking can drive the multiplier negative when
+    // multiple large-discount upgrades combine (e.g. 0.3 + 0.3 → 1 - 0.7 - 0.7 = -0.4).
     cachedCostMultiplier = Math.max(0, cost);
     return cachedCostMultiplier;
   }
