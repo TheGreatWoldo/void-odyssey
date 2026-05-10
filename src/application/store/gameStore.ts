@@ -1,4 +1,4 @@
-import type { MenuConfig } from '@/domain/models/menu'
+import type { MenuConfig } from '@/domain/models/menu/menu'
 import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
 

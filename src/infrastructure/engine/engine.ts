@@ -1,4 +1,4 @@
-import type { IGameEngineFacade } from '@/domain/services/IGameEngineFacade'
+import type { IGameEngineFacade } from '@/application/ports/IGameEngineFacade'
 import { backgroundSceneArgsCatalog } from '@/infrastructure/background/catalogs/background-scene-args-catalog'
 import { BackgroundScene } from '@/infrastructure/background/scenes/background-scene'
 import { HueForSizeStrategy } from '@/infrastructure/background/strategies/color-strategy'

@@ -1,4 +1,4 @@
-import type { MenuConfig, MenuItem } from '@/domain/models/menu'
+import type { MenuConfig, MenuItem } from '@/domain/models/menu/menu'
 import type { SceneKey } from '@/shared/scene-key'
 import { useCallback, useState } from 'react'
 
