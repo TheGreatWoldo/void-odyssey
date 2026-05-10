@@ -29,6 +29,7 @@ export interface ResourceContainerOptions {
  */
 export interface ResourceContainer extends IStorageNode {
   readonly id: string;
+  readonly kind: 'resource';
   readonly labelKey: string;
   readonly capacity: number;
   get(id: ResourceType): number;
@@ -74,7 +75,7 @@ export function createResourceContainer(
   // Float drift accumulates over thousands of add/destroy calls; revalidating every 1024 ops
   // corrects it before it can cause allocation bugs. The 1024 interval (bitmask check) is
   // chosen to keep the revalidation cost negligible vs. the savings from O(1) freeSpace().
-  let _opCount = 0;
+  let opCount = 0;
 
   // --- Helpers ---
 
@@ -85,8 +86,8 @@ export function createResourceContainer(
   /** Recomputes usedSpace from the store — corrects any accumulated float drift. */
   function revalidateUsedSpace(): void {
     let actual = 0;
-    for (const [id, amount] of store.entries()) {
-      actual += amount * slotCost(id);
+    for (const [type, amount] of store.entries()) {
+      actual += amount * slotCost(type);
     }
     usedSpace = actual;
   }
@@ -111,7 +112,7 @@ export function createResourceContainer(
     if (amount <= 0) return;
     store.set(id, get(id) + amount);
     usedSpace += amount * slotCost(id);
-    if ((++_opCount & 0x3ff) === 0) revalidateUsedSpace();
+    if ((++opCount & 0x3ff) === 0) revalidateUsedSpace();
   }
 
   /** Removes units directly from the store. */
@@ -121,7 +122,7 @@ export function createResourceContainer(
     const actual = Math.min(amount, current);
     store.set(id, current - actual);
     usedSpace -= actual * slotCost(id);
-    if ((++_opCount & 0x3ff) === 0) revalidateUsedSpace();
+    if ((++opCount & 0x3ff) === 0) revalidateUsedSpace();
   }
 
   // --- Public API ---
@@ -157,26 +158,26 @@ export function createResourceContainer(
 
   // Per-container buffer reused by moveTo to avoid allocating a Resource on every transfer.
   // Safe because moveTo is synchronous and target.add() does not call back into this container.
-  const _moveBuffer: { id: ResourceType; amount: number } = { id: ResourceType.Fuel, amount: 0 };
+  const moveBuffer: { id: ResourceType; amount: number } = { id: ResourceType.Fuel, amount: 0 };
 
   function moveTo(resource: Resource, target: ResourceContainer): number {
     const id = resource.id;
     const actualRemoved = removeAmount(id, resource.amount);
     if (actualRemoved <= 0) return 0;
-    _moveBuffer.id = id;
-    _moveBuffer.amount = actualRemoved;
-    const refused = target.add(_moveBuffer);
+    moveBuffer.id = id;
+    moveBuffer.amount = actualRemoved;
+    const refused = target.add(moveBuffer);
     if (refused > 0) deposit(id, refused);
     return refused;
   }
 
   function moveAll(target: ResourceContainer): number {
     let totalRefused = 0;
-    for (const [id, amount] of store.entries()) {
+    for (const [type, amount] of store.entries()) {
       if (amount > 0) {
-        _moveBuffer.id = id;
-        _moveBuffer.amount = amount;
-        totalRefused += moveTo(_moveBuffer, target);
+        moveBuffer.id = type;
+        moveBuffer.amount = amount;
+        totalRefused += moveTo(moveBuffer, target);
       }
     }
     return totalRefused;
@@ -216,6 +217,7 @@ export function createResourceContainer(
 
   return {
     id,
+    kind: 'resource' as const,
     labelKey,
     capacity,
     get,
