@@ -1,4 +1,3 @@
-import type { GameFont } from '@/shared/font'
 import type { MenuConfig } from '@/shared/menu'
 import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
@@ -11,9 +10,6 @@ interface GameState {
 
   menuConfig: MenuConfig | null
   setMenuConfig: (config: MenuConfig) => void
-
-  font: GameFont
-  setFont: (font: GameFont) => void
 }
 
 export const useGameStore = create<GameState>()(
@@ -28,13 +24,6 @@ export const useGameStore = create<GameState>()(
     setMenuConfig: (config) =>
       set((state) => {
         state.menuConfig = config
-      }),
-
-    font: (localStorage.getItem('game-font') as GameFont) ?? 'orbitron',
-    setFont: (font) =>
-      set((state) => {
-        state.font = font
-        localStorage.setItem('game-font', font)
       }),
   }))
 )
