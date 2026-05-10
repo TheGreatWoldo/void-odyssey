@@ -321,7 +321,7 @@ describe('createProductionModule', () => {
   describe('produce', () => {
     function makeContainerMap(types: ResourceType[]) {
       return new Map(
-        types.map((t) => [t, createResourceContainer({ allowedResources: [t], capacity: 1000 })])
+        types.map((t) => [t, createResourceContainer({ perTypeCapacity: { [t]: null }, capacity: 1000 })])
       );
     }
 
@@ -370,8 +370,8 @@ describe('createProductionModule', () => {
   describe('drain', () => {
     it('moves accumulated output into target containers', () => {
       const m = makeModule('m', 'M', powerRecipe, { type: ModuleId.ReactorCore, maxOutput: 10 });
-      const sources = new Map([[ResourceType.Fuel, createResourceContainer({ allowedResources: [ResourceType.Fuel], capacity: 1000 })]]);
-      const targets = new Map([[ResourceType.Power, createResourceContainer({ allowedResources: [ResourceType.Power], capacity: 1000 })]]);
+      const sources = new Map([[ResourceType.Fuel, createResourceContainer({ perTypeCapacity: { [ResourceType.Fuel]: null }, capacity: 1000 })]]);
+      const targets = new Map([[ResourceType.Power, createResourceContainer({ perTypeCapacity: { [ResourceType.Power]: null }, capacity: 1000 })]]);
 
       sources.get(ResourceType.Fuel)!.add(createResource(ResourceType.Fuel, 100));
       m.produce(1, sources);
@@ -385,8 +385,8 @@ describe('createProductionModule', () => {
 
     it('leaves no stock after draining', () => {
       const m = makeModule('m', 'M', powerRecipe, { type: ModuleId.ReactorCore, maxOutput: 10 });
-      const sources = new Map([[ResourceType.Fuel, createResourceContainer({ allowedResources: [ResourceType.Fuel], capacity: 1000 })]]);
-      const targets = new Map([[ResourceType.Power, createResourceContainer({ allowedResources: [ResourceType.Power], capacity: 1000 })]]);
+      const sources = new Map([[ResourceType.Fuel, createResourceContainer({ perTypeCapacity: { [ResourceType.Fuel]: null }, capacity: 1000 })]]);
+      const targets = new Map([[ResourceType.Power, createResourceContainer({ perTypeCapacity: { [ResourceType.Power]: null }, capacity: 1000 })]]);
 
       sources.get(ResourceType.Fuel)!.add(createResource(ResourceType.Fuel, 100));
       m.produce(1, sources);
@@ -402,8 +402,8 @@ describe('createProductionModule', () => {
   describe('reset', () => {
     it('resets state to Idle without discarding accumulated output', () => {
       const m = makeModule('m', 'M', powerRecipe, { type: ModuleId.ReactorCore, maxOutput: 10 });
-      const sources = new Map([[ResourceType.Fuel, createResourceContainer({ allowedResources: [ResourceType.Fuel], capacity: 1000 })]]);
-      const targets = new Map([[ResourceType.Power, createResourceContainer({ allowedResources: [ResourceType.Power], capacity: 1000 })]]);
+      const sources = new Map([[ResourceType.Fuel, createResourceContainer({ perTypeCapacity: { [ResourceType.Fuel]: null }, capacity: 1000 })]]);
+      const targets = new Map([[ResourceType.Power, createResourceContainer({ perTypeCapacity: { [ResourceType.Power]: null }, capacity: 1000 })]]);
 
       sources.get(ResourceType.Fuel)!.add(createResource(ResourceType.Fuel, 100));
       m.produce(1, sources);

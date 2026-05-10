@@ -39,8 +39,8 @@ describe('createResourceContainer', () => {
       expect(refused).toBe(3);
     });
 
-    it('rejects resources not in allowedResources whitelist', () => {
-      const c = createResourceContainer({ capacity: 20, allowedResources: [ResourceType.Fuel] });
+    it('rejects resources not in perTypeCapacity whitelist', () => {
+      const c = createResourceContainer({ capacity: 20, perTypeCapacity: { [ResourceType.Fuel]: null } });
 
       const refused = c.add(createResource(ResourceType.Food, 5));
 
@@ -77,7 +77,7 @@ describe('createResourceContainer', () => {
     });
 
     it('returns true only for whitelisted types', () => {
-      const c = createResourceContainer({ allowedResources: [ResourceType.Water] });
+      const c = createResourceContainer({ perTypeCapacity: { [ResourceType.Water]: null } });
 
       expect(c.accepts(ResourceType.Water)).toBe(true);
       expect(c.accepts(ResourceType.Fuel)).toBe(false);

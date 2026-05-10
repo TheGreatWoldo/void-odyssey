@@ -2,7 +2,7 @@ import type { Inventory, InventoryOptions } from '@/domain/models/inventory/inve
 import { createInventory } from '@/domain/models/inventory/inventory';
 import type { ProductionModule } from '@/domain/models/module/production-module';
 import { ModuleId } from '@/domain/models/module/production-module-id';
-import { ResourceType } from '@/domain/models/resources/resource';
+import { ResourceType, TransientResourceTypes } from '@/domain/models/resources/resource';
 import type { ContainerMap } from '@/domain/models/resources/resource-container';
 import type { ItemContainer, ItemContainerOptions } from '@/domain/models/storage/item-container';
 import { createItemContainer } from '@/domain/models/storage/item-container';
@@ -124,6 +124,13 @@ export function createProductionSystem(
   }
 
   function tick(deltaTime: number): void {
+    // Reset transient resources before any module produces — they represent
+    // instantaneous rates (shield output, thrust, etc.) not persistent pools.
+    for (const type of TransientResourceTypes) {
+      const current = inventory.resources.get(type);
+      if (current > 0) inventory.resources.destroy({ id: type, amount: current });
+    }
+
     for (const module of tickOrder) {
       module.stepRamp(deltaTime);
 

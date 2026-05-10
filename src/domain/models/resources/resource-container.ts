@@ -15,7 +15,14 @@ export interface ResourceContainerOptions {
   id?: string;
   labelKey?: string;
   capacity?: number;
-  allowedResources?: ResourceType[];
+  /**
+   * Controls both which resource types are accepted and their individual caps.
+   * - Omit entirely → all resource types accepted, limits come from shared capacity only.
+   * - Provide a record → only keys present are accepted.
+   *   - `null`   → whitelisted, no per-type cap (shared capacity is the only limit).
+   *   - `number` → whitelisted and capped at that amount, independently of shared capacity.
+   */
+  perTypeCapacity?: Partial<Record<ResourceType, number | null>>;
 }
 
 /**
@@ -35,6 +42,11 @@ export interface ResourceContainer extends IStorageNode {
   get(id: ResourceType): number;
   /** Returns true if this container is allowed to hold resources of this type. */
   accepts(id: ResourceType): boolean;
+  /**
+   * Returns how many additional units of the given type this container can accept,
+   * taking both shared capacity and any per-type cap into account.
+   */
+  freeSpaceFor(id: ResourceType): number;
   /** Adds as much of the resource as fits. Returns the refused remainder amount. */
   add(resource: Resource): number;
   destroy(resource: Resource): void;
@@ -62,9 +74,11 @@ export function createResourceContainer(
     id = generateId(),
     labelKey = 'container',
     capacity = Infinity,
-    allowedResources,
+    perTypeCapacity = null,
   } = options;
-  const whitelist = allowedResources ? new Set(allowedResources) : null;
+  // null  → no perTypeCapacity record provided; all types accepted.
+  // record → only keys present are accepted; value null = no cap, number = capped.
+  const perTypeCaps: Partial<Record<ResourceType, number | null>> | null = perTypeCapacity;
   const store = new Map<ResourceType, number>();
   const children: ResourceContainer[] = [];
   let childCapacityUsed = 0;
@@ -92,9 +106,9 @@ export function createResourceContainer(
     usedSpace = actual;
   }
 
-  /** Returns false if the container has an allowedResources whitelist that excludes this id. */
+  /** Returns false when a perTypeCapacity record is set and this type is not a key in it. */
   function isAllowed(id: ResourceType): boolean {
-    return whitelist === null || whitelist.has(id);
+    return perTypeCaps === null || Object.prototype.hasOwnProperty.call(perTypeCaps, id);
   }
 
   /** Slot cost for one unit of a resource, in capacity slots. */
@@ -105,6 +119,22 @@ export function createResourceContainer(
   /** How many units of a resource fit given current free space. */
   function fitsInSpace(id: ResourceType): number {
     return Math.floor(freeSpace() / slotCost(id));
+  }
+
+  /**
+   * How many additional units of the given type can be accepted, respecting both
+   * the shared capacity and any per-type cap.
+   */
+  function freeSpaceFor(id: ResourceType): number {
+    const spaceBased = fitsInSpace(id);
+    if (perTypeCaps === null) return spaceBased;
+
+    const cap = perTypeCaps[id];
+    // null = whitelisted but no per-type cap; undefined = not allowed (isAllowed guards this).
+    if (cap === null || cap === undefined) return spaceBased;
+
+    const remaining = Math.max(0, cap - get(id));
+    return Math.min(spaceBased, remaining);
   }
 
   /** Writes units directly into the store. */
@@ -140,7 +170,7 @@ export function createResourceContainer(
 
     if (!isAllowed(id)) return amount;
 
-    const accepted = Math.max(0, Math.min(amount, fitsInSpace(id)));
+    const accepted = Math.max(0, Math.min(amount, freeSpaceFor(id)));
     if (accepted > 0) deposit(id, accepted);
 
     return amount - accepted;
@@ -222,6 +252,7 @@ export function createResourceContainer(
     capacity,
     get,
     accepts,
+    freeSpaceFor,
     add,
     destroy,
     has,
