@@ -1,4 +1,4 @@
-import { createResource, ResourceType, StatType } from '@/domain/models/resources/resource';
+import { createResource, ResourceType } from '@/domain/models/resources/resource';
 import { describe, expect, it } from 'vitest';
 import { createRecipe } from './recipe';
 
@@ -12,14 +12,14 @@ function makeSources(entries: { id: ResourceType; amount: number }[]) {
 
 const fuelToVelocityRecipe = createRecipe({
   name: 'Test',
-  primaryOutput: ResourceType.Thrust,
+  primaryOutput: ResourceType.Power,
   costsPerSecond: [createResource(ResourceType.Fuel, 1)],
 });
 
 const powerOnlyRecipe = createRecipe({
   name: 'PowerOnly',
-  primaryOutput: ResourceType.Thrust,
-  costsPerSecond: [createResource(StatType.Power, 4)],
+  primaryOutput: ResourceType.Oxygen,
+  costsPerSecond: [createResource(ResourceType.Power, 4)],
 });
 
 const multiCostRecipe = createRecipe({
@@ -27,7 +27,7 @@ const multiCostRecipe = createRecipe({
   primaryOutput: ResourceType.Oxygen,
   costsPerSecond: [
     createResource(ResourceType.Water, 0.5),
-    createResource(StatType.Power, 2),
+    createResource(ResourceType.Power, 2),
   ],
 });
 

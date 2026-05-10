@@ -1,5 +1,4 @@
 import type { Resource, ResourceType } from '@/domain/models/resources/resource';
-import { StatType } from '@/domain/models/resources/resource';
 
 /**
  * Defines a continuous production process.
@@ -56,8 +55,8 @@ export interface RecipeData {
 /** Creates a Recipe with production-logic behaviour methods. */
 export function createRecipe(data: RecipeData): Recipe {
   // Pre-filter at creation time so hot-path loops never need to check for Power.
-  const nonPowerCosts = data.costsPerSecond.filter(r => r.id !== StatType.Power);
-  const powerCostPerSecond = data.costsPerSecond.find(r => r.id === StatType.Power)?.amount ?? 0;
+  const nonPowerCosts = data.costsPerSecond.filter(r => r.id !== 'Power');
+  const powerCostPerSecond = data.costsPerSecond.find(r => r.id === 'Power')?.amount ?? 0;
 
   function calculateFraction(
     amounts: ReadonlyMap<ResourceType, number>,
