@@ -1,6 +1,6 @@
-import { fisherYatesShuffle } from '@/shared/math-utils';
 import { NodeType } from '@/domain/navigation/node-type';
 import { PositionedNodeStub } from '@/domain/navigation/route/strategies/node-type-strategy';
+import { fisherYatesShuffle } from '@/shared/math-utils';
 
 /**
  * Base class for all type allocation strategies used by LayeredAllocationStrategy.

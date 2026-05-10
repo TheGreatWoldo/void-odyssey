@@ -1,6 +1,6 @@
-import { fisherYatesShuffle } from '@/shared/math-utils';
 import { RouteConnection, RouteNode } from '@/domain/navigation/route/route-node';
 import { NodeConnectionStrategy } from '@/domain/navigation/route/strategies/node-connection-strategy';
+import { fisherYatesShuffle } from '@/shared/math-utils';
 
 function squaredDistance(a: RouteNode, b: RouteNode): number {
   const dx = a.wx - b.wx;

@@ -1,10 +1,10 @@
-import { generateId } from '@/shared/utils';
 import type { Resource, ResourceType } from '@/domain/models/resources/resource';
 import type { ResourceContainer, ResourceContainerOptions } from '@/domain/models/resources/resource-container';
 import { createResourceContainer } from '@/domain/models/resources/resource-container';
 import type { ItemContainer, ItemContainerOptions } from '@/domain/models/storage/item-container';
 import { createItemContainer } from '@/domain/models/storage/item-container';
 import type { Storable } from '@/domain/models/storage/storable';
+import { generateId } from '@/shared/utils';
 
 export interface InventoryOptions {
   id?: string;
