@@ -58,17 +58,6 @@ describe('createResourceContainer', () => {
       expect(c.get(ResourceType.Food)).toBe(1);
     });
 
-    it('stat resources (zero slot cost) always fit regardless of capacity', () => {
-      const c = createResourceContainer({ capacity: 0 });
-
-      // Hull has no slot cost, so it occupies no space
-      const refused = c.add(createResource(ResourceType.Hull, 999));
-
-      expect(refused).toBe(0);
-      expect(c.get(ResourceType.Hull)).toBe(999);
-      expect(c.freeSpace()).toBe(0); // capacity unchanged
-    });
-
     it('unbounded container (no capacity) accepts any amount', () => {
       const c = createResourceContainer();
 

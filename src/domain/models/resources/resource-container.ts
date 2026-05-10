@@ -96,15 +96,14 @@ export function createResourceContainer(
     return whitelist === null || whitelist.has(id);
   }
 
-  /** Slot cost for one unit. Non-zero for resources listed in ResourceSizes (cargo types and Power); zero for all other stat types. */
+  /** Slot cost for one unit of a resource, in capacity slots. */
   function slotCost(id: ResourceType): number {
-    return ResourceSizes[id as keyof typeof ResourceSizes] ?? 0;
+    return ResourceSizes[id] ?? 1;
   }
 
-  /** How many units of a resource fit given current free space. Stat resources (slot cost 0) always fit. */
-  function fitsInSpace(id: ResourceType, amount: number): number {
-    const cost = slotCost(id);
-    return cost > 0 ? Math.floor(freeSpace() / cost) : amount;
+  /** How many units of a resource fit given current free space. */
+  function fitsInSpace(id: ResourceType): number {
+    return Math.floor(freeSpace() / slotCost(id));
   }
 
   /** Writes units directly into the store. */
@@ -140,7 +139,7 @@ export function createResourceContainer(
 
     if (!isAllowed(id)) return amount;
 
-    const accepted = Math.max(0, Math.min(amount, fitsInSpace(id, amount)));
+    const accepted = Math.max(0, Math.min(amount, fitsInSpace(id)));
     if (accepted > 0) deposit(id, accepted);
 
     return amount - accepted;
@@ -158,7 +157,7 @@ export function createResourceContainer(
 
   // Per-container buffer reused by moveTo to avoid allocating a Resource on every transfer.
   // Safe because moveTo is synchronous and target.add() does not call back into this container.
-  const _moveBuffer: Resource = { id: ResourceType.Fuel, amount: 0 };
+  const _moveBuffer: { id: ResourceType; amount: number } = { id: ResourceType.Fuel, amount: 0 };
 
   function moveTo(resource: Resource, target: ResourceContainer): number {
     const id = resource.id;
