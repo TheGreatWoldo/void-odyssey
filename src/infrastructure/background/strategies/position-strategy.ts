@@ -13,7 +13,7 @@ import {
 } from '@/infrastructure/utils/quadrant-utils';
 import { Vector } from 'excalibur';
 import type { BackgroundActorArgs } from '../actors/background-actor-args';
-import type { BackgroundSceneArgs } from '../background-scene-args';
+import type { IBackgroundSceneArgs } from '../background-scene-args';
 
 export type PositionResult = {
   startingPosition: Vector;
@@ -38,7 +38,7 @@ export class PositionStrategyDebugResult implements PositionResult {
 }
 
 function computePosition(
-  sceneArgs: BackgroundSceneArgs,
+  sceneArgs: IBackgroundSceneArgs,
   actorArgs: BackgroundActorArgs
 ): PositionStrategyDebugResult {
   const result = new PositionStrategyDebugResult();
@@ -105,20 +105,20 @@ function computePosition(
   result.startingPosition = randomPointOnLine(
     result.intersection1,
     result.intersection2
-  );
+  ) ?? new Vector(0, 0);
 
   return result;
 }
 
 export function getPositionForArgs(
-  sceneArgs: BackgroundSceneArgs,
+  sceneArgs: IBackgroundSceneArgs,
   actorArgs: BackgroundActorArgs
 ): PositionResult {
   return computePosition(sceneArgs, actorArgs);
 }
 
 export function getPositionDebugInfoForArgs(
-  sceneArgs: BackgroundSceneArgs,
+  sceneArgs: IBackgroundSceneArgs,
   actorArgs: BackgroundActorArgs
 ): PositionStrategyDebugResult {
   return computePosition(sceneArgs, actorArgs);

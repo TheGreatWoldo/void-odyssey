@@ -17,6 +17,7 @@ export interface Recipe {
   byproductsPerSecond: Resource[];
   /**
    * Non-power input costs, pre-filtered at creation time.
+   * These are binary gates — if any is insufficient the fraction is 0.
    * Use this in hot paths instead of iterating costsPerSecond with a Power check.
    */
   readonly nonPowerCosts: readonly Resource[];
@@ -26,8 +27,7 @@ export interface Recipe {
    */
   readonly powerCostPerSecond: number;
   /**
-   * Returns true when all non-Power inputs are fully available.
-   * Power is excluded — it is filtered out of `nonPowerCosts` at recipe creation time.
+   * Returns true when all non-Power inputs are fully available AND power fraction > 0.
    */
   canExecute(
     amounts: ReadonlyMap<ResourceType, number>,
@@ -35,8 +35,14 @@ export interface Recipe {
     costMultiplier: number
   ): boolean;
   /**
-   * Returns 1 if all non-Power inputs are available, 0 otherwise.
-   * Power is excluded from this check — it is filtered out of `nonPowerCosts` at recipe creation time.
+   * Returns the effective production fraction in [0, 1] for this tick.
+   *
+   * Non-power inputs act as a binary gate — if any is insufficient the result is 0.
+   * Power is the fractional dimension: `min(1, availablePower / powerNeeded)`.
+   * When the recipe has no power cost, the power fraction is always 1.
+   *
+   * `amounts` must contain entries for every resource type used by the recipe,
+   * including ResourceType.Power when powerCostPerSecond > 0.
    */
   calculateFraction(
     amounts: ReadonlyMap<ResourceType, number>,
@@ -63,13 +69,20 @@ export function createRecipe(data: RecipeData): Recipe {
     deltaTime: number,
     costMultiplier: number
   ): number {
-    // Power is excluded — filtered out of nonPowerCosts at recipe creation time.
+    // Non-power inputs are a binary gate.
     for (const r of nonPowerCosts) {
       const needed = r.amount * costMultiplier * deltaTime;
       const available = amounts.get(r.id) ?? 0;
       if (available < needed) return 0;
     }
-    return 1;
+
+    // Power is the fractional dimension.
+    if (powerCostPerSecond <= 0) return 1;
+
+    const powerNeeded = powerCostPerSecond * costMultiplier * deltaTime;
+    const powerAvailable = amounts.get('Power' as ResourceType) ?? 0;
+
+    return Math.min(1, powerAvailable / powerNeeded);
   }
 
   function canExecute(

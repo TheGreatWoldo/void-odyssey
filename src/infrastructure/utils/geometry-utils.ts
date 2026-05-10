@@ -32,15 +32,13 @@ export function perpendicularVector(v: Vector): Vector {
 export function randomPointOnLine(
   pointOne: Vector | null,
   pointTwo: Vector | null
-): Vector {
-  if (pointOne && pointTwo) {
-    const t = Math.random();
+): Vector | null {
+  if (!pointOne || !pointTwo) return null;
 
-    return vec(
-      pointOne.x + t * (pointTwo.x - pointOne.x),
-      pointOne.y + t * (pointTwo.y - pointOne.y)
-    );
-  }
+  const t = Math.random();
 
-  throw new Error(`One or more invalid points: ${pointOne} - ${pointTwo}`);
+  return vec(
+    pointOne.x + t * (pointTwo.x - pointOne.x),
+    pointOne.y + t * (pointTwo.y - pointOne.y)
+  );
 }

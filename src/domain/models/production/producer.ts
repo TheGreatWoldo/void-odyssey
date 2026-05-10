@@ -1,4 +1,5 @@
-import type { Resource, ResourceType } from '@/domain/models/resources/resource';
+import type { Resource } from '@/domain/models/resources/resource';
+import { ResourceType } from '@/domain/models/resources/resource';
 import type { ContainerMap } from '@/domain/models/resources/resource-container';
 import { createResourceContainer } from '@/domain/models/resources/resource-container';
 import type { Recipe } from './recipe';
@@ -12,7 +13,8 @@ export const ProductionState = {
 export type ProductionState = (typeof ProductionState)[keyof typeof ProductionState];
 
 /**
- * Aggregate Root for a single production process.
+ * Entity — owned and lifecycle-managed by ProductionModule, which is installed
+ * into ProductionSystem (the true Aggregate Root).
  *
  * Encapsulates a Recipe's execution cycle and its output accumulator.
  * External code interacts only through this interface — the internal
@@ -26,8 +28,9 @@ export type ProductionState = (typeof ProductionState)[keyof typeof ProductionSt
  * Call drain() to push accumulated outputs into pre-resolved target containers.
  * Sources and targets are resolved once at module install time — not on every tick.
  *
- * Power is excluded from the consume loop — it is filtered out of
- * `nonPowerCosts` at recipe creation time and never appears in source lookups.
+ * Power is the fractional dimension: if the power source is depleted the module
+ * runs at a proportionally reduced rate. All non-power inputs and outputs are
+ * scaled by the same fraction.
  */
 export interface Producer {
   readonly id: string;
@@ -61,12 +64,16 @@ export function createProducer(id: string, recipe: Recipe): Producer {
   let currentFraction = 0;
 
   // Pre-allocated mutable buffers reused every tick to avoid per-tick allocations.
-  // Indexed against recipe.nonPowerCosts — Power is excluded at recipe creation time.
+  // Indexed against recipe.nonPowerCosts — Power is handled separately via powerBuffer.
   const costBuffers = recipe.nonPowerCosts.map(r => ({ id: r.id, amount: 0 } as Resource));
-  // Pre-allocated amounts map passed to recipe.calculateFraction — avoids Map construction each tick.
-  const amountsBuffer = new Map<ResourceType, number>(recipe.nonPowerCosts.map(r => [r.id, 0]));
+  // Pre-allocated amounts map passed to recipe.calculateFraction — includes Power when recipe has a cost.
+  const amountsBuffer = new Map<ResourceType, number>([
+    ...recipe.nonPowerCosts.map(r => [r.id, 0] as [ResourceType, number]),
+    ...(recipe.powerCostPerSecond > 0 ? [[ResourceType.Power, 0] as [ResourceType, number]] : []),
+  ]);
   const primaryBuffer: Resource = { id: recipe.primaryOutput, amount: 0 };
   const byproductBuffers = recipe.byproductsPerSecond.map(r => ({ id: r.id, amount: 0 } as Resource));
+  const powerBuffer: Resource = { id: ResourceType.Power, amount: 0 };
 
   function getStock(id: ResourceType): number {
     return storage.get(id);
@@ -112,6 +119,12 @@ export function createProducer(id: string, recipe: Recipe): Producer {
     for (const r of recipe.nonPowerCosts) {
       amountsBuffer.set(r.id, sources.get(r.id)?.get(r.id) ?? 0);
     }
+
+    // Include available Power so calculateFraction can compute the power fraction.
+    if (recipe.powerCostPerSecond > 0) {
+      amountsBuffer.set(ResourceType.Power, sources.get(ResourceType.Power)?.get(ResourceType.Power) ?? 0);
+    }
+
     const fraction = recipe.calculateFraction(amountsBuffer, deltaTime, combinedCostMult);
 
     if (fraction <= 0 || effectiveThrottle <= 0) {
@@ -122,23 +135,32 @@ export function createProducer(id: string, recipe: Recipe): Producer {
 
     const nonPowerCosts = recipe.nonPowerCosts;
 
-    // Consume all non-Power inputs. Power is excluded at recipe creation time (nonPowerCosts).
+    // Consume non-Power inputs scaled by fraction — partial power means proportionally less consumed.
     for (let i = 0; i < nonPowerCosts.length; i++) {
       const r = nonPowerCosts[i];
-      costBuffers[i].amount = r.amount * upgradeCostMult * effectiveThrottle * deltaTime;
+      costBuffers[i].amount = r.amount * upgradeCostMult * effectiveThrottle * fraction * deltaTime;
       sources.get(r.id)!.destroy(costBuffers[i]);
     }
 
-    currentFraction = effectiveThrottle;
-    currentState = effectiveThrottle >= 1 ? ProductionState.Active : ProductionState.Partial;
+    // Consume Power proportional to the fraction actually produced.
+    if (recipe.powerCostPerSecond > 0) {
+      const powerSource = sources.get(ResourceType.Power);
+      if (powerSource) {
+        powerBuffer.amount = recipe.powerCostPerSecond * upgradeCostMult * effectiveThrottle * fraction * deltaTime;
+        powerSource.destroy(powerBuffer);
+      }
+    }
 
-    // Produce primary output: module max scaled by effective throttle.
-    primaryBuffer.amount = maxOutput * effectiveThrottle * deltaTime;
+    currentFraction = effectiveThrottle * fraction;
+    currentState = currentFraction >= 1 ? ProductionState.Active : ProductionState.Partial;
+
+    // Produce primary output scaled by effective throttle × power fraction.
+    primaryBuffer.amount = maxOutput * effectiveThrottle * fraction * deltaTime;
     storage.add(primaryBuffer);
 
-    // Produce byproducts proportional to effective throttle.
+    // Produce byproducts proportional to effective throttle × power fraction.
     for (let i = 0; i < recipe.byproductsPerSecond.length; i++) {
-      byproductBuffers[i].amount = recipe.byproductsPerSecond[i].amount * effectiveThrottle * deltaTime;
+      byproductBuffers[i].amount = recipe.byproductsPerSecond[i].amount * effectiveThrottle * fraction * deltaTime;
       storage.add(byproductBuffers[i]);
     }
   }

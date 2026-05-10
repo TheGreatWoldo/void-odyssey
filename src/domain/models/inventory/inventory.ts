@@ -47,6 +47,14 @@ export interface Inventory {
   takeItem(id: string): (Storable & { readonly id: string }) | undefined;
   hasItem(id: string): boolean;
   listItems(): readonly (Storable & { readonly id: string })[];
+
+  /**
+   * Transfers all resources and all items from this inventory into `target`.
+   * Resources are moved first; then items are stored in target if space allows.
+   * Returns the amounts refused — enforces that the two containers are treated
+   * as a co-owned unit and cannot be partially transferred without tracking loss.
+   */
+  transfer(target: Inventory): { resourcesRefused: number; itemsRefused: number };
 }
 
 export function createInventory(options: InventoryOptions = {}): Inventory {
@@ -74,5 +82,21 @@ export function createInventory(options: InventoryOptions = {}): Inventory {
     takeItem: (itemId) => items.take(itemId),
     hasItem: (itemId) => items.has(itemId),
     listItems: () => items.list(),
+
+    transfer(target) {
+      const resourcesRefused = resources.moveAll(target.resources);
+
+      let itemsRefused = 0;
+
+      for (const item of items.list()) {
+        items.take(item.id);
+        if (!target.items.store(item)) {
+          items.store(item);
+          itemsRefused++;
+        }
+      }
+
+      return { resourcesRefused, itemsRefused };
+    },
   };
 }

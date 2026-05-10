@@ -70,17 +70,44 @@ describe('createProducer', () => {
       expect(p.getStock(ResourceType.Power)).toBe(0);
     });
 
-    it('does not consume Power — Power is debited externally', () => {
-      // powerToOxygenRecipe costs Power. No Power source is provided.
-      // produce() must skip Power in the consume loop and still run.
+    it('sets state to Idle and produces nothing when Power is absent', () => {
+      // powerToOxygenRecipe costs 4 Power/s. No Power source provided → fraction 0 → Idle.
       const emptySources = new Map<ResourceType, ReturnType<typeof createResourceContainer>>();
       const p = createProducer('test-producer', powerToOxygenRecipe);
 
-      // calculateFraction skips Power → returns 1 → produce runs
       p.produce(1, emptySources, 1, 1, 1);
 
+      expect(p.state).toBe(ProductionState.Idle);
+      expect(p.getStock(ResourceType.Oxygen)).toBe(0);
+    });
+
+    it('runs at partial rate and consumes Power when Power is partially available', () => {
+      // powerToOxygenRecipe costs 4 Power/s. Only 2 available → fraction 0.5.
+      const powerSource = createResourceContainer({ capacity: 100 });
+      powerSource.add(createResource(ResourceType.Power, 2));
+      const sources = new Map([[ResourceType.Power, powerSource]]);
+      const p = createProducer('test-producer', powerToOxygenRecipe);
+
+      p.produce(1, sources, 1, 1, 10); // maxOutput 10 → 5 Oxygen at full, 5 × 0.5 = 2.5 at half
+
+      expect(p.state).toBe(ProductionState.Partial);
+      expect(p.getStock(ResourceType.Oxygen)).toBeCloseTo(5);
+      // 4 Power/s × 0.5 fraction × 1s = 2 consumed
+      expect(powerSource.get(ResourceType.Power)).toBeCloseTo(0);
+    });
+
+    it('runs at full rate when Power fully covers the cost', () => {
+      const powerSource = createResourceContainer({ capacity: 100 });
+      powerSource.add(createResource(ResourceType.Power, 10));
+      const sources = new Map([[ResourceType.Power, powerSource]]);
+      const p = createProducer('test-producer', powerToOxygenRecipe);
+
+      p.produce(1, sources, 1, 1, 10);
+
       expect(p.state).toBe(ProductionState.Active);
-      expect(p.getStock(ResourceType.Oxygen)).toBeCloseTo(1);
+      expect(p.getStock(ResourceType.Oxygen)).toBeCloseTo(10);
+      // 4 Power/s × 1 fraction × 1s = 4 consumed
+      expect(powerSource.get(ResourceType.Power)).toBeCloseTo(6);
     });
 
     it('scales primary output by effectiveThrottle × maxOutput', () => {

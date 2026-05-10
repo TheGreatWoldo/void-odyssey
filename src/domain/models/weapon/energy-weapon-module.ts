@@ -1,8 +1,6 @@
 import type { DamagePacket, DamageType } from '@/domain/models/combat/damage';
 import { createDamagePacket } from '@/domain/models/combat/damage';
 import type { ProductionModuleOptions } from '@/domain/models/module/production-module';
-import type { ModuleId } from '@/domain/models/module/production-module-id';
-import { ModuleSlotCosts } from '@/domain/models/module/production-module-id';
 import type { ModuleUpgrade } from '@/domain/models/module/production-module-upgrade';
 import { createResource, ResourceType } from '@/domain/models/resources/resource';
 import type { ContainerMap } from '@/domain/models/resources/resource-container';
@@ -10,6 +8,7 @@ import { err, ok, type Result } from '@/shared/result';
 import { isNullOrWhiteSpace } from '@/shared/string-utils';
 
 import type { WeaponModule } from './weapon-module';
+import { createWeaponModuleBase } from './weapon-module-base';
 
 /**
  * Options for creating an energy weapon module.
@@ -33,6 +32,8 @@ export interface EnergyWeaponModuleOptions extends ProductionModuleOptions {
  * `fire()` returns a DamagePacket when fully charged, resetting chargeProgress to 0.
  */
 export interface EnergyWeaponModule extends WeaponModule {
+  readonly weaponKind: 'energy';
+
   /** Charge level in [0, 1]. 1 = fully charged and ready to fire. */
   readonly chargeProgress: number;
 
@@ -50,7 +51,7 @@ export interface EnergyWeaponModule extends WeaponModule {
  * Returns true when `m` is an EnergyWeaponModule.
  */
 export function isEnergyWeaponModule(m: WeaponModule): m is EnergyWeaponModule {
-  return 'chargeProgress' in m;
+  return m.weaponKind === 'energy';
 }
 
 export function createEnergyWeaponModule(
@@ -87,94 +88,25 @@ export function createEnergyWeaponModule(
   if (powerCostPerSecond < 0)
     return err(`EnergyWeaponModule powerCostPerSecond must be >= 0, got ${powerCostPerSecond}`);
 
-  // --- Mutable state ---
+  const base = createWeaponModuleBase(id, {
+    initialCondition,
+    rampRate,
+    type,
+    maxOutput,
+    snapOutputToInteger,
+  });
 
-  type MutableModuleUpgrade = { -readonly [K in keyof ModuleUpgrade]: ModuleUpgrade[K] };
-
-  const upgradeMap = new Map<string, MutableModuleUpgrade>();
-
-  let cachedCostMultiplier: number | null = null;
-  let cachedUpgrades: readonly ModuleUpgrade[] | null = null;
-  let condition = initialCondition;
-  let throttle = 1;
-  let actualThrottle = 1;
-  let enabled = true;
   let chargeProgress = 0;
-
-  // --- Upgrades ---
-
-  function addUpgrade(upgrade: ModuleUpgrade): Result<void, string> {
-    upgradeMap.set(upgrade.id, { ...upgrade });
-    cachedCostMultiplier = null;
-    cachedUpgrades = null;
-    return ok(undefined);
-  }
-
-  function setUpgradeEnabled(upgradeId: string, upgEnabled: boolean): Result<void, string> {
-    const upgrade = upgradeMap.get(upgradeId);
-    if (!upgrade) return err(`Upgrade '${upgradeId}' not found on module '${id}'`);
-    upgrade.enabled = upgEnabled;
-    cachedCostMultiplier = null;
-    cachedUpgrades = null;
-    return ok(undefined);
-  }
-
-  function computeCostMultiplier(): number {
-    if (cachedCostMultiplier !== null) return cachedCostMultiplier;
-    let cost = 1;
-    for (const u of upgradeMap.values()) {
-      if (!u.enabled) continue;
-      cost += u.costFactor - 1;
-    }
-    cachedCostMultiplier = Math.max(0, cost);
-    return cachedCostMultiplier;
-  }
-
-  // --- Throttle & ramp ---
-
-  function setThrottle(value: number): void {
-    if (snapOutputToInteger) {
-      const maxN = Math.floor(maxOutput);
-      if (maxN > 0) {
-        const snapped = Math.round(value * maxN) / maxN;
-        throttle = Math.max(0, Math.min(1, snapped));
-        return;
-      }
-    }
-    throttle = Math.max(0, Math.min(1, value));
-  }
-
-  function setCondition(value: number): Result<void, string> {
-    if (value < 0 || value > 1)
-      return err(`EnergyWeaponModule condition must be in [0, 1], got ${value}`);
-    condition = value;
-    return ok(undefined);
-  }
-
-  function stepRamp(deltaTime: number): void {
-    if (rampRate === Infinity) {
-      actualThrottle = throttle;
-      return;
-    }
-    const step = rampRate * deltaTime;
-    if (actualThrottle < throttle) {
-      actualThrottle = Math.min(throttle, actualThrottle + step);
-    } else if (actualThrottle > throttle) {
-      actualThrottle = Math.max(throttle, actualThrottle - step);
-    }
-  }
-
-  // --- Weapon-specific ---
 
   function isCharged(): boolean {
     return chargeProgress >= 1;
   }
 
   function produce(deltaTime: number, containerMap: ContainerMap): void {
-    chargeProgress = Math.min(1, chargeProgress + (actualThrottle * deltaTime) / chargeTime);
+    chargeProgress = Math.min(1, chargeProgress + (base.actualThrottle * deltaTime) / chargeTime);
 
     if (powerCostPerSecond > 0) {
-      const powerCost = powerCostPerSecond * actualThrottle * deltaTime;
+      const powerCost = powerCostPerSecond * base.actualThrottle * deltaTime;
       const powerContainer = containerMap.get(ResourceType.Power);
       if (powerContainer) {
         powerContainer.destroy(createResource(ResourceType.Power, powerCost));
@@ -198,42 +130,38 @@ export function createEnergyWeaponModule(
 
   return ok({
     id,
-    type,
+    type: base.type,
     name,
     storableType: 'module' as const,
-    slotCost: ModuleSlotCosts[type as ModuleId],
+    slotCost: base.slotCost,
+    weaponKind: 'energy' as const,
     damageType,
     chargeTime,
     powerCostPerSecond,
     maxOutput,
 
-    get condition() { return condition; },
+    get condition() { return base.condition; },
     get chargeProgress() { return chargeProgress; },
+    get upgrades() { return base.upgrades; },
+    get throttle() { return base.throttle; },
+    get actualThrottle() { return base.actualThrottle; },
+    get rampRate() { return base.rampRate; },
+    get enabled() { return base.enabled; },
 
-    get upgrades() {
-      if (!cachedUpgrades) cachedUpgrades = [...upgradeMap.values()] as readonly ModuleUpgrade[];
-      return cachedUpgrades;
-    },
+    enable: () => base.enable(),
+    disable: () => base.disable(),
 
-    get throttle() { return throttle; },
-    get actualThrottle() { return actualThrottle; },
-    get rampRate() { return rampRate; },
-    get enabled() { return enabled; },
+    addUpgrade: (upgrade: ModuleUpgrade) => base.addUpgrade(upgrade),
+    setUpgradeEnabled: (upgradeId: string, enabled: boolean) => base.setUpgradeEnabled(upgradeId, enabled),
 
-    enable: () => { enabled = true; },
-    disable: () => { enabled = false; },
+    get costMultiplier() { return base.costMultiplier; },
 
-    addUpgrade,
-    setUpgradeEnabled,
-
-    get costMultiplier() { return computeCostMultiplier(); },
-
-    isOperational: () => condition > 0 && enabled,
+    isOperational: () => base.isOperational(),
     isCharged,
 
-    setCondition,
-    setThrottle,
-    stepRamp,
+    setCondition: (value: number) => base.setCondition(value),
+    setThrottle: (value: number) => base.setThrottle(value),
+    stepRamp: (deltaTime: number) => base.stepRamp(deltaTime),
     produce,
     drain,
     reset,

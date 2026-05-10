@@ -1,11 +1,11 @@
 import type { Color, Vector } from 'excalibur';
 import type { BackgroundActorArgs } from '../actors/background-actor-args';
 import type { ColorArgs } from '../args/color-args';
-import type { BackgroundSceneArgs, SizeArgs } from '../background-scene-args';
+import type { IBackgroundSceneArgs, SizeArgs } from '../background-scene-args';
 import type { PositionResult } from './position-strategy';
 
 export type SizeStrategy = (
-  scene: BackgroundSceneArgs,
+  scene: IBackgroundSceneArgs,
   actor: BackgroundActorArgs
 ) => number;
 
@@ -16,12 +16,12 @@ export type ActorColorStrategy = (
 ) => Color;
 
 export type VelocityStrategy = (
-  scene: BackgroundSceneArgs,
+  scene: IBackgroundSceneArgs,
   actor: BackgroundActorArgs
 ) => Vector;
 
 export type PositionStrategy = (
-  scene: BackgroundSceneArgs,
+  scene: IBackgroundSceneArgs,
   actor: BackgroundActorArgs
 ) => PositionResult;
 

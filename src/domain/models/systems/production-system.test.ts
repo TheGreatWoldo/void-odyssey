@@ -2,6 +2,7 @@ import type { ProductionModule } from '@/domain/models/module/production-module'
 import { createProductionModule } from '@/domain/models/module/production-module';
 import { ModuleId } from '@/domain/models/module/production-module-id';
 import { createRecipe } from '@/domain/models/production/recipe';
+import { createBatteryContainer } from '@/domain/models/resources/power-container';
 import { createResource, ResourceType } from '@/domain/models/resources/resource';
 import { createResourceContainer } from '@/domain/models/resources/resource-container';
 import { describe, expect, it } from 'vitest';
@@ -104,12 +105,15 @@ describe('createProductionSystem', () => {
   });
 
   describe('tick — reactor only', () => {
-    it('accumulates Power in inventory when reactor has Fuel', () => {
+    it('accumulates Power in battery when reactor has Fuel', () => {
       const resources = createResourceContainer({ capacity: 1000 });
       const system = createProductionSystem({
         modules: { capacity: 100 },
         resources,
       });
+
+      const battery = createBatteryContainer({ capacity: 100 });
+      system.addBattery(battery);
 
       // Pre-load Fuel so the reactor can run
       resources.add(createResource(ResourceType.Fuel, 10));
@@ -122,8 +126,8 @@ describe('createProductionSystem', () => {
       system.installModule(reactor);
       system.tick(1);
 
-      // Reactor produces 5 Power/s × 1s; Fuel cost is 1/s × 1s = 1 Fuel consumed
-      expect(resources.get(ResourceType.Power)).toBeCloseTo(5);
+      // Reactor produces 5 Power/s × 1s into the battery; Fuel cost is 1/s × 1s = 1 consumed
+      expect(battery.get(ResourceType.Power)).toBeCloseTo(5);
       expect(resources.get(ResourceType.Fuel)).toBeCloseTo(9);
     });
 
@@ -134,6 +138,9 @@ describe('createProductionSystem', () => {
         resources,
       });
 
+      const battery = createBatteryContainer({ capacity: 100 });
+      system.addBattery(battery);
+
       const reactor = makeModule('r1', 'Reactor', reactorRecipe, {
         type: ModuleId.ReactorCore,
         maxOutput: 5,
@@ -142,7 +149,7 @@ describe('createProductionSystem', () => {
       system.installModule(reactor);
       system.tick(1);
 
-      expect(resources.get(ResourceType.Power)).toBe(0);
+      expect(battery.get(ResourceType.Power)).toBe(0);
     });
   });
 
@@ -258,6 +265,115 @@ describe('createProductionSystem', () => {
       system.tick(1);
 
       expect(resources.get(ResourceType.Oxygen)).toBe(0);
+    });
+  });
+
+  describe('battery \u2014 power routing', () => {
+    /** A module that consumes 2 Power/s and produces 3 Oxygen/s. */
+    const powerToOxygenRecipe = createRecipe({
+      name: 'PowerToOxygen',
+      primaryOutput: ResourceType.Oxygen,
+      costsPerSecond: [createResource(ResourceType.Power, 2)],
+    });
+
+    it('reactor fills battery; consumer draws from it in the same tick', () => {
+      const resources = createResourceContainer({ capacity: 1000 });
+      const system = createProductionSystem({ modules: { capacity: 100 }, resources });
+      const battery = createBatteryContainer({ capacity: 100 });
+      system.addBattery(battery);
+
+      // Seed Fuel for the reactor
+      resources.add(createResource(ResourceType.Fuel, 10));
+
+      const reactor = makeModule('r1', 'Reactor', reactorRecipe, {
+        type: ModuleId.ReactorCore,
+        maxOutput: 10, // 10 Power/s
+      });
+
+      const consumer = makeModule('c1', 'Consumer', powerToOxygenRecipe, {
+        type: ModuleId.LifeSupport,
+        maxOutput: 3, // 3 Oxygen/s at full power
+      });
+
+      // Reactor runs first (ReactorCore sort) — drains 10 Power into battery.
+      // Consumer then draws 2 Power → fraction 1 → produces 3 Oxygen.
+      system.installModule(consumer);
+      system.installModule(reactor);
+
+      system.tick(1);
+
+      // 10 Power produced, 2 consumed by consumer, 8 remain in battery.
+      expect(battery.get(ResourceType.Power)).toBeCloseTo(8);
+      expect(resources.get(ResourceType.Oxygen)).toBeCloseTo(3);
+    });
+
+    it('consumer idles when no battery is installed', () => {
+      const resources = createResourceContainer({ capacity: 1000 });
+      const system = createProductionSystem({ modules: { capacity: 100 }, resources });
+
+      // No battery added — power container has zero capacity.
+      resources.add(createResource(ResourceType.Fuel, 10));
+
+      const reactor = makeModule('r1', 'Reactor', reactorRecipe, {
+        type: ModuleId.ReactorCore,
+        maxOutput: 10,
+      });
+
+      const consumer = makeModule('c1', 'Consumer', powerToOxygenRecipe, {
+        type: ModuleId.LifeSupport,
+        maxOutput: 3,
+      });
+
+      system.installModule(consumer);
+      system.installModule(reactor);
+      system.tick(1);
+
+      // Reactor output is wasted (no battery capacity). Consumer gets fraction 0 → Idle.
+      expect(resources.get(ResourceType.Oxygen)).toBe(0);
+    });
+
+    it('consumer runs at partial rate when battery is underpowered', () => {
+      const resources = createResourceContainer({ capacity: 1000 });
+      const system = createProductionSystem({ modules: { capacity: 100 }, resources });
+      const battery = createBatteryContainer({ capacity: 100 });
+      system.addBattery(battery);
+
+      // Pre-charge battery with 1 Power (consumer needs 2/s → fraction 0.5)
+      battery.add(createResource(ResourceType.Power, 1));
+
+      const consumer = makeModule('c1', 'Consumer', powerToOxygenRecipe, {
+        type: ModuleId.LifeSupport,
+        maxOutput: 3,
+      });
+
+      system.installModule(consumer);
+      system.tick(1);
+
+      // fraction 0.5 → 3 × 0.5 = 1.5 Oxygen; 2 × 0.5 = 1 Power consumed
+      expect(resources.get(ResourceType.Oxygen)).toBeCloseTo(1.5);
+      expect(battery.get(ResourceType.Power)).toBeCloseTo(0);
+    });
+
+    it('removeBattery stops routing power through it', () => {
+      const resources = createResourceContainer({ capacity: 1000 });
+      const system = createProductionSystem({ modules: { capacity: 100 }, resources });
+      const battery = createBatteryContainer({ capacity: 100 });
+      system.addBattery(battery);
+      battery.add(createResource(ResourceType.Power, 10));
+
+      const consumer = makeModule('c1', 'Consumer', powerToOxygenRecipe, {
+        type: ModuleId.LifeSupport,
+        maxOutput: 3,
+      });
+
+      system.installModule(consumer);
+      system.removeBattery(battery);
+      system.tick(1);
+
+      // Battery removed — consumer sees 0 Power → Idle
+      expect(resources.get(ResourceType.Oxygen)).toBe(0);
+      // Power still in the battery (untouched after removal)
+      expect(battery.get(ResourceType.Power)).toBeCloseTo(10);
     });
   });
 });

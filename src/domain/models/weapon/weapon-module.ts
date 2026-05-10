@@ -7,11 +7,13 @@ import type { ContainerMap } from '@/domain/models/resources/resource-container'
  * Extends ProductionModule — weapons participate in the normal tick cycle
  * (stepRamp, produce, drain) so power charging integrates with the production system.
  *
+ * `weaponKind` is a stable discriminant for type-narrowing without duck-typing.
  * `fire()` is the external trigger. It returns a DamagePacket when the weapon
  * is ready to fire, or undefined when it cannot (not charged, no ammo, etc.).
  * The caller is responsible for calling `applyDamage` on the target.
  */
 export interface WeaponModule extends ProductionModule {
+  readonly weaponKind: 'energy' | 'kinetic';
   readonly damageType: DamageType;
 
   /**

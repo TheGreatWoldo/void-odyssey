@@ -1,11 +1,11 @@
 import { Vector } from 'excalibur';
 import type { BackgroundActorArgs } from '../actors/background-actor-args';
-import { BackgroundSceneArgs } from '../background-scene-args';
+import type { IBackgroundSceneArgs } from '../background-scene-args';
 
 const SIZE_TO_SPEED_SCALE = 2;
 
 export function getVelocityForArgs(
-  sceneArgs: BackgroundSceneArgs,
+  sceneArgs: IBackgroundSceneArgs,
   actorArgs: BackgroundActorArgs
 ): Vector {
   const sizeRange = sceneArgs.maxSize - sceneArgs.minSize;

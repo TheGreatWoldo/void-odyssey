@@ -3,8 +3,6 @@ import { AmmoResourceType } from '@/domain/models/combat/ammo';
 import type { DamagePacket, DamageType } from '@/domain/models/combat/damage';
 import { createDamagePacket } from '@/domain/models/combat/damage';
 import type { ProductionModuleOptions } from '@/domain/models/module/production-module';
-import type { ModuleId } from '@/domain/models/module/production-module-id';
-import { ModuleSlotCosts } from '@/domain/models/module/production-module-id';
 import type { ModuleUpgrade } from '@/domain/models/module/production-module-upgrade';
 import { createResource } from '@/domain/models/resources/resource';
 import type { ContainerMap } from '@/domain/models/resources/resource-container';
@@ -12,6 +10,7 @@ import { err, ok, type Result } from '@/shared/result';
 import { isNullOrWhiteSpace } from '@/shared/string-utils';
 
 import type { WeaponModule } from './weapon-module';
+import { createWeaponModuleBase } from './weapon-module-base';
 
 /**
  * Options for creating a kinetic weapon module.
@@ -32,6 +31,8 @@ export interface KineticWeaponModuleOptions extends ProductionModuleOptions {
  * `fire()` checks for ammo, consumes one unit, and returns a DamagePacket.
  */
 export interface KineticWeaponModule extends WeaponModule {
+  readonly weaponKind: 'kinetic';
+
   /** The ammo variant currently loaded. Changed via `loadAmmo()`. */
   readonly loadedAmmoType: AmmoType;
 
@@ -46,7 +47,7 @@ export interface KineticWeaponModule extends WeaponModule {
  * Returns true when `m` is a KineticWeaponModule.
  */
 export function isKineticWeaponModule(m: WeaponModule): m is KineticWeaponModule {
-  return 'loadedAmmoType' in m;
+  return m.weaponKind === 'kinetic';
 }
 
 export function createKineticWeaponModule(
@@ -76,84 +77,15 @@ export function createKineticWeaponModule(
   if (rampRate < 0)
     return err(`KineticWeaponModule rampRate must be >= 0, got ${rampRate}`);
 
-  // --- Mutable state ---
+  const base = createWeaponModuleBase(id, {
+    initialCondition,
+    rampRate,
+    type,
+    maxOutput,
+    snapOutputToInteger,
+  });
 
-  type MutableModuleUpgrade = { -readonly [K in keyof ModuleUpgrade]: ModuleUpgrade[K] };
-
-  const upgradeMap = new Map<string, MutableModuleUpgrade>();
-
-  let cachedCostMultiplier: number | null = null;
-  let cachedUpgrades: readonly ModuleUpgrade[] | null = null;
-  let condition = initialCondition;
-  let throttle = 1;
-  let actualThrottle = 1;
-  let enabled = true;
   let loadedAmmoType: AmmoType = initialAmmoType;
-
-  // --- Upgrades ---
-
-  function addUpgrade(upgrade: ModuleUpgrade): Result<void, string> {
-    upgradeMap.set(upgrade.id, { ...upgrade });
-    cachedCostMultiplier = null;
-    cachedUpgrades = null;
-    return ok(undefined);
-  }
-
-  function setUpgradeEnabled(upgradeId: string, upgEnabled: boolean): Result<void, string> {
-    const upgrade = upgradeMap.get(upgradeId);
-    if (!upgrade) return err(`Upgrade '${upgradeId}' not found on module '${id}'`);
-    upgrade.enabled = upgEnabled;
-    cachedCostMultiplier = null;
-    cachedUpgrades = null;
-    return ok(undefined);
-  }
-
-  function computeCostMultiplier(): number {
-    if (cachedCostMultiplier !== null) return cachedCostMultiplier;
-    let cost = 1;
-    for (const u of upgradeMap.values()) {
-      if (!u.enabled) continue;
-      cost += u.costFactor - 1;
-    }
-    cachedCostMultiplier = Math.max(0, cost);
-    return cachedCostMultiplier;
-  }
-
-  // --- Throttle & ramp ---
-
-  function setThrottle(value: number): void {
-    if (snapOutputToInteger) {
-      const maxN = Math.floor(maxOutput);
-      if (maxN > 0) {
-        const snapped = Math.round(value * maxN) / maxN;
-        throttle = Math.max(0, Math.min(1, snapped));
-        return;
-      }
-    }
-    throttle = Math.max(0, Math.min(1, value));
-  }
-
-  function setCondition(value: number): Result<void, string> {
-    if (value < 0 || value > 1)
-      return err(`KineticWeaponModule condition must be in [0, 1], got ${value}`);
-    condition = value;
-    return ok(undefined);
-  }
-
-  function stepRamp(deltaTime: number): void {
-    if (rampRate === Infinity) {
-      actualThrottle = throttle;
-      return;
-    }
-    const step = rampRate * deltaTime;
-    if (actualThrottle < throttle) {
-      actualThrottle = Math.min(throttle, actualThrottle + step);
-    } else if (actualThrottle > throttle) {
-      actualThrottle = Math.max(throttle, actualThrottle - step);
-    }
-  }
-
-  // --- Weapon-specific ---
 
   function fire(containerMap: ContainerMap): DamagePacket | undefined {
     const ammoResourceType = AmmoResourceType[loadedAmmoType];
@@ -168,41 +100,37 @@ export function createKineticWeaponModule(
 
   return ok({
     id,
-    type,
+    type: base.type,
     name,
     storableType: 'module' as const,
-    slotCost: ModuleSlotCosts[type as ModuleId],
+    slotCost: base.slotCost,
+    weaponKind: 'kinetic' as const,
     damageType,
     maxOutput,
 
     get loadedAmmoType() { return loadedAmmoType; },
-    get condition() { return condition; },
+    get condition() { return base.condition; },
+    get upgrades() { return base.upgrades; },
+    get throttle() { return base.throttle; },
+    get actualThrottle() { return base.actualThrottle; },
+    get rampRate() { return base.rampRate; },
+    get enabled() { return base.enabled; },
 
-    get upgrades() {
-      if (!cachedUpgrades) cachedUpgrades = [...upgradeMap.values()] as readonly ModuleUpgrade[];
-      return cachedUpgrades;
-    },
+    enable: () => base.enable(),
+    disable: () => base.disable(),
 
-    get throttle() { return throttle; },
-    get actualThrottle() { return actualThrottle; },
-    get rampRate() { return rampRate; },
-    get enabled() { return enabled; },
+    loadAmmo: (ammoType: AmmoType) => { loadedAmmoType = ammoType; },
 
-    enable: () => { enabled = true; },
-    disable: () => { enabled = false; },
+    addUpgrade: (upgrade: ModuleUpgrade) => base.addUpgrade(upgrade),
+    setUpgradeEnabled: (upgradeId: string, enabled: boolean) => base.setUpgradeEnabled(upgradeId, enabled),
 
-    loadAmmo: (type: AmmoType) => { loadedAmmoType = type; },
+    get costMultiplier() { return base.costMultiplier; },
 
-    addUpgrade,
-    setUpgradeEnabled,
+    isOperational: () => base.isOperational(),
 
-    get costMultiplier() { return computeCostMultiplier(); },
-
-    isOperational: () => condition > 0 && enabled,
-
-    setCondition,
-    setThrottle,
-    stepRamp,
+    setCondition: (value: number) => base.setCondition(value),
+    setThrottle: (value: number) => base.setThrottle(value),
+    stepRamp: (deltaTime: number) => base.stepRamp(deltaTime),
 
     // Kinetic weapons do not charge or consume power — these are intentional no-ops.
     produce: (_deltaTime: number, _containerMap: ContainerMap) => {},

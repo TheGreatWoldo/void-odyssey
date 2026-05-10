@@ -1,9 +1,12 @@
+import type { ProductionSystemEvent } from '@/domain/events/production-system-events';
 import type { ProductionModule } from '@/domain/models/module/production-module';
 import { ModuleId } from '@/domain/models/module/production-module-id';
+import { createPowerContainer } from '@/domain/models/resources/power-container';
 import { createResource, ResourceType, TransientResourceTypes } from '@/domain/models/resources/resource';
 import type { ContainerMap, ResourceContainer } from '@/domain/models/resources/resource-container';
 import type { ItemContainerOptions } from '@/domain/models/storage/item-container';
 import { createItemContainer } from '@/domain/models/storage/item-container';
+import { createDomainEventCollector } from '@/shared/domain-event';
 import { generateId } from '@/shared/utils';
 
 export interface ProductionSystemOptions {
@@ -69,6 +72,26 @@ export interface ProductionSystem {
    * Disabled or zero-condition modules are skipped.
    */
   tick(deltaTime: number): void;
+
+  /**
+   * Adds a battery container to the internal PowerContainer.
+   * The battery's capacity is immediately available for power storage.
+   * Batteries are filled and drained left-to-right in the order they were added.
+   */
+  addBattery(battery: ResourceContainer): void;
+
+  /**
+   * Removes a previously added battery container.
+   * Any power stored inside it is lost (it leaves with the container).
+   */
+  removeBattery(battery: ResourceContainer): void;
+
+  /**
+   * Returns all domain events raised since the last call and clears the queue.
+   * Call this once per tick (or frame) in the application layer to react to
+   * module lifecycle changes and resource pressure.
+   */
+  drainEvents(): readonly ProductionSystemEvent[];
 }
 
 export function createProductionSystem(
@@ -81,11 +104,18 @@ export function createProductionSystem(
   } = options;
 
   const modules = createItemContainer({ ...moduleOptions, allowedTypes: ['module'] });
+  const eventCollector = createDomainEventCollector<ProductionSystemEvent>();
 
-  // Build ContainerMap once — all ResourceTypes point at the injected resource container.
-  // This is the contract expected by ProductionModule.produce() and .drain().
+  // Composite power store — batteries are added/removed at runtime via addBattery/removeBattery.
+  // Power is routed through this container; all other resource types point at the shared container.
+  const powerContainer = createPowerContainer();
+
+  // Build ContainerMap: Power routes to the composite power container; everything else to resources.
   const containerMap: ContainerMap = new Map(
-    (Object.values(ResourceType) as ResourceType[]).map(type => [type, resources])
+    (Object.values(ResourceType) as ResourceType[]).map(type => [
+      type,
+      type === ResourceType.Power ? powerContainer : resources,
+    ])
   );
 
   // Sorted tick list — maintained at install/remove time so tick never needs to sort.
@@ -107,6 +137,14 @@ export function createProductionSystem(
       tickOrder.push(module);
     }
 
+    eventCollector.push({
+      type: 'ModuleInstalled',
+      occurredOn: Date.now(),
+      systemId: id,
+      moduleId: module.id,
+      moduleType: module.type,
+    });
+
     return true;
   }
 
@@ -117,16 +155,29 @@ export function createProductionSystem(
     const idx = tickOrder.findIndex(m => m.id === moduleId);
     if (idx !== -1) tickOrder.splice(idx, 1);
 
+    eventCollector.push({
+      type: 'ModuleRemoved',
+      occurredOn: Date.now(),
+      systemId: id,
+      moduleId: removed.id,
+      moduleType: removed.type,
+    });
+
     return removed;
   }
 
-  function tick(deltaTime: number): void {
-    // Reset transient resources before any module produces — they represent
-    // instantaneous rates (shield output, thrust, etc.) not persistent pools.
+  function resetTransientResources(): void {
+    // Transient resources represent instantaneous rates (shield output, thrust, etc.)
+    // — not persistent pools. They are zeroed before each tick so modules always
+    // produce into a clean slate. ProductionSystem owns this enforcement.
     for (const type of TransientResourceTypes) {
       const current = resources.get(type);
       if (current > 0) resources.destroy(createResource(type, current));
     }
+  }
+
+  function tick(deltaTime: number): void {
+    resetTransientResources();
 
     for (const module of tickOrder) {
       module.stepRamp(deltaTime);
@@ -139,6 +190,15 @@ export function createProductionSystem(
       module.produce(deltaTime, containerMap);
       module.drain(containerMap);
     }
+
+    // Emit a pressure signal if the shared resource pool is completely full.
+    if (resources.freeSpace() === 0) {
+      eventCollector.push({
+        type: 'ResourceContainerFull',
+        occurredOn: Date.now(),
+        systemId: id,
+      });
+    }
   }
 
   const installedModules: InstalledModules = {
@@ -148,5 +208,14 @@ export function createProductionSystem(
     list: () => modules.list() as readonly ProductionModule[],
   };
 
-  return { id, modules: installedModules, installModule, removeModule, tick };
+  return {
+    id,
+    modules: installedModules,
+    installModule,
+    removeModule,
+    addBattery: (battery) => { powerContainer.addContainer(battery); },
+    removeBattery: (battery) => { powerContainer.removeContainer(battery); },
+    tick,
+    drainEvents: () => eventCollector.drain(),
+  };
 }

@@ -51,11 +51,24 @@ describe('createRecipe', () => {
       expect(fuelToVelocityRecipe.calculateFraction(sources, 1, 1)).toBe(0);
     });
 
-    it('ignores Power cost — returns 1 even when no Power source is provided', () => {
-      // No Power source in the map; calculateFraction must skip it
-      const sources = new Map();
+    it('returns 0 when Power is absent and recipe has a power cost', () => {
+      const sources = new Map<ResourceType, number>();
+
+      expect(powerOnlyRecipe.calculateFraction(sources, 1, 1)).toBe(0);
+    });
+
+    it('returns 1 when Power fully covers the cost', () => {
+      // Needs 4 Power/s × 1s = 4 Power
+      const sources = makeSources([{ id: ResourceType.Power, amount: 4 }]);
 
       expect(powerOnlyRecipe.calculateFraction(sources, 1, 1)).toBe(1);
+    });
+
+    it('returns a fractional value when Power partially covers the cost', () => {
+      // Needs 4 Power/s × 1s = 4; only 2 available → fraction 0.5
+      const sources = makeSources([{ id: ResourceType.Power, amount: 2 }]);
+
+      expect(powerOnlyRecipe.calculateFraction(sources, 1, 1)).toBeCloseTo(0.5);
     });
 
     it('applies deltaTime and costMultiplier to determine required amount', () => {
@@ -76,16 +89,33 @@ describe('createRecipe', () => {
       expect(fuelToVelocityRecipe.calculateFraction(shortSources, 1, 3)).toBe(0);
     });
 
-    it('skips Power in multi-cost recipe but still checks non-Power inputs', () => {
-      // Water is insufficient; Power is skipped
-      const noWater = makeSources([{ id: ResourceType.Water, amount: 0 }]);
+    it('returns 0 when non-Power input is insufficient regardless of Power', () => {
+      // Water is insufficient — binary gate fires before power fraction
+      const noWater = makeSources([
+        { id: ResourceType.Water, amount: 0 },
+        { id: ResourceType.Power, amount: 100 },
+      ]);
 
       expect(multiCostRecipe.calculateFraction(noWater, 1, 1)).toBe(0);
+    });
 
-      // Water is sufficient; Power is skipped → returns 1
-      const withWater = makeSources([{ id: ResourceType.Water, amount: 1 }]);
+    it('returns power fraction when non-Power inputs are sufficient but Power is partial', () => {
+      // Water OK (0.5/s needed), Power only half available (2/s needed, 1 available)
+      const sources = makeSources([
+        { id: ResourceType.Water, amount: 1 },
+        { id: ResourceType.Power, amount: 1 },
+      ]);
 
-      expect(multiCostRecipe.calculateFraction(withWater, 1, 1)).toBe(1);
+      expect(multiCostRecipe.calculateFraction(sources, 1, 1)).toBeCloseTo(0.5);
+    });
+
+    it('returns 1 when all inputs including Power are fully available', () => {
+      const sources = makeSources([
+        { id: ResourceType.Water, amount: 1 },
+        { id: ResourceType.Power, amount: 4 },
+      ]);
+
+      expect(multiCostRecipe.calculateFraction(sources, 1, 1)).toBe(1);
     });
   });
 
