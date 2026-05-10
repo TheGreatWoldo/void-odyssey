@@ -1,4 +1,4 @@
-import { useSetPhase } from '@/application/hooks/useSetPhase'
+import { useStartEngine } from '@/application/hooks/useStartEngine'
 import type { IGameService } from '@/shared/game-service'
 import type { SceneKey } from '@/shared/scene-key'
 import { useRouteContext } from '@tanstack/react-router'
@@ -12,9 +12,9 @@ interface GameCanvasProps {
 function GameCanvas({ sceneKey, children }: GameCanvasProps) {
   const { onCanvasReady } = useRouteContext({ from: '__root__' })
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const setPhase = useSetPhase()
   const [service, setService] = useState<IGameService | null>(null)
   const [engineError, setEngineError] = useState<string | null>(null)
+  const startEngine = useStartEngine(onCanvasReady)
 
   // onCanvasReady must be stable (defined outside any component). If it is
   // ever moved inside a component, wrap it with useCallback to prevent the
@@ -25,16 +25,16 @@ function GameCanvas({ sceneKey, children }: GameCanvasProps) {
     let cancelled = false
     let svc: IGameService | null = null
 
-    onCanvasReady(canvasRef.current)
-      .then(async (s) => {
+    // sceneKey is intentionally omitted from deps — the engine is started once.
+    // Scene navigation after startup is handled by MenuView via service.goToScene().
+    startEngine(canvasRef.current, sceneKey)
+      .then((s) => {
         if (cancelled) {
           s.dispose()
           return
         }
-        await s.goToScene(sceneKey)
         svc = s
         setService(s)
-        setPhase('menu')
       })
       .catch((err: unknown) => {
         console.error('Engine failed to start:', err)
@@ -45,7 +45,7 @@ function GameCanvas({ sceneKey, children }: GameCanvasProps) {
       cancelled = true
       svc?.dispose()
     }
-  }, [onCanvasReady, setPhase])
+  }, [startEngine]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (engineError) {
     return (

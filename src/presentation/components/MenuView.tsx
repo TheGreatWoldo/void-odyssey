@@ -1,32 +1,11 @@
 import { useMenuNavigation } from '@/application/hooks/useMenuNavigation'
+import type { MenuConfig } from '@/domain/models/menu/menu'
 import { MenuButton } from '@/presentation/components/MenuButton'
 import type { IGameService } from '@/shared/game-service'
-import type { SceneKey } from '@/shared/scene-key'
 import { useEffect } from 'react'
 
-interface MenuViewIconSlot {
-  icon: string
-  event?: string
-}
-
-interface MenuViewItem {
-  id: string
-  label: string
-  leadingIcons?: MenuViewIconSlot[]
-  trailingIcons?: MenuViewIconSlot[]
-  event?: string
-  sceneKey?: SceneKey
-  children?: MenuViewItem[]
-}
-
-interface MenuViewConfig {
-  sceneKey: SceneKey
-  title: string
-  items: MenuViewItem[]
-}
-
 interface MenuViewProps {
-  config: MenuViewConfig
+  config: MenuConfig
   service: IGameService
   onEvent: (event: string) => void
 }

@@ -1,11 +1,7 @@
 import { GameService } from '@/application/services/GameService'
-import { useGameStore } from '@/application/store/gameStore'
 import { ExcaliburEngineFacade } from '@/infrastructure/engine/engine'
-import { JsonMenuRepository } from '@/infrastructure/menu/JsonMenuRepository'
 import { createAppRouter } from '@/infrastructure/router/router'
 import { RouterProvider } from '@tanstack/react-router'
-
-useGameStore.getState().setMenuConfig(new JsonMenuRepository().getMenuConfig())
 
 async function onCanvasReady(canvas: HTMLCanvasElement): Promise<GameService> {
   const facade = new ExcaliburEngineFacade(canvas)
