@@ -6,6 +6,8 @@ This is a TypeScript game project using React, Excalibur, Zustand, Immer, i18nex
 
 The project follows Domain-Driven Design (DDD). See [ddd-architecture.md](ddd-architecture.md) for the full layer breakdown.
 
+**Rules priority: import layer boundaries > path alias > file extension > naming conventions.**
+
 **Import rules (strictly enforced):**
 
 | Layer | May import from |
@@ -16,9 +18,13 @@ The project follows Domain-Driven Design (DDD). See [ddd-architecture.md](ddd-ar
 | `presentation/` | `application/hooks/`, `shared/` |
 | `shared/` | nothing from the project |
 
+## Self-Review After Implementation
+
+After implementing any non-trivial change, run a self-review against the checklist in `.github/prompts/review.prompt.md` before reporting done. Scope the review to the files and folders the user explicitly added to the context — do not review unrelated files. Fix all violations found, then verify the fixes introduced no new issues. Only report completion once no violations remain.
+
 ## Path alias
 
-Use `@/` for all imports from `src/` across all layers unless explicitly stated otherwise:
+Use `@/` for all imports from `src/` across all layers. The only exception is relative imports within the same directory (e.g. `./resource`):
 ```ts
 import { useGameStore } from '@/application/store/gameStore'
 ```
