@@ -56,10 +56,16 @@ function GameCanvas({ sceneKey, children }: GameCanvasProps) {
   }
 
   return (
-    <>
-      <canvas ref={canvasRef} className="block w-full h-full" />
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 0,
+      }}
+    >
+      <canvas ref={canvasRef} style={{ width: '100%', height: '100%', display: 'block' }} />
       {service && children?.(service)}
-    </>
+    </div>
   )
 }
 

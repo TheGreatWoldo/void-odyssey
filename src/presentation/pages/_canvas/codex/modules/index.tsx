@@ -47,9 +47,10 @@ function CodexModulesPage() {
               key={id}
               to="/codex/modules/$moduleId"
               params={{ moduleId: id }}
-              className="pointer-events-auto flex items-center border border-white/20 bg-black/90 px-5 py-4 uppercase tracking-wider transition-colors hover:border-white/40 hover:text-white cursor-pointer"
+              className="pointer-events-auto flex flex-col border border-white/20 bg-black/90 px-5 py-4 uppercase tracking-wider transition-colors hover:border-white/40 hover:text-white cursor-pointer"
             >
               <span className="text-white/90 text-base">{ModuleCatalog[id].displayName}</span>
+              <span className="text-white/30 text-xs mt-1 self-end">{ModuleCatalog[id].category}</span>
             </Link>
           ))}
         </div>

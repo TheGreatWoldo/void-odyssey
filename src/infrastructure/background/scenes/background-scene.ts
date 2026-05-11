@@ -13,7 +13,7 @@ const PRESEED_WINDOW_MS = 60_000;
 export class BackgroundScene extends Scene {
   private elapsed = 0;
   private spawnIntervalMs: number;
-  protected sceneArgs: BackgroundSceneArgs;
+  sceneArgs: BackgroundSceneArgs;
   protected readonly strategies: BackgroundStrategies;
 
   constructor(sceneArgs: BackgroundSceneArgs, strategies: BackgroundStrategies) {

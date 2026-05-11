@@ -59,6 +59,11 @@ function CodexModuleDetailPage() {
               <span className="text-white/40 text-xs uppercase tracking-widest">Slot Cost</span>
               <span className="text-white/90 text-base uppercase tracking-wider">{ModuleSlotCosts[moduleId as ModuleId]}</span>
             </div>
+
+            <div className="border border-white/20 bg-black/90 px-5 py-4 flex flex-col gap-1 col-span-2">
+              <span className="text-white/40 text-xs uppercase tracking-widest">Primary Output</span>
+              <span className="text-white/90 text-base uppercase tracking-wider">{meta.primaryOutput}</span>
+            </div>
           </div>
 
         </div>

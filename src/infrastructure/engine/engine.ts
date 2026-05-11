@@ -28,31 +28,39 @@ const backgroundStrategies = {
 }
 
 export class ExcaliburEngineFacade implements IGameEngineFacade {
-  private readonly engine: Engine
+  private engine: Engine
+  private readonly _canvas: HTMLCanvasElement
 
   constructor(canvas: HTMLCanvasElement) {
-    this.engine = new Engine({
-      canvasElement: canvas,
-      displayMode: DisplayMode.FitContainerAndFill,
+    this._canvas = canvas
+    this.engine = this.buildEngine()
+  }
+
+  private buildEngine(): Engine {
+    const engine = new Engine({
+      canvasElement: this._canvas,
+      displayMode: DisplayMode.FillContainer,
       backgroundColor: Color.fromHex('#000000'),
       suppressPlayButton: SUPPRESS_PLAY_BUTTON,
     })
 
     for (const [key, args] of Object.entries(backgroundSceneArgsCatalog)) {
-      this.engine.addScene(key, new BackgroundScene(args, backgroundStrategies))
+      engine.addScene(key, new BackgroundScene(args, backgroundStrategies))
     }
+
+    return engine
   }
 
   get canvas(): HTMLCanvasElement {
-    return this.engine.canvas
+    return this._canvas
   }
 
   setCanvasInteractive(interactive: boolean): void {
-    this.engine.canvas.style.pointerEvents = interactive ? 'auto' : 'none'
+    this._canvas.style.pointerEvents = interactive ? 'auto' : 'none'
   }
 
-  startEngine(): Promise<void> {
-    return this.engine.start()
+  async startEngine(): Promise<void> {
+    await this.engine.start()
   }
 
   goToScene(key: SceneKey): Promise<void> {
