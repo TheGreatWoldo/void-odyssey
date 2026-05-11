@@ -64,6 +64,7 @@ export class ExcaliburEngineFacade implements IGameEngineFacade {
   }
 
   goToScene(key: SceneKey): Promise<void> {
+    if (this.engine.currentSceneName === key) return Promise.resolve()
     return this.engine.goToScene(key)
   }
 

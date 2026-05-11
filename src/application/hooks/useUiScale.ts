@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 
-const VIRTUAL_WIDTH = 1920
-const VIRTUAL_HEIGHT = 1080
+const VIRTUAL_WIDTH = 1600
+const VIRTUAL_HEIGHT = 900
 
 function computeScale(): number {
   return Math.min(window.innerWidth / VIRTUAL_WIDTH, window.innerHeight / VIRTUAL_HEIGHT)

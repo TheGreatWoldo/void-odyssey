@@ -24,11 +24,10 @@ export function RootLayout({ children }: RootLayoutProps) {
     >
       <div
         style={{
-          width: 1920,
-          height: 1080,
+          width: 1600,
+          height: 900,
           flexShrink: 0,
-          transformOrigin: 'center',
-          transform: `scale(${scale})`,
+          zoom: scale,
           pointerEvents: 'auto',
         }}
       >
