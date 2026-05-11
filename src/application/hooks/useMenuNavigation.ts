@@ -23,10 +23,19 @@ export interface MenuNavigation {
   pop(): void
 }
 
-export function useMenuNavigation(config: MenuConfig): MenuNavigation {
-  const [stack, setStack] = useState<MenuFrame[]>([
-    { items: config.items, sceneKey: config.sceneKey, title: config.title },
-  ])
+export function useMenuNavigation(config: MenuConfig, initialItemId?: string): MenuNavigation {
+  const [stack, setStack] = useState<MenuFrame[]>(() => {
+    const root: MenuFrame = { items: config.items, sceneKey: config.sceneKey, title: config.title }
+
+    if (initialItemId) {
+      const item = config.items.find((i) => i.id === initialItemId)
+      if (item?.children?.length && item.sceneKey) {
+        return [root, { items: item.children, sceneKey: item.sceneKey, title: item.label }]
+      }
+    }
+
+    return [root]
+  })
 
   const current = stack[stack.length - 1]
 

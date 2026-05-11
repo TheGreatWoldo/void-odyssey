@@ -8,10 +8,11 @@ interface MenuViewProps {
   config: MenuConfig
   service: IGameService
   onEvent: (event: string) => void
+  initialMenuId?: string
 }
 
-export function MenuView({ config, service, onEvent }: MenuViewProps) {
-  const nav = useMenuNavigation(config)
+export function MenuView({ config, service, onEvent, initialMenuId }: MenuViewProps) {
+  const nav = useMenuNavigation(config, initialMenuId)
 
   // Switch background scene when the level changes.
   useEffect(() => {
@@ -24,10 +25,23 @@ export function MenuView({ config, service, onEvent }: MenuViewProps) {
     <div className="pointer-events-none absolute inset-0 flex flex-col">
       {/* Top title bar */}
       {nav.currentTitle && (
-        <div className="pointer-events-none flex items-center justify-center border-b border-white/20 bg-black/30 px-6 py-3 backdrop-blur-[2px]">
-          <h2 className="text-[2.5rem] font-bold tracking-widest text-white/80 uppercase">
+        <div className="pointer-events-none flex items-center border-b border-white/20 bg-black/30 px-6 py-3 backdrop-blur-[2px]">
+          <div className="w-32">
+            {nav.canGoBack && (
+              <button
+                onClick={nav.pop}
+                className="pointer-events-auto flex items-center gap-2 text-white/60 hover:text-white transition-colors uppercase tracking-widest text-sm -m-3 p-3"
+              >
+                ← Back
+              </button>
+            )}
+          </div>
+
+          <h2 className="flex-1 text-center text-[2.5rem] font-bold tracking-widest text-white/80 uppercase">
             {nav.currentTitle}
           </h2>
+
+          <div className="w-32" />
         </div>
       )}
 
@@ -52,14 +66,7 @@ export function MenuView({ config, service, onEvent }: MenuViewProps) {
           />
         ))}
 
-        {/* Back button — same style as menu buttons, at the bottom */}
-        {nav.canGoBack && (
-          <MenuButton
-            label="Back"
-            leadingIcons={[{ icon: 'ChevronLeft' }]}
-            onClick={nav.pop}
-          />
-        )}
+
       </div>
       </div>
 

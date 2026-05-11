@@ -9,50 +9,139 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './../../presentation/pages/__root'
-import { Route as IndexRouteImport } from './../../presentation/pages/index'
+import { Route as CanvasRouteImport } from './../../presentation/pages/_canvas'
+import { Route as CanvasIndexRouteImport } from './../../presentation/pages/_canvas/index'
+import { Route as CanvasCodexUpgradesRouteImport } from './../../presentation/pages/_canvas/codex/upgrades'
+import { Route as CanvasCodexModulesIndexRouteImport } from './../../presentation/pages/_canvas/codex/modules/index'
+import { Route as CanvasCodexModulesModuleIdRouteImport } from './../../presentation/pages/_canvas/codex/modules/$moduleId'
 
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const CanvasRoute = CanvasRouteImport.update({
+  id: '/_canvas',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CanvasIndexRoute = CanvasIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => CanvasRoute,
+} as any)
+const CanvasCodexUpgradesRoute = CanvasCodexUpgradesRouteImport.update({
+  id: '/codex/upgrades',
+  path: '/codex/upgrades',
+  getParentRoute: () => CanvasRoute,
+} as any)
+const CanvasCodexModulesIndexRoute = CanvasCodexModulesIndexRouteImport.update({
+  id: '/codex/modules/',
+  path: '/codex/modules/',
+  getParentRoute: () => CanvasRoute,
+} as any)
+const CanvasCodexModulesModuleIdRoute =
+  CanvasCodexModulesModuleIdRouteImport.update({
+    id: '/codex/modules/$moduleId',
+    path: '/codex/modules/$moduleId',
+    getParentRoute: () => CanvasRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
+  '/': typeof CanvasIndexRoute
+  '/codex/upgrades': typeof CanvasCodexUpgradesRoute
+  '/codex/modules/$moduleId': typeof CanvasCodexModulesModuleIdRoute
+  '/codex/modules/': typeof CanvasCodexModulesIndexRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
+  '/': typeof CanvasIndexRoute
+  '/codex/upgrades': typeof CanvasCodexUpgradesRoute
+  '/codex/modules/$moduleId': typeof CanvasCodexModulesModuleIdRoute
+  '/codex/modules': typeof CanvasCodexModulesIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
+  '/_canvas': typeof CanvasRouteWithChildren
+  '/_canvas/': typeof CanvasIndexRoute
+  '/_canvas/codex/upgrades': typeof CanvasCodexUpgradesRoute
+  '/_canvas/codex/modules/$moduleId': typeof CanvasCodexModulesModuleIdRoute
+  '/_canvas/codex/modules/': typeof CanvasCodexModulesIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/codex/upgrades'
+    | '/codex/modules/$moduleId'
+    | '/codex/modules/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/codex/upgrades' | '/codex/modules/$moduleId' | '/codex/modules'
+  id:
+    | '__root__'
+    | '/_canvas'
+    | '/_canvas/'
+    | '/_canvas/codex/upgrades'
+    | '/_canvas/codex/modules/$moduleId'
+    | '/_canvas/codex/modules/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
+  CanvasRoute: typeof CanvasRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
+    '/_canvas': {
+      id: '/_canvas'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof CanvasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_canvas/': {
+      id: '/_canvas/'
       path: '/'
       fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof CanvasIndexRouteImport
+      parentRoute: typeof CanvasRoute
+    }
+    '/_canvas/codex/upgrades': {
+      id: '/_canvas/codex/upgrades'
+      path: '/codex/upgrades'
+      fullPath: '/codex/upgrades'
+      preLoaderRoute: typeof CanvasCodexUpgradesRouteImport
+      parentRoute: typeof CanvasRoute
+    }
+    '/_canvas/codex/modules/': {
+      id: '/_canvas/codex/modules/'
+      path: '/codex/modules'
+      fullPath: '/codex/modules/'
+      preLoaderRoute: typeof CanvasCodexModulesIndexRouteImport
+      parentRoute: typeof CanvasRoute
+    }
+    '/_canvas/codex/modules/$moduleId': {
+      id: '/_canvas/codex/modules/$moduleId'
+      path: '/codex/modules/$moduleId'
+      fullPath: '/codex/modules/$moduleId'
+      preLoaderRoute: typeof CanvasCodexModulesModuleIdRouteImport
+      parentRoute: typeof CanvasRoute
     }
   }
 }
 
+interface CanvasRouteChildren {
+  CanvasIndexRoute: typeof CanvasIndexRoute
+  CanvasCodexUpgradesRoute: typeof CanvasCodexUpgradesRoute
+  CanvasCodexModulesModuleIdRoute: typeof CanvasCodexModulesModuleIdRoute
+  CanvasCodexModulesIndexRoute: typeof CanvasCodexModulesIndexRoute
+}
+
+const CanvasRouteChildren: CanvasRouteChildren = {
+  CanvasIndexRoute: CanvasIndexRoute,
+  CanvasCodexUpgradesRoute: CanvasCodexUpgradesRoute,
+  CanvasCodexModulesModuleIdRoute: CanvasCodexModulesModuleIdRoute,
+  CanvasCodexModulesIndexRoute: CanvasCodexModulesIndexRoute,
+}
+
+const CanvasRouteWithChildren =
+  CanvasRoute._addFileChildren(CanvasRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
+  CanvasRoute: CanvasRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

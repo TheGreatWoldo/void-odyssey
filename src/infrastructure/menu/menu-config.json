@@ -77,6 +77,18 @@
           "label": "Bestiary",
           "leadingIcons": [{ "icon": "Bug" }],
           "event": "codex:bestiary"
+        },
+        {
+          "id": "modules",
+          "label": "Modules",
+          "leadingIcons": [{ "icon": "Cpu" }],
+          "event": "codex:modules"
+        },
+        {
+          "id": "upgrades",
+          "label": "Upgrades",
+          "leadingIcons": [{ "icon": "Wrench" }],
+          "event": "codex:upgrades"
         }
       ]
     },
