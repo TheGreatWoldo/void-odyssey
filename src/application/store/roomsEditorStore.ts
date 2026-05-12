@@ -221,6 +221,35 @@ export const useRoomsEditorStore = create<RoomsEditorState>()(
     setMapSize: (width, height) =>
       set((state) => {
         if (!state.data) return
+
+        const allSections = state.data.rooms.flatMap((r) => r.sections)
+
+        if (allSections.length > 0) {
+          const minX = Math.min(...allSections.map((s) => s.position.x))
+          const minY = Math.min(...allSections.map((s) => s.position.y))
+          const maxX = Math.max(...allSections.map((s) => s.position.x))
+          const maxY = Math.max(...allSections.map((s) => s.position.y))
+
+          const layoutW = maxX - minX + 1
+          const layoutH = maxY - minY + 1
+
+          const targetOriginX = Math.floor((width - layoutW) / 2)
+          const targetOriginY = Math.floor((height - layoutH) / 2)
+
+          const dx = targetOriginX - minX
+          const dy = targetOriginY - minY
+
+          if (dx !== 0 || dy !== 0) {
+            for (const room of state.data.rooms) {
+              for (const section of room.sections) {
+                section.position.x += dx
+                section.position.y += dy
+              }
+              recalcRoomBounds(room)
+            }
+          }
+        }
+
         state.data.mapSize = { width, height }
       }),
 
