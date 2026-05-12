@@ -5,24 +5,8 @@ import { immer } from 'zustand/middleware/immer'
 
 export type { EditorTool }
 
-const ROOM_COLORS = [
-  '#fadea5', // warm tan
-  '#ba0502', // red
-  '#fa6b4b', // orange
-  '#4ade80', // green
-  '#60a5fa', // blue
-  '#c084fc', // purple
-  '#f472b6', // pink
-  '#34d399', // teal
-  '#fbbf24', // amber
-  '#a78bfa', // violet
-  '#f87171', // light red
-  '#86efac', // light green
-  '#93c5fd', // light blue
-  '#fcd34d', // yellow
-  '#6ee7b7', // mint
-  '#fb923c', // orange-400
-]
+const AUTO_COLORS = ['#f59e0b', '#3b82f6', '#ef4444', '#10b981']
+export { AUTO_COLORS }
 
 const OPPOSING: Record<keyof Doors, keyof Doors> = {
   left: 'right',
@@ -83,32 +67,31 @@ function sectionAt(
 interface RoomsEditorState {
   data: RoomsLayout | null
   tool: EditorTool
-  selectedRoomIndex: number
+  selectedColor: string
 
   loadLayout: (layout: RoomsLayout) => void
   newLayout: (name: string, width: number, height: number) => void
   paintSection: (x: number, y: number) => void
   eraseSection: (x: number, y: number) => void
   toggleDoor: (x: number, y: number, side: keyof Doors) => void
-  addRoom: () => void
+  removeDoor: (x: number, y: number, side: keyof Doors) => void
   removeRoom: (index: number) => void
-  setRoomColor: (index: number, color: string) => void
   setMapSize: (width: number, height: number) => void
   setName: (name: string) => void
   setTool: (tool: EditorTool) => void
-  setSelectedRoom: (index: number) => void
+  setSelectedColor: (color: string) => void
 }
 
 export const useRoomsEditorStore = create<RoomsEditorState>()(
   immer((set) => ({
     data: null,
-    tool: 'paint',
-    selectedRoomIndex: 0,
+    tool: 'room',
+    selectedColor: AUTO_COLORS[0],
 
     loadLayout: (layout) =>
       set((state) => {
         state.data = layout
-        state.selectedRoomIndex = layout.rooms.length > 0 ? layout.rooms[0].index : 0
+        state.selectedColor = AUTO_COLORS[0]
       }),
 
     newLayout: (name, width, height) =>
@@ -121,7 +104,6 @@ export const useRoomsEditorStore = create<RoomsEditorState>()(
           mapSize: { width, height },
           rooms: [],
         }
-        state.selectedRoomIndex = 0
       }),
 
     paintSection: (x, y) =>
@@ -131,18 +113,43 @@ export const useRoomsEditorStore = create<RoomsEditorState>()(
         const already = sectionAt(state.data, x, y)
         if (already) return
 
-        const room = state.data.rooms.find((r) => r.index === state.selectedRoomIndex)
-        if (!room) return
+        // Find an adjacent room that shares the selected color
+        let targetRoom: Room | undefined
+        for (const { dx, dy } of Object.values(NEIGHBOR_OFFSET)) {
+          const hit = sectionAt(state.data, x + dx, y + dy)
+          if (hit && hit.room.color === state.selectedColor) {
+            targetRoom = hit.room
+            break
+          }
+        }
+
+        // No adjacent same-color room — create one
+        if (!targetRoom) {
+          const nextIndex =
+            state.data.rooms.length === 0
+              ? 0
+              : Math.max(...state.data.rooms.map((r) => r.index)) + 1
+
+          const newRoom: Room = {
+            index: nextIndex,
+            color: state.selectedColor,
+            position: { x, y },
+            size: { width: 1, height: 1 },
+            sections: [],
+          }
+          state.data.rooms.push(newRoom)
+          targetRoom = newRoom
+        }
 
         const section: Section = {
-          room: room.index,
-          index: nextSectionIndex(room),
+          room: targetRoom.index,
+          index: nextSectionIndex(targetRoom),
           position: { x, y },
           doors: { left: false, right: false, top: false, bottom: false },
         }
 
-        room.sections.push(section)
-        recalcRoomBounds(room)
+        targetRoom.sections.push(section)
+        recalcRoomBounds(targetRoom)
       }),
 
     eraseSection: (x, y) =>
@@ -154,7 +161,12 @@ export const useRoomsEditorStore = create<RoomsEditorState>()(
 
           if (idx !== -1) {
             room.sections.splice(idx, 1)
-            recalcRoomBounds(room)
+            if (room.sections.length === 0) {
+              const roomIdx = state.data.rooms.indexOf(room)
+              state.data.rooms.splice(roomIdx, 1)
+            } else {
+              recalcRoomBounds(room)
+            }
             return
           }
         }
@@ -178,27 +190,22 @@ export const useRoomsEditorStore = create<RoomsEditorState>()(
         }
       }),
 
-    addRoom: () =>
+    removeDoor: (x, y, side) =>
       set((state) => {
         if (!state.data) return
 
-        const nextIndex =
-          state.data.rooms.length === 0
-            ? 0
-            : Math.max(...state.data.rooms.map((r) => r.index)) + 1
+        const hit = sectionAt(state.data, x, y)
+        if (!hit) return
 
-        const color = ROOM_COLORS[nextIndex % ROOM_COLORS.length]
+        const { section } = hit
+        section.doors[side] = false
 
-        const room: Room = {
-          index: nextIndex,
-          color,
-          position: { x: 0, y: 0 },
-          size: { width: 0, height: 0 },
-          sections: [],
+        const offset = NEIGHBOR_OFFSET[side]
+        const neighbor = sectionAt(state.data, x + offset.dx, y + offset.dy)
+
+        if (neighbor) {
+          neighbor.section.doors[OPPOSING[side]] = false
         }
-
-        state.data.rooms.push(room)
-        state.selectedRoomIndex = nextIndex
       }),
 
     removeRoom: (index) =>
@@ -209,19 +216,6 @@ export const useRoomsEditorStore = create<RoomsEditorState>()(
         if (roomIdx === -1) return
 
         state.data.rooms.splice(roomIdx, 1)
-
-        if (state.selectedRoomIndex === index) {
-          state.selectedRoomIndex =
-            state.data.rooms.length > 0 ? state.data.rooms[0].index : 0
-        }
-      }),
-
-    setRoomColor: (index, color) =>
-      set((state) => {
-        if (!state.data) return
-
-        const room = state.data.rooms.find((r) => r.index === index)
-        if (room) room.color = color
       }),
 
     setMapSize: (width, height) =>
@@ -241,9 +235,9 @@ export const useRoomsEditorStore = create<RoomsEditorState>()(
         state.tool = tool
       }),
 
-    setSelectedRoom: (index) =>
+    setSelectedColor: (color) =>
       set((state) => {
-        state.selectedRoomIndex = index
+        state.selectedColor = color
       }),
   }))
 )

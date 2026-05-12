@@ -6,20 +6,19 @@ import { useState } from 'react'
 export function useRoomsEditor() {
   const data = useRoomsEditorStore((s) => s.data)
   const tool = useRoomsEditorStore((s) => s.tool)
-  const selectedRoomIndex = useRoomsEditorStore((s) => s.selectedRoomIndex)
+  const selectedColor = useRoomsEditorStore((s) => s.selectedColor)
 
   const loadLayout = useRoomsEditorStore((s) => s.loadLayout)
   const newLayout = useRoomsEditorStore((s) => s.newLayout)
   const paintSection = useRoomsEditorStore((s) => s.paintSection)
   const eraseSection = useRoomsEditorStore((s) => s.eraseSection)
   const toggleDoor = useRoomsEditorStore((s) => s.toggleDoor)
-  const addRoom = useRoomsEditorStore((s) => s.addRoom)
+  const removeDoor = useRoomsEditorStore((s) => s.removeDoor)
   const removeRoom = useRoomsEditorStore((s) => s.removeRoom)
-  const setRoomColor = useRoomsEditorStore((s) => s.setRoomColor)
   const setMapSize = useRoomsEditorStore((s) => s.setMapSize)
   const setName = useRoomsEditorStore((s) => s.setName)
   const setTool = useRoomsEditorStore((s) => s.setTool)
-  const setSelectedRoom = useRoomsEditorStore((s) => s.setSelectedRoom)
+  const setSelectedColor = useRoomsEditorStore((s) => s.setSelectedColor)
 
   const [lastError, setLastError] = useState<string | null>(null)
 
@@ -48,20 +47,19 @@ export function useRoomsEditor() {
   return {
     data,
     tool,
-    selectedRoomIndex,
+    selectedColor,
     lastError,
     dismissError: () => setLastError(null),
     newLayout,
     paintSection,
     eraseSection,
     toggleDoor,
-    addRoom,
+    removeDoor,
     removeRoom,
-    setRoomColor,
     setMapSize,
     setName,
     setTool,
-    setSelectedRoom,
+    setSelectedColor,
     openFile,
     save,
   }

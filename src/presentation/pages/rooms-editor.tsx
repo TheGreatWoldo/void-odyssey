@@ -15,20 +15,19 @@ function RoomsEditorPage() {
   const {
     data,
     tool,
-    selectedRoomIndex,
+    selectedColor,
     lastError,
     dismissError,
     newLayout,
     paintSection,
     eraseSection,
     toggleDoor,
-    addRoom,
+    removeDoor,
     removeRoom,
-    setRoomColor,
     setMapSize,
     setName,
     setTool,
-    setSelectedRoom,
+    setSelectedColor,
     openFile,
     save,
   } = useRoomsEditor()
@@ -43,13 +42,11 @@ function RoomsEditorPage() {
       <RoomsEditorToolbar
         name={data?.name ?? ''}
         mapSize={data?.mapSize ?? { width: DEFAULT_MAP_WIDTH, height: DEFAULT_MAP_HEIGHT }}
-        tool={tool}
         onNewLayout={handleNew}
         onOpenFile={openFile}
         onSave={save}
         onNameChange={setName}
         onMapSizeChange={setMapSize}
-        onToolChange={setTool}
       />
 
       {lastError && (
@@ -68,11 +65,15 @@ function RoomsEditorPage() {
 
         <RoomsPalette
           rooms={data?.rooms ?? []}
-          selectedRoomIndex={selectedRoomIndex}
-          onSelectRoom={setSelectedRoom}
-          onAddRoom={addRoom}
+          selectedColor={selectedColor}
+          tool={tool}
+          mapSize={data?.mapSize ?? { width: DEFAULT_MAP_WIDTH, height: DEFAULT_MAP_HEIGHT }}
+          onSelectColor={(color) => {
+            setSelectedColor(color)
+            if (tool !== 'room') setTool('room')
+          }}
           onRemoveRoom={removeRoom}
-          onColorChange={setRoomColor}
+          onToolChange={setTool}
         />
 
         <div className="flex-1 overflow-hidden bg-blue-950 flex items-center justify-center p-4">
@@ -80,10 +81,11 @@ function RoomsEditorPage() {
             <RoomsEditorCanvas
               layout={data}
               tool={tool}
-              selectedRoomIndex={selectedRoomIndex}
+              selectedColor={selectedColor}
               onPaint={paintSection}
               onErase={eraseSection}
               onToggleDoor={toggleDoor}
+              onRemoveDoor={removeDoor}
             />
           ) : (
             <div className="flex flex-col items-center justify-center h-full gap-4 text-slate-500">

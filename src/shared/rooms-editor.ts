@@ -1,4 +1,4 @@
-export type EditorTool = 'paint' | 'erase' | 'door'
+export type EditorTool = 'room' | 'erase' | 'door'
 
 export interface RoomDoors {
   left: boolean

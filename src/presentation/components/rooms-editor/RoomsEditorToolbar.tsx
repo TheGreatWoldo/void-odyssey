@@ -1,34 +1,23 @@
-import type { EditorTool } from '@/shared/rooms-editor';
 import { useRef } from 'react';
 
 interface Props {
   name: string
   mapSize: { width: number; height: number }
-  tool: EditorTool
   onNewLayout: () => void
   onOpenFile: (file: File) => void
   onSave: () => void
   onNameChange: (name: string) => void
   onMapSizeChange: (width: number, height: number) => void
-  onToolChange: (tool: EditorTool) => void
 }
-
-const TOOLS: { key: EditorTool; label: string; title: string }[] = [
-  { key: 'paint', label: 'Paint', title: 'Paint sections onto a room' },
-  { key: 'erase', label: 'Erase', title: 'Remove sections from the grid' },
-  { key: 'door', label: 'Door', title: 'Toggle door edges between sections' },
-]
 
 export function RoomsEditorToolbar({
   name,
   mapSize,
-  tool,
   onNewLayout,
   onOpenFile,
   onSave,
   onNameChange,
   onMapSizeChange,
-  onToolChange,
 }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -106,27 +95,6 @@ export function RoomsEditorToolbar({
           onChange={(e) => onMapSizeChange(mapSize.width, Number(e.target.value))}
           className="text-xs bg-slate-800 border border-slate-600 text-slate-200 rounded px-2 py-1 w-14 focus:outline-none focus:border-slate-400"
         />
-      </div>
-
-      <div className="w-px h-6 bg-slate-700" />
-
-      {/* Tool selector */}
-      <div className="flex items-center gap-1">
-        {TOOLS.map((t) => (
-          <button
-            key={t.key}
-            title={t.title}
-            onClick={() => onToolChange(t.key)}
-            className={[
-              'text-xs px-3 py-1.5 rounded transition-colors',
-              tool === t.key
-                ? 'bg-blue-600 text-white'
-                : 'text-slate-300 hover:text-white bg-slate-700 hover:bg-slate-600',
-            ].join(' ')}
-          >
-            {t.label}
-          </button>
-        ))}
       </div>
 
     </div>
