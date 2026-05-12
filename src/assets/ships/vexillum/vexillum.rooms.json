@@ -1,0 +1,1552 @@
+{
+  "version": "1.0",
+  "name": "vexillum",
+  "layoutSectionSize": 4,
+  "mapSectionSize": 40,
+  "mapSize": {
+    "width": 12,
+    "height": 14
+  },
+  "rooms": [
+    {
+      "index": 0,
+      "color": "#ba0502",
+      "position": {
+        "x": 3,
+        "y": 0
+      },
+      "size": {
+        "width": 1,
+        "height": 2
+      },
+      "sections": [
+        {
+          "room": 0,
+          "index": 0,
+          "position": {
+            "x": 3,
+            "y": 0
+          },
+          "doors": {
+            "left": false,
+            "right": false,
+            "top": false,
+            "bottom": false
+          }
+        },
+        {
+          "room": 0,
+          "index": 1,
+          "position": {
+            "x": 3,
+            "y": 1
+          },
+          "doors": {
+            "left": false,
+            "right": false,
+            "top": false,
+            "bottom": true
+          }
+        }
+      ]
+    },
+    {
+      "index": 1,
+      "color": "#ba0502",
+      "position": {
+        "x": 8,
+        "y": 0
+      },
+      "size": {
+        "width": 1,
+        "height": 2
+      },
+      "sections": [
+        {
+          "room": 1,
+          "index": 0,
+          "position": {
+            "x": 8,
+            "y": 0
+          },
+          "doors": {
+            "left": false,
+            "right": false,
+            "top": false,
+            "bottom": false
+          }
+        },
+        {
+          "room": 1,
+          "index": 1,
+          "position": {
+            "x": 8,
+            "y": 1
+          },
+          "doors": {
+            "left": false,
+            "right": false,
+            "top": false,
+            "bottom": true
+          }
+        }
+      ]
+    },
+    {
+      "index": 2,
+      "color": "#fadea5",
+      "position": {
+        "x": 4,
+        "y": 1
+      },
+      "size": {
+        "width": 1,
+        "height": 2
+      },
+      "sections": [
+        {
+          "room": 2,
+          "index": 0,
+          "position": {
+            "x": 4,
+            "y": 1
+          },
+          "doors": {
+            "left": false,
+            "right": false,
+            "top": false,
+            "bottom": false
+          }
+        },
+        {
+          "room": 2,
+          "index": 1,
+          "position": {
+            "x": 4,
+            "y": 2
+          },
+          "doors": {
+            "left": true,
+            "right": false,
+            "top": false,
+            "bottom": false
+          }
+        }
+      ]
+    },
+    {
+      "index": 3,
+      "color": "#fadea5",
+      "position": {
+        "x": 7,
+        "y": 1
+      },
+      "size": {
+        "width": 1,
+        "height": 2
+      },
+      "sections": [
+        {
+          "room": 3,
+          "index": 0,
+          "position": {
+            "x": 7,
+            "y": 1
+          },
+          "doors": {
+            "left": false,
+            "right": false,
+            "top": false,
+            "bottom": false
+          }
+        },
+        {
+          "room": 3,
+          "index": 1,
+          "position": {
+            "x": 7,
+            "y": 2
+          },
+          "doors": {
+            "left": false,
+            "right": true,
+            "top": false,
+            "bottom": false
+          }
+        }
+      ]
+    },
+    {
+      "index": 4,
+      "color": "#fa6b4b",
+      "position": {
+        "x": 2,
+        "y": 2
+      },
+      "size": {
+        "width": 2,
+        "height": 2
+      },
+      "sections": [
+        {
+          "room": 4,
+          "index": 0,
+          "position": {
+            "x": 2,
+            "y": 2
+          },
+          "doors": {
+            "left": false,
+            "right": false,
+            "top": false,
+            "bottom": false
+          }
+        },
+        {
+          "room": 4,
+          "index": 1,
+          "position": {
+            "x": 3,
+            "y": 2
+          },
+          "doors": {
+            "left": false,
+            "right": true,
+            "top": true,
+            "bottom": false
+          }
+        },
+        {
+          "room": 4,
+          "index": 2,
+          "position": {
+            "x": 2,
+            "y": 3
+          },
+          "doors": {
+            "left": false,
+            "right": false,
+            "top": false,
+            "bottom": true
+          }
+        },
+        {
+          "room": 4,
+          "index": 3,
+          "position": {
+            "x": 3,
+            "y": 3
+          },
+          "doors": {
+            "left": false,
+            "right": false,
+            "top": false,
+            "bottom": true
+          }
+        }
+      ]
+    },
+    {
+      "index": 5,
+      "color": "#fa6b4b",
+      "position": {
+        "x": 8,
+        "y": 2
+      },
+      "size": {
+        "width": 2,
+        "height": 2
+      },
+      "sections": [
+        {
+          "room": 5,
+          "index": 0,
+          "position": {
+            "x": 8,
+            "y": 2
+          },
+          "doors": {
+            "left": true,
+            "right": false,
+            "top": true,
+            "bottom": false
+          }
+        },
+        {
+          "room": 5,
+          "index": 1,
+          "position": {
+            "x": 9,
+            "y": 2
+          },
+          "doors": {
+            "left": false,
+            "right": false,
+            "top": false,
+            "bottom": false
+          }
+        },
+        {
+          "room": 5,
+          "index": 2,
+          "position": {
+            "x": 8,
+            "y": 3
+          },
+          "doors": {
+            "left": false,
+            "right": false,
+            "top": false,
+            "bottom": true
+          }
+        },
+        {
+          "room": 5,
+          "index": 3,
+          "position": {
+            "x": 9,
+            "y": 3
+          },
+          "doors": {
+            "left": false,
+            "right": false,
+            "top": false,
+            "bottom": true
+          }
+        }
+      ]
+    },
+    {
+      "index": 6,
+      "color": "#fadea5",
+      "position": {
+        "x": 1,
+        "y": 4
+      },
+      "size": {
+        "width": 2,
+        "height": 2
+      },
+      "sections": [
+        {
+          "room": 6,
+          "index": 0,
+          "position": {
+            "x": 1,
+            "y": 4
+          },
+          "doors": {
+            "left": true,
+            "right": false,
+            "top": false,
+            "bottom": false
+          }
+        },
+        {
+          "room": 6,
+          "index": 1,
+          "position": {
+            "x": 2,
+            "y": 4
+          },
+          "doors": {
+            "left": false,
+            "right": false,
+            "top": true,
+            "bottom": false
+          }
+        },
+        {
+          "room": 6,
+          "index": 2,
+          "position": {
+            "x": 1,
+            "y": 5
+          },
+          "doors": {
+            "left": true,
+            "right": false,
+            "top": false,
+            "bottom": false
+          }
+        },
+        {
+          "room": 6,
+          "index": 3,
+          "position": {
+            "x": 2,
+            "y": 5
+          },
+          "doors": {
+            "left": false,
+            "right": false,
+            "top": false,
+            "bottom": true
+          }
+        }
+      ]
+    },
+    {
+      "index": 7,
+      "color": "#ba0502",
+      "position": {
+        "x": 3,
+        "y": 4
+      },
+      "size": {
+        "width": 1,
+        "height": 1
+      },
+      "sections": [
+        {
+          "room": 7,
+          "index": 0,
+          "position": {
+            "x": 3,
+            "y": 4
+          },
+          "doors": {
+            "left": false,
+            "right": false,
+            "top": true,
+            "bottom": false
+          }
+        }
+      ]
+    },
+    {
+      "index": 8,
+      "color": "#ba0502",
+      "position": {
+        "x": 8,
+        "y": 4
+      },
+      "size": {
+        "width": 1,
+        "height": 1
+      },
+      "sections": [
+        {
+          "room": 8,
+          "index": 0,
+          "position": {
+            "x": 8,
+            "y": 4
+          },
+          "doors": {
+            "left": false,
+            "right": false,
+            "top": true,
+            "bottom": false
+          }
+        }
+      ]
+    },
+    {
+      "index": 9,
+      "color": "#fadea5",
+      "position": {
+        "x": 9,
+        "y": 4
+      },
+      "size": {
+        "width": 2,
+        "height": 2
+      },
+      "sections": [
+        {
+          "room": 9,
+          "index": 0,
+          "position": {
+            "x": 9,
+            "y": 4
+          },
+          "doors": {
+            "left": false,
+            "right": false,
+            "top": true,
+            "bottom": false
+          }
+        },
+        {
+          "room": 9,
+          "index": 1,
+          "position": {
+            "x": 10,
+            "y": 4
+          },
+          "doors": {
+            "left": false,
+            "right": true,
+            "top": false,
+            "bottom": false
+          }
+        },
+        {
+          "room": 9,
+          "index": 2,
+          "position": {
+            "x": 9,
+            "y": 5
+          },
+          "doors": {
+            "left": false,
+            "right": false,
+            "top": false,
+            "bottom": true
+          }
+        },
+        {
+          "room": 9,
+          "index": 3,
+          "position": {
+            "x": 10,
+            "y": 5
+          },
+          "doors": {
+            "left": false,
+            "right": true,
+            "top": false,
+            "bottom": false
+          }
+        }
+      ]
+    },
+    {
+      "index": 10,
+      "color": "#ba0502",
+      "position": {
+        "x": 0,
+        "y": 5
+      },
+      "size": {
+        "width": 2,
+        "height": 2
+      },
+      "sections": [
+        {
+          "room": 10,
+          "index": 0,
+          "position": {
+            "x": 0,
+            "y": 5
+          },
+          "doors": {
+            "left": false,
+            "right": true,
+            "top": false,
+            "bottom": false
+          }
+        },
+        {
+          "room": 10,
+          "index": 1,
+          "position": {
+            "x": 0,
+            "y": 6
+          },
+          "doors": {
+            "left": false,
+            "right": false,
+            "top": false,
+            "bottom": true
+          }
+        },
+        {
+          "room": 10,
+          "index": 2,
+          "position": {
+            "x": 1,
+            "y": 6
+          },
+          "doors": {
+            "left": false,
+            "right": false,
+            "top": false,
+            "bottom": false
+          }
+        }
+      ]
+    },
+    {
+      "index": 11,
+      "color": "#ba0502",
+      "position": {
+        "x": 10,
+        "y": 5
+      },
+      "size": {
+        "width": 2,
+        "height": 2
+      },
+      "sections": [
+        {
+          "room": 11,
+          "index": 0,
+          "position": {
+            "x": 11,
+            "y": 5
+          },
+          "doors": {
+            "left": true,
+            "right": false,
+            "top": false,
+            "bottom": false
+          }
+        },
+        {
+          "room": 11,
+          "index": 1,
+          "position": {
+            "x": 10,
+            "y": 6
+          },
+          "doors": {
+            "left": false,
+            "right": false,
+            "top": false,
+            "bottom": false
+          }
+        },
+        {
+          "room": 11,
+          "index": 2,
+          "position": {
+            "x": 11,
+            "y": 6
+          },
+          "doors": {
+            "left": false,
+            "right": false,
+            "top": false,
+            "bottom": true
+          }
+        }
+      ]
+    },
+    {
+      "index": 12,
+      "color": "#fa6b4b",
+      "position": {
+        "x": 2,
+        "y": 6
+      },
+      "size": {
+        "width": 1,
+        "height": 2
+      },
+      "sections": [
+        {
+          "room": 12,
+          "index": 0,
+          "position": {
+            "x": 2,
+            "y": 6
+          },
+          "doors": {
+            "left": false,
+            "right": false,
+            "top": true,
+            "bottom": false
+          }
+        },
+        {
+          "room": 12,
+          "index": 1,
+          "position": {
+            "x": 2,
+            "y": 7
+          },
+          "doors": {
+            "left": false,
+            "right": false,
+            "top": false,
+            "bottom": true
+          }
+        }
+      ]
+    },
+    {
+      "index": 13,
+      "color": "#fa6b4b",
+      "position": {
+        "x": 9,
+        "y": 6
+      },
+      "size": {
+        "width": 1,
+        "height": 2
+      },
+      "sections": [
+        {
+          "room": 13,
+          "index": 0,
+          "position": {
+            "x": 9,
+            "y": 6
+          },
+          "doors": {
+            "left": false,
+            "right": false,
+            "top": true,
+            "bottom": false
+          }
+        },
+        {
+          "room": 13,
+          "index": 1,
+          "position": {
+            "x": 9,
+            "y": 7
+          },
+          "doors": {
+            "left": false,
+            "right": false,
+            "top": false,
+            "bottom": true
+          }
+        }
+      ]
+    },
+    {
+      "index": 14,
+      "color": "#fadea5",
+      "position": {
+        "x": 0,
+        "y": 7
+      },
+      "size": {
+        "width": 2,
+        "height": 2
+      },
+      "sections": [
+        {
+          "room": 14,
+          "index": 0,
+          "position": {
+            "x": 0,
+            "y": 7
+          },
+          "doors": {
+            "left": false,
+            "right": false,
+            "top": true,
+            "bottom": false
+          }
+        },
+        {
+          "room": 14,
+          "index": 1,
+          "position": {
+            "x": 1,
+            "y": 7
+          },
+          "doors": {
+            "left": false,
+            "right": false,
+            "top": false,
+            "bottom": false
+          }
+        },
+        {
+          "room": 14,
+          "index": 2,
+          "position": {
+            "x": 0,
+            "y": 8
+          },
+          "doors": {
+            "left": true,
+            "right": false,
+            "top": false,
+            "bottom": false
+          }
+        },
+        {
+          "room": 14,
+          "index": 3,
+          "position": {
+            "x": 1,
+            "y": 8
+          },
+          "doors": {
+            "left": false,
+            "right": true,
+            "top": false,
+            "bottom": true
+          }
+        }
+      ]
+    },
+    {
+      "index": 15,
+      "color": "#fadea5",
+      "position": {
+        "x": 10,
+        "y": 7
+      },
+      "size": {
+        "width": 2,
+        "height": 2
+      },
+      "sections": [
+        {
+          "room": 15,
+          "index": 0,
+          "position": {
+            "x": 10,
+            "y": 7
+          },
+          "doors": {
+            "left": false,
+            "right": false,
+            "top": false,
+            "bottom": false
+          }
+        },
+        {
+          "room": 15,
+          "index": 1,
+          "position": {
+            "x": 11,
+            "y": 7
+          },
+          "doors": {
+            "left": false,
+            "right": false,
+            "top": true,
+            "bottom": false
+          }
+        },
+        {
+          "room": 15,
+          "index": 2,
+          "position": {
+            "x": 10,
+            "y": 8
+          },
+          "doors": {
+            "left": true,
+            "right": false,
+            "top": false,
+            "bottom": true
+          }
+        },
+        {
+          "room": 15,
+          "index": 3,
+          "position": {
+            "x": 11,
+            "y": 8
+          },
+          "doors": {
+            "left": false,
+            "right": true,
+            "top": false,
+            "bottom": false
+          }
+        }
+      ]
+    },
+    {
+      "index": 16,
+      "color": "#ba0502",
+      "position": {
+        "x": 2,
+        "y": 8
+      },
+      "size": {
+        "width": 2,
+        "height": 2
+      },
+      "sections": [
+        {
+          "room": 16,
+          "index": 0,
+          "position": {
+            "x": 2,
+            "y": 8
+          },
+          "doors": {
+            "left": true,
+            "right": false,
+            "top": true,
+            "bottom": false
+          }
+        },
+        {
+          "room": 16,
+          "index": 1,
+          "position": {
+            "x": 3,
+            "y": 8
+          },
+          "doors": {
+            "left": false,
+            "right": true,
+            "top": false,
+            "bottom": false
+          }
+        },
+        {
+          "room": 16,
+          "index": 2,
+          "position": {
+            "x": 2,
+            "y": 9
+          },
+          "doors": {
+            "left": false,
+            "right": true,
+            "top": false,
+            "bottom": false
+          }
+        }
+      ]
+    },
+    {
+      "index": 17,
+      "color": "#ba0502",
+      "position": {
+        "x": 8,
+        "y": 8
+      },
+      "size": {
+        "width": 2,
+        "height": 2
+      },
+      "sections": [
+        {
+          "room": 17,
+          "index": 0,
+          "position": {
+            "x": 8,
+            "y": 8
+          },
+          "doors": {
+            "left": true,
+            "right": false,
+            "top": false,
+            "bottom": false
+          }
+        },
+        {
+          "room": 17,
+          "index": 1,
+          "position": {
+            "x": 9,
+            "y": 8
+          },
+          "doors": {
+            "left": false,
+            "right": true,
+            "top": true,
+            "bottom": false
+          }
+        },
+        {
+          "room": 17,
+          "index": 2,
+          "position": {
+            "x": 9,
+            "y": 9
+          },
+          "doors": {
+            "left": true,
+            "right": false,
+            "top": false,
+            "bottom": false
+          }
+        }
+      ]
+    },
+    {
+      "index": 18,
+      "color": "#fa6b4b",
+      "position": {
+        "x": 1,
+        "y": 9
+      },
+      "size": {
+        "width": 1,
+        "height": 2
+      },
+      "sections": [
+        {
+          "room": 18,
+          "index": 0,
+          "position": {
+            "x": 1,
+            "y": 9
+          },
+          "doors": {
+            "left": false,
+            "right": false,
+            "top": true,
+            "bottom": false
+          }
+        },
+        {
+          "room": 18,
+          "index": 1,
+          "position": {
+            "x": 1,
+            "y": 10
+          },
+          "doors": {
+            "left": false,
+            "right": true,
+            "top": false,
+            "bottom": false
+          }
+        }
+      ]
+    },
+    {
+      "index": 19,
+      "color": "#fa6b4b",
+      "position": {
+        "x": 3,
+        "y": 9
+      },
+      "size": {
+        "width": 2,
+        "height": 2
+      },
+      "sections": [
+        {
+          "room": 19,
+          "index": 0,
+          "position": {
+            "x": 3,
+            "y": 9
+          },
+          "doors": {
+            "left": true,
+            "right": false,
+            "top": false,
+            "bottom": false
+          }
+        },
+        {
+          "room": 19,
+          "index": 1,
+          "position": {
+            "x": 4,
+            "y": 9
+          },
+          "doors": {
+            "left": false,
+            "right": false,
+            "top": false,
+            "bottom": false
+          }
+        },
+        {
+          "room": 19,
+          "index": 2,
+          "position": {
+            "x": 4,
+            "y": 10
+          },
+          "doors": {
+            "left": false,
+            "right": false,
+            "top": false,
+            "bottom": true
+          }
+        }
+      ]
+    },
+    {
+      "index": 20,
+      "color": "#fa6b4b",
+      "position": {
+        "x": 7,
+        "y": 9
+      },
+      "size": {
+        "width": 2,
+        "height": 2
+      },
+      "sections": [
+        {
+          "room": 20,
+          "index": 0,
+          "position": {
+            "x": 7,
+            "y": 9
+          },
+          "doors": {
+            "left": false,
+            "right": false,
+            "top": false,
+            "bottom": false
+          }
+        },
+        {
+          "room": 20,
+          "index": 1,
+          "position": {
+            "x": 8,
+            "y": 9
+          },
+          "doors": {
+            "left": false,
+            "right": true,
+            "top": false,
+            "bottom": false
+          }
+        },
+        {
+          "room": 20,
+          "index": 2,
+          "position": {
+            "x": 7,
+            "y": 10
+          },
+          "doors": {
+            "left": false,
+            "right": false,
+            "top": false,
+            "bottom": true
+          }
+        }
+      ]
+    },
+    {
+      "index": 21,
+      "color": "#fa6b4b",
+      "position": {
+        "x": 10,
+        "y": 9
+      },
+      "size": {
+        "width": 1,
+        "height": 2
+      },
+      "sections": [
+        {
+          "room": 21,
+          "index": 0,
+          "position": {
+            "x": 10,
+            "y": 9
+          },
+          "doors": {
+            "left": false,
+            "right": false,
+            "top": true,
+            "bottom": false
+          }
+        },
+        {
+          "room": 21,
+          "index": 1,
+          "position": {
+            "x": 10,
+            "y": 10
+          },
+          "doors": {
+            "left": true,
+            "right": false,
+            "top": false,
+            "bottom": false
+          }
+        }
+      ]
+    },
+    {
+      "index": 22,
+      "color": "#fadea5",
+      "position": {
+        "x": 2,
+        "y": 10
+      },
+      "size": {
+        "width": 2,
+        "height": 2
+      },
+      "sections": [
+        {
+          "room": 22,
+          "index": 0,
+          "position": {
+            "x": 2,
+            "y": 10
+          },
+          "doors": {
+            "left": true,
+            "right": false,
+            "top": false,
+            "bottom": false
+          }
+        },
+        {
+          "room": 22,
+          "index": 1,
+          "position": {
+            "x": 3,
+            "y": 10
+          },
+          "doors": {
+            "left": false,
+            "right": false,
+            "top": false,
+            "bottom": false
+          }
+        },
+        {
+          "room": 22,
+          "index": 2,
+          "position": {
+            "x": 2,
+            "y": 11
+          },
+          "doors": {
+            "left": false,
+            "right": false,
+            "top": false,
+            "bottom": true
+          }
+        },
+        {
+          "room": 22,
+          "index": 3,
+          "position": {
+            "x": 3,
+            "y": 11
+          },
+          "doors": {
+            "left": false,
+            "right": false,
+            "top": false,
+            "bottom": true
+          }
+        }
+      ]
+    },
+    {
+      "index": 23,
+      "color": "#fadea5",
+      "position": {
+        "x": 8,
+        "y": 10
+      },
+      "size": {
+        "width": 2,
+        "height": 2
+      },
+      "sections": [
+        {
+          "room": 23,
+          "index": 0,
+          "position": {
+            "x": 8,
+            "y": 10
+          },
+          "doors": {
+            "left": false,
+            "right": false,
+            "top": false,
+            "bottom": false
+          }
+        },
+        {
+          "room": 23,
+          "index": 1,
+          "position": {
+            "x": 9,
+            "y": 10
+          },
+          "doors": {
+            "left": false,
+            "right": true,
+            "top": false,
+            "bottom": false
+          }
+        },
+        {
+          "room": 23,
+          "index": 2,
+          "position": {
+            "x": 8,
+            "y": 11
+          },
+          "doors": {
+            "left": false,
+            "right": false,
+            "top": false,
+            "bottom": true
+          }
+        },
+        {
+          "room": 23,
+          "index": 3,
+          "position": {
+            "x": 9,
+            "y": 11
+          },
+          "doors": {
+            "left": false,
+            "right": false,
+            "top": false,
+            "bottom": true
+          }
+        }
+      ]
+    },
+    {
+      "index": 24,
+      "color": "#ba0502",
+      "position": {
+        "x": 4,
+        "y": 11
+      },
+      "size": {
+        "width": 1,
+        "height": 1
+      },
+      "sections": [
+        {
+          "room": 24,
+          "index": 0,
+          "position": {
+            "x": 4,
+            "y": 11
+          },
+          "doors": {
+            "left": false,
+            "right": true,
+            "top": true,
+            "bottom": false
+          }
+        }
+      ]
+    },
+    {
+      "index": 25,
+      "color": "#fa6b4b",
+      "position": {
+        "x": 5,
+        "y": 11
+      },
+      "size": {
+        "width": 2,
+        "height": 1
+      },
+      "sections": [
+        {
+          "room": 25,
+          "index": 0,
+          "position": {
+            "x": 5,
+            "y": 11
+          },
+          "doors": {
+            "left": true,
+            "right": false,
+            "top": false,
+            "bottom": true
+          }
+        },
+        {
+          "room": 25,
+          "index": 1,
+          "position": {
+            "x": 6,
+            "y": 11
+          },
+          "doors": {
+            "left": false,
+            "right": true,
+            "top": false,
+            "bottom": true
+          }
+        }
+      ]
+    },
+    {
+      "index": 26,
+      "color": "#ba0502",
+      "position": {
+        "x": 7,
+        "y": 11
+      },
+      "size": {
+        "width": 1,
+        "height": 1
+      },
+      "sections": [
+        {
+          "room": 26,
+          "index": 0,
+          "position": {
+            "x": 7,
+            "y": 11
+          },
+          "doors": {
+            "left": true,
+            "right": false,
+            "top": true,
+            "bottom": false
+          }
+        }
+      ]
+    },
+    {
+      "index": 27,
+      "color": "#fa6b4b",
+      "position": {
+        "x": 3,
+        "y": 12
+      },
+      "size": {
+        "width": 2,
+        "height": 1
+      },
+      "sections": [
+        {
+          "room": 27,
+          "index": 0,
+          "position": {
+            "x": 3,
+            "y": 12
+          },
+          "doors": {
+            "left": false,
+            "right": false,
+            "top": true,
+            "bottom": false
+          }
+        },
+        {
+          "room": 27,
+          "index": 1,
+          "position": {
+            "x": 4,
+            "y": 12
+          },
+          "doors": {
+            "left": false,
+            "right": true,
+            "top": false,
+            "bottom": false
+          }
+        }
+      ]
+    },
+    {
+      "index": 28,
+      "color": "#fadea5",
+      "position": {
+        "x": 5,
+        "y": 12
+      },
+      "size": {
+        "width": 2,
+        "height": 2
+      },
+      "sections": [
+        {
+          "room": 28,
+          "index": 0,
+          "position": {
+            "x": 5,
+            "y": 12
+          },
+          "doors": {
+            "left": true,
+            "right": false,
+            "top": true,
+            "bottom": false
+          }
+        },
+        {
+          "room": 28,
+          "index": 1,
+          "position": {
+            "x": 6,
+            "y": 12
+          },
+          "doors": {
+            "left": false,
+            "right": true,
+            "top": true,
+            "bottom": false
+          }
+        },
+        {
+          "room": 28,
+          "index": 2,
+          "position": {
+            "x": 5,
+            "y": 13
+          },
+          "doors": {
+            "left": false,
+            "right": false,
+            "top": false,
+            "bottom": false
+          }
+        },
+        {
+          "room": 28,
+          "index": 3,
+          "position": {
+            "x": 6,
+            "y": 13
+          },
+          "doors": {
+            "left": false,
+            "right": false,
+            "top": false,
+            "bottom": false
+          }
+        }
+      ]
+    },
+    {
+      "index": 29,
+      "color": "#fa6b4b",
+      "position": {
+        "x": 7,
+        "y": 12
+      },
+      "size": {
+        "width": 2,
+        "height": 1
+      },
+      "sections": [
+        {
+          "room": 29,
+          "index": 0,
+          "position": {
+            "x": 7,
+            "y": 12
+          },
+          "doors": {
+            "left": true,
+            "right": false,
+            "top": false,
+            "bottom": false
+          }
+        },
+        {
+          "room": 29,
+          "index": 1,
+          "position": {
+            "x": 8,
+            "y": 12
+          },
+          "doors": {
+            "left": false,
+            "right": false,
+            "top": true,
+            "bottom": false
+          }
+        }
+      ]
+    }
+  ]
+}
