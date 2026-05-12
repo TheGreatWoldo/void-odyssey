@@ -9,12 +9,18 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './../../presentation/pages/__root'
+import { Route as RoomsEditorRouteImport } from './../../presentation/pages/rooms-editor'
 import { Route as CanvasRouteImport } from './../../presentation/pages/_canvas'
 import { Route as CanvasIndexRouteImport } from './../../presentation/pages/_canvas/index'
 import { Route as CanvasCodexUpgradesRouteImport } from './../../presentation/pages/_canvas/codex/upgrades'
 import { Route as CanvasCodexModulesIndexRouteImport } from './../../presentation/pages/_canvas/codex/modules/index'
 import { Route as CanvasCodexModulesModuleIdRouteImport } from './../../presentation/pages/_canvas/codex/modules/$moduleId'
 
+const RoomsEditorRoute = RoomsEditorRouteImport.update({
+  id: '/rooms-editor',
+  path: '/rooms-editor',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CanvasRoute = CanvasRouteImport.update({
   id: '/_canvas',
   getParentRoute: () => rootRouteImport,
@@ -43,11 +49,13 @@ const CanvasCodexModulesModuleIdRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof CanvasIndexRoute
+  '/rooms-editor': typeof RoomsEditorRoute
   '/codex/upgrades': typeof CanvasCodexUpgradesRoute
   '/codex/modules/$moduleId': typeof CanvasCodexModulesModuleIdRoute
   '/codex/modules/': typeof CanvasCodexModulesIndexRoute
 }
 export interface FileRoutesByTo {
+  '/rooms-editor': typeof RoomsEditorRoute
   '/': typeof CanvasIndexRoute
   '/codex/upgrades': typeof CanvasCodexUpgradesRoute
   '/codex/modules/$moduleId': typeof CanvasCodexModulesModuleIdRoute
@@ -56,6 +64,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_canvas': typeof CanvasRouteWithChildren
+  '/rooms-editor': typeof RoomsEditorRoute
   '/_canvas/': typeof CanvasIndexRoute
   '/_canvas/codex/upgrades': typeof CanvasCodexUpgradesRoute
   '/_canvas/codex/modules/$moduleId': typeof CanvasCodexModulesModuleIdRoute
@@ -65,14 +74,21 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/rooms-editor'
     | '/codex/upgrades'
     | '/codex/modules/$moduleId'
     | '/codex/modules/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/codex/upgrades' | '/codex/modules/$moduleId' | '/codex/modules'
+  to:
+    | '/rooms-editor'
+    | '/'
+    | '/codex/upgrades'
+    | '/codex/modules/$moduleId'
+    | '/codex/modules'
   id:
     | '__root__'
     | '/_canvas'
+    | '/rooms-editor'
     | '/_canvas/'
     | '/_canvas/codex/upgrades'
     | '/_canvas/codex/modules/$moduleId'
@@ -81,10 +97,18 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   CanvasRoute: typeof CanvasRouteWithChildren
+  RoomsEditorRoute: typeof RoomsEditorRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/rooms-editor': {
+      id: '/rooms-editor'
+      path: '/rooms-editor'
+      fullPath: '/rooms-editor'
+      preLoaderRoute: typeof RoomsEditorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_canvas': {
       id: '/_canvas'
       path: ''
@@ -142,6 +166,7 @@ const CanvasRouteWithChildren =
 
 const rootRouteChildren: RootRouteChildren = {
   CanvasRoute: CanvasRouteWithChildren,
+  RoomsEditorRoute: RoomsEditorRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
