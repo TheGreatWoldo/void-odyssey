@@ -76,6 +76,22 @@ export class ExcaliburEngineFacade implements IGameEngineFacade {
   }
 
   dispose(): void {
+    // Excalibur's dispose() calls toggleEnabled(false) but never calls detach() on
+    // any PointerEventReceiver — neither the engine-level one nor each scene's own.
+    // In React StrictMode's double-mount, the first engine is disposed (screen._canvas
+    // → null) while its listeners stay on the canvas. The next mouse event fires
+    // _handle against the disposed engine and crashes in _viewportToPixels.
+    // Fix: explicitly detach every registered pointer receiver before disposing.
+    this.engine.input.pointers.detach()
+
+    for (const key of Object.keys(this.engine.director.scenes)) {
+      const scene = this.engine.director.getSceneInstance(key)
+
+      if (scene?.isInitialized) {
+        scene.input.pointers.detach()
+      }
+    }
+
     this.engine.dispose()
   }
 }
