@@ -1,6 +1,6 @@
 import type { EditorTool } from '@/shared/rooms-editor';
 
-const AUTO_COLORS = ['#f59e0b', '#3b82f6', '#ef4444', '#10b981']
+const AUTO_COLORS = ['#60a5fa', '#22d3ee', '#818cf8', '#38bdf8']
 
 const TOOLS: { key: EditorTool; label: string; title: string }[] = [
   { key: 'room', label: 'Room', title: 'Paint sections onto a room' },
@@ -45,7 +45,7 @@ export function RoomsPalette({
         Tool
       </div>
 
-      <div className="flex gap-1 px-1 pb-3 shrink-0">
+      <div className="flex gap-1 px-1 pb-2 shrink-0">
         {TOOLS.map((t) => (
           <button
             key={t.key}
@@ -63,12 +63,14 @@ export function RoomsPalette({
         ))}
       </div>
 
+      <div className="h-px bg-slate-700 my-2 shrink-0" />
+
       {/* Color */}
       <div className="text-xs font-semibold text-slate-400 uppercase tracking-widest px-1 pb-1 shrink-0">
         Color
       </div>
 
-      <div className="flex gap-2 px-1 pb-3 shrink-0">
+      <div className="flex gap-2 px-1 pb-2 shrink-0">
         {AUTO_COLORS.map((color) => (
           <button
             key={color}
@@ -82,6 +84,8 @@ export function RoomsPalette({
           />
         ))}
       </div>
+
+      <div className="h-px bg-slate-700 my-2 shrink-0" />
 
       {/* Rooms — scrollable */}
       <div className="text-xs font-semibold text-slate-400 uppercase tracking-widest px-1 pb-1 shrink-0">

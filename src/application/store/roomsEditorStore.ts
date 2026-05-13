@@ -5,7 +5,7 @@ import { immer } from 'zustand/middleware/immer'
 
 export type { EditorTool }
 
-const AUTO_COLORS = ['#f59e0b', '#3b82f6', '#ef4444', '#10b981']
+const AUTO_COLORS = ['#60a5fa', '#22d3ee', '#818cf8', '#38bdf8']
 export { AUTO_COLORS }
 
 const OPPOSING: Record<keyof Doors, keyof Doors> = {
@@ -76,7 +76,11 @@ interface RoomsEditorState {
   toggleDoor: (x: number, y: number, side: keyof Doors) => void
   removeDoor: (x: number, y: number, side: keyof Doors) => void
   removeRoom: (index: number) => void
+  autoRecenter: boolean
+
+  nudgeLayout: (dx: number, dy: number) => void
   setMapSize: (width: number, height: number) => void
+  setAutoRecenter: (value: boolean) => void
   setName: (name: string) => void
   setTool: (tool: EditorTool) => void
   setSelectedColor: (color: string) => void
@@ -87,6 +91,7 @@ export const useRoomsEditorStore = create<RoomsEditorState>()(
     data: null,
     tool: 'room',
     selectedColor: AUTO_COLORS[0],
+    autoRecenter: true,
 
     loadLayout: (layout) =>
       set((state) => {
@@ -113,18 +118,19 @@ export const useRoomsEditorStore = create<RoomsEditorState>()(
         const already = sectionAt(state.data, x, y)
         if (already) return
 
-        // Find an adjacent room that shares the selected color
-        let targetRoom: Room | undefined
+        // Collect all adjacent same-color rooms (deduplicated by index)
+        const adjacentIndices = new Set<number>()
         for (const { dx, dy } of Object.values(NEIGHBOR_OFFSET)) {
           const hit = sectionAt(state.data, x + dx, y + dy)
           if (hit && hit.room.color === state.selectedColor) {
-            targetRoom = hit.room
-            break
+            adjacentIndices.add(hit.room.index)
           }
         }
 
-        // No adjacent same-color room — create one
-        if (!targetRoom) {
+        let targetRoom: Room
+
+        if (adjacentIndices.size === 0) {
+          // No adjacent same-color room — create one
           const nextIndex =
             state.data.rooms.length === 0
               ? 0
@@ -139,13 +145,43 @@ export const useRoomsEditorStore = create<RoomsEditorState>()(
           }
           state.data.rooms.push(newRoom)
           targetRoom = newRoom
+        } else {
+          // Use the room with the lowest index as canonical, merge the rest into it
+          const adjacentRooms = state.data.rooms
+            .filter((r) => adjacentIndices.has(r.index))
+            .sort((a, b) => a.index - b.index)
+
+          targetRoom = adjacentRooms[0]
+
+          for (let i = 1; i < adjacentRooms.length; i++) {
+            const toMerge = adjacentRooms[i]
+
+            for (const s of toMerge.sections) {
+              s.room = targetRoom.index
+              s.index = nextSectionIndex(targetRoom)
+              targetRoom.sections.push(s)
+            }
+
+            const roomIdx = state.data.rooms.indexOf(toMerge)
+            state.data.rooms.splice(roomIdx, 1)
+          }
+        }
+
+        // Inherit doors from adjacent sections that already face this cell
+        const doors: Doors = { left: false, right: false, top: false, bottom: false }
+
+        for (const [side, { dx, dy }] of Object.entries(NEIGHBOR_OFFSET) as [keyof Doors, { dx: number; dy: number }][]) {
+          const neighbor = sectionAt(state.data, x + dx, y + dy)
+          if (neighbor && neighbor.section.doors[OPPOSING[side]]) {
+            doors[side] = true
+          }
         }
 
         const section: Section = {
           room: targetRoom.index,
           index: nextSectionIndex(targetRoom),
           position: { x, y },
-          doors: { left: false, right: false, top: false, bottom: false },
+          doors,
         }
 
         targetRoom.sections.push(section)
@@ -218,13 +254,26 @@ export const useRoomsEditorStore = create<RoomsEditorState>()(
         state.data.rooms.splice(roomIdx, 1)
       }),
 
+    nudgeLayout: (dx, dy) =>
+      set((state) => {
+        if (!state.data) return
+
+        for (const room of state.data.rooms) {
+          for (const section of room.sections) {
+            section.position.x += dx
+            section.position.y += dy
+          }
+          recalcRoomBounds(room)
+        }
+      }),
+
     setMapSize: (width, height) =>
       set((state) => {
         if (!state.data) return
 
         const allSections = state.data.rooms.flatMap((r) => r.sections)
 
-        if (allSections.length > 0) {
+        if (state.autoRecenter && allSections.length > 0) {
           const minX = Math.min(...allSections.map((s) => s.position.x))
           const minY = Math.min(...allSections.map((s) => s.position.y))
           const maxX = Math.max(...allSections.map((s) => s.position.x))
@@ -233,11 +282,14 @@ export const useRoomsEditorStore = create<RoomsEditorState>()(
           const layoutW = maxX - minX + 1
           const layoutH = maxY - minY + 1
 
+          const widthChanged = width !== state.data.mapSize.width
+          const heightChanged = height !== state.data.mapSize.height
+
           const targetOriginX = Math.floor((width - layoutW) / 2)
           const targetOriginY = Math.floor((height - layoutH) / 2)
 
-          const dx = targetOriginX - minX
-          const dy = targetOriginY - minY
+          const dx = widthChanged ? targetOriginX - minX : 0
+          const dy = heightChanged ? targetOriginY - minY : 0
 
           if (dx !== 0 || dy !== 0) {
             for (const room of state.data.rooms) {
@@ -251,6 +303,11 @@ export const useRoomsEditorStore = create<RoomsEditorState>()(
         }
 
         state.data.mapSize = { width, height }
+      }),
+
+    setAutoRecenter: (value) =>
+      set((state) => {
+        state.autoRecenter = value
       }),
 
     setName: (name) =>

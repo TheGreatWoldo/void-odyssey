@@ -1,8 +1,10 @@
 import { useRoomsEditor } from '@/application/hooks/useRoomsEditor'
 import { RoomsEditorCanvas } from '@/presentation/components/rooms-editor/RoomsEditorCanvas'
+import { RoomsEditorPreviewCanvas } from '@/presentation/components/rooms-editor/RoomsEditorPreviewCanvas'
 import { RoomsEditorToolbar } from '@/presentation/components/rooms-editor/RoomsEditorToolbar'
 import { RoomsPalette } from '@/presentation/components/rooms-editor/RoomsPalette'
 import { createFileRoute } from '@tanstack/react-router'
+import { useState } from 'react'
 
 export const Route = createFileRoute('/rooms-editor')({
   component: RoomsEditorPage,
@@ -16,6 +18,7 @@ function RoomsEditorPage() {
     data,
     tool,
     selectedColor,
+    autoRecenter,
     lastError,
     dismissError,
     newLayout,
@@ -24,10 +27,12 @@ function RoomsEditorPage() {
     toggleDoor,
     removeDoor,
     removeRoom,
+    nudgeLayout,
     setMapSize,
     setName,
     setTool,
     setSelectedColor,
+    setAutoRecenter,
     openFile,
     save,
   } = useRoomsEditor()
@@ -36,17 +41,22 @@ function RoomsEditorPage() {
     newLayout('untitled', DEFAULT_MAP_WIDTH, DEFAULT_MAP_HEIGHT)
   }
 
+  const [view, setView] = useState<'edit' | 'preview'>('edit')
+
   return (
     <div className="flex flex-col h-full bg-slate-950 text-slate-100 overflow-hidden">
 
       <RoomsEditorToolbar
         name={data?.name ?? ''}
         mapSize={data?.mapSize ?? { width: DEFAULT_MAP_WIDTH, height: DEFAULT_MAP_HEIGHT }}
+        autoRecenter={autoRecenter}
         onNewLayout={handleNew}
         onOpenFile={openFile}
         onSave={save}
         onNameChange={setName}
         onMapSizeChange={setMapSize}
+        onNudge={nudgeLayout}
+        onAutoRecenterChange={setAutoRecenter}
       />
 
       {lastError && (
@@ -76,30 +86,58 @@ function RoomsEditorPage() {
           onToolChange={setTool}
         />
 
-        <div className="flex-1 overflow-hidden bg-blue-950 flex items-center justify-center p-4">
-          {data ? (
-            <RoomsEditorCanvas
-              layout={data}
-              tool={tool}
-              selectedColor={selectedColor}
-              onPaint={paintSection}
-              onErase={eraseSection}
-              onToggleDoor={toggleDoor}
-              onRemoveDoor={removeDoor}
-            />
-          ) : (
-            <div className="flex flex-col items-center justify-center h-full gap-4 text-slate-500">
-              <p className="text-sm">No layout loaded.</p>
-              <div className="flex gap-3">
+        <div className="flex-1 overflow-hidden bg-blue-950 flex flex-col">
+
+          {/* View toggle */}
+          {data && (
+            <div className="flex gap-1 px-4 pt-3 shrink-0">
+              {(['edit', 'preview'] as const).map((v) => (
                 <button
-                  onClick={handleNew}
-                  className="text-xs text-slate-300 hover:text-white bg-slate-700 hover:bg-slate-600 px-4 py-2 rounded transition-colors"
+                  key={v}
+                  onClick={() => setView(v)}
+                  className={[
+                    'text-xs px-3 py-1 rounded transition-colors capitalize',
+                    view === v
+                      ? 'bg-blue-600 text-white'
+                      : 'text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700',
+                  ].join(' ')}
                 >
-                  New layout
+                  {v}
                 </button>
-              </div>
+              ))}
             </div>
           )}
+
+          <div className="flex-1 overflow-hidden flex items-center justify-center p-4">
+            {data ? (
+              view === 'edit' ? (
+                <RoomsEditorCanvas
+                  layout={data}
+                  tool={tool}
+                  selectedColor={selectedColor}
+                  onPaint={paintSection}
+                  onErase={eraseSection}
+                  onToggleDoor={toggleDoor}
+                  onRemoveDoor={removeDoor}
+                />
+              ) : (
+                <RoomsEditorPreviewCanvas layout={data} />
+              )
+            ) : (
+              <div className="flex flex-col items-center justify-center h-full gap-4 text-slate-500">
+                <p className="text-sm">No layout loaded.</p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={handleNew}
+                    className="text-xs text-slate-300 hover:text-white bg-slate-700 hover:bg-slate-600 px-4 py-2 rounded transition-colors"
+                  >
+                    New layout
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
         </div>
 
       </div>

@@ -1,8 +1,9 @@
 import type { EditorTool, RoomDoors, RoomSection, RoomsLayoutData } from '@/shared/rooms-editor'
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { CELL, DOOR_THICKNESS, NEIGHBOR_DELTA, doorLineCoords } from './geometry'
+import { RoomDoorLines } from './RoomDoorLines'
+import { RoomWalls } from './RoomWalls'
 
-const CELL = 60
-const DOOR_THICKNESS = 4
 const CROSS_ARM = 7
 const PAD = CROSS_ARM + 2 // padding so edge crosses are fully visible
 
@@ -11,61 +12,10 @@ const BP_BG = '#172554'              // blue-950
 const BP_LINE = 'rgba(231,229,228,0.18)'  // stone-200/18
 const BP_CROSS = '#e7e5e4' // stone-200
 
-const DOOR_SIDES: (keyof RoomDoors)[] = ['left', 'right', 'top', 'bottom']
 const SECTION_BORDER = '#1e293b'
 
-const NEIGHBOR_DELTA: Record<string, { dx: number; dy: number }> = {
-  left:   { dx: -1, dy:  0 },
-  right:  { dx:  1, dy:  0 },
-  top:    { dx:  0, dy: -1 },
-  bottom: { dx:  0, dy:  1 },
-}
-
-function edgeLineCoords(
-  cx: number,
-  cy: number,
-  side: string,
-): { x1: number; y1: number; x2: number; y2: number } {
-  const px = cx * CELL
-  const py = cy * CELL
-  switch (side) {
-    case 'left':   return { x1: px,        y1: py,        x2: px,        y2: py + CELL }
-    case 'right':  return { x1: px + CELL,  y1: py,        x2: px + CELL,  y2: py + CELL }
-    case 'top':    return { x1: px,        y1: py,        x2: px + CELL,  y2: py }
-    default:       return { x1: px,        y1: py + CELL,  x2: px + CELL,  y2: py + CELL }
-  }
-}
-
-function doorLineCoords(
-  cx: number,
-  cy: number,
-  side: keyof RoomDoors,
-): { x1: number; y1: number; x2: number; y2: number } {
-  const px = cx * CELL
-  const py = cy * CELL
-  const inset = DOOR_THICKNESS / 2
-  const quarter = CELL / 4
-
-  switch (side) {
-    case 'left':
-      return { x1: px + inset, y1: py + quarter, x2: px + inset, y2: py + CELL - quarter }
-    case 'right':
-      return {
-        x1: px + CELL - inset,
-        y1: py + quarter,
-        x2: px + CELL - inset,
-        y2: py + CELL - quarter,
-      }
-    case 'top':
-      return { x1: px + quarter, y1: py + inset, x2: px + CELL - quarter, y2: py + inset }
-    case 'bottom':
-      return {
-        x1: px + quarter,
-        y1: py + CELL - inset,
-        x2: px + CELL - quarter,
-        y2: py + CELL - inset,
-      }
-  }
+const OPPOSITE: Record<keyof RoomDoors, keyof RoomDoors> = {
+  left: 'right', right: 'left', top: 'bottom', bottom: 'top',
 }
 
 interface Props {
@@ -120,6 +70,16 @@ export function RoomsEditorCanvas({
     for (const room of layout.rooms) {
       for (const section of room.sections) {
         map.set(`${section.position.x},${section.position.y}`, room.index)
+      }
+    }
+    return map
+  }, [layout.rooms])
+
+  const sectionMap = useMemo(() => {
+    const map = new Map<string, RoomSection>()
+    for (const room of layout.rooms) {
+      for (const section of room.sections) {
+        map.set(`${room.index}-${section.index}`, section)
       }
     }
     return map
@@ -318,66 +278,41 @@ export function RoomsEditorCanvas({
         ))
       )}
 
-      {/* Section borders — only on edges with no same-room neighbor */}
-      {layout.rooms.flatMap((room) =>
-        room.sections.flatMap((section) =>
-          ['left', 'right', 'top', 'bottom'].flatMap((side) => {
-            const { dx, dy } = NEIGHBOR_DELTA[side]
-            const nx = section.position.x + dx
-            const ny = section.position.y + dy
-            const neighborSameRoom = room.sections.some(
-              (s) => s.position.x === nx && s.position.y === ny,
-            )
-            const { x1, y1, x2, y2 } = edgeLineCoords(section.position.x, section.position.y, side)
-            return [
-              <line
-                key={`border-${room.index}-${section.index}-${side}`}
-                x1={x1} y1={y1} x2={x2} y2={y2}
-                stroke={neighborSameRoom ? 'rgba(30,41,59,0.05)' : SECTION_BORDER}
-                strokeWidth={2}                strokeLinecap="square"                style={{ pointerEvents: 'none' }}
-              />,
-            ]
-          })
-        )
-      )}
+      {/* Section borders */}
+      <RoomWalls
+        layout={layout}
+        getLineProps={(roomIndex, _sectionIndex, _side, neighborRoomIndex) => {
+          const sameRoom = neighborRoomIndex === roomIndex
+          return {
+            stroke: sameRoom ? 'rgba(30,41,59,0.05)' : SECTION_BORDER,
+            strokeWidth: 2,
+            strokeLinecap: 'square',
+            style: { pointerEvents: 'none' },
+          }
+        }}
+      />
 
       {/* Door lines */}
-      {layout.rooms.flatMap((room) =>
-        room.sections.flatMap((section) =>
-          DOOR_SIDES
-            .filter((side) => section.doors[side])
-            .map((side) => {
-              const { x1, y1, x2, y2 } = doorLineCoords(
-                section.position.x,
-                section.position.y,
-                side,
-              )
-              const OPPOSITE: Record<keyof RoomDoors, keyof RoomDoors> = { left: 'right', right: 'left', top: 'bottom', bottom: 'top' }
-              const { dx, dy } = NEIGHBOR_DELTA[side]
-              const isHovered = tool === 'door' && hoveredDoor !== null && (
-                (hoveredDoor.x === section.position.x && hoveredDoor.y === section.position.y && hoveredDoor.side === side) ||
-                (hoveredDoor.x === section.position.x + dx && hoveredDoor.y === section.position.y + dy && hoveredDoor.side === OPPOSITE[side])
-              )
-              return (
-                <line
-                  key={`door-${room.index}-${section.index}-${side}`}
-                  x1={x1}
-                  y1={y1}
-                  x2={x2}
-                  y2={y2}
-                  stroke={isHovered ? '#fde68a' : '#facc15'}
-                  strokeWidth={isHovered ? DOOR_THICKNESS + 2 : DOOR_THICKNESS}
-                  style={{ pointerEvents: 'none' }}
-                />
-              )
-            })
-        )
-      )}
+      <RoomDoorLines
+        layout={layout}
+        getLineProps={(roomIndex, sectionIndex, side) => {
+          const section = sectionMap.get(`${roomIndex}-${sectionIndex}`)
+          const { dx, dy } = NEIGHBOR_DELTA[side]
+          const isHovered = tool === 'door' && hoveredDoor !== null && section !== undefined && (
+            (hoveredDoor.x === section.position.x && hoveredDoor.y === section.position.y && hoveredDoor.side === side) ||
+            (hoveredDoor.x === section.position.x + dx && hoveredDoor.y === section.position.y + dy && hoveredDoor.side === OPPOSITE[side])
+          )
+          return {
+            stroke: isHovered ? '#fde68a' : '#facc15',
+            strokeWidth: isHovered ? DOOR_THICKNESS + 2 : DOOR_THICKNESS,
+            style: { pointerEvents: 'none' },
+          }
+        }}
+      />
 
       {/* Door snap preview */}
       {tool === 'door' && hoveredDoor && (() => {
         const { x, y, side } = hoveredDoor
-        const OPPOSITE: Record<keyof RoomDoors, keyof RoomDoors> = { left: 'right', right: 'left', top: 'bottom', bottom: 'top' }
         const { dx, dy } = NEIGHBOR_DELTA[side]
         const nx = x + dx
         const ny = y + dy

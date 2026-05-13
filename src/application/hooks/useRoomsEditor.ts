@@ -7,6 +7,7 @@ export function useRoomsEditor() {
   const data = useRoomsEditorStore((s) => s.data)
   const tool = useRoomsEditorStore((s) => s.tool)
   const selectedColor = useRoomsEditorStore((s) => s.selectedColor)
+  const autoRecenter = useRoomsEditorStore((s) => s.autoRecenter)
 
   const loadLayout = useRoomsEditorStore((s) => s.loadLayout)
   const newLayout = useRoomsEditorStore((s) => s.newLayout)
@@ -15,10 +16,12 @@ export function useRoomsEditor() {
   const toggleDoor = useRoomsEditorStore((s) => s.toggleDoor)
   const removeDoor = useRoomsEditorStore((s) => s.removeDoor)
   const removeRoom = useRoomsEditorStore((s) => s.removeRoom)
+  const nudgeLayout = useRoomsEditorStore((s) => s.nudgeLayout)
   const setMapSize = useRoomsEditorStore((s) => s.setMapSize)
   const setName = useRoomsEditorStore((s) => s.setName)
   const setTool = useRoomsEditorStore((s) => s.setTool)
   const setSelectedColor = useRoomsEditorStore((s) => s.setSelectedColor)
+  const setAutoRecenter = useRoomsEditorStore((s) => s.setAutoRecenter)
 
   const [lastError, setLastError] = useState<string | null>(null)
 
@@ -48,6 +51,7 @@ export function useRoomsEditor() {
     data,
     tool,
     selectedColor,
+    autoRecenter,
     lastError,
     dismissError: () => setLastError(null),
     newLayout,
@@ -56,10 +60,12 @@ export function useRoomsEditor() {
     toggleDoor,
     removeDoor,
     removeRoom,
+    nudgeLayout,
     setMapSize,
     setName,
     setTool,
     setSelectedColor,
+    setAutoRecenter,
     openFile,
     save,
   }
