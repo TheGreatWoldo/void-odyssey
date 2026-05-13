@@ -1,12 +1,13 @@
+import { useGameService } from '@/application/hooks/useGameService'
+import { useMenuConfig } from '@/application/hooks/useMenuConfig'
 import { useRoomsEditor } from '@/application/hooks/useRoomsEditor'
 import { RoomsEditorCanvas } from '@/presentation/components/rooms-editor/RoomsEditorCanvas'
-import { RoomsEditorPreviewCanvas } from '@/presentation/components/rooms-editor/RoomsEditorPreviewCanvas'
 import { RoomsEditorToolbar } from '@/presentation/components/rooms-editor/RoomsEditorToolbar'
 import { RoomsPalette } from '@/presentation/components/rooms-editor/RoomsPalette'
 import { createFileRoute } from '@tanstack/react-router'
 import { useState } from 'react'
 
-export const Route = createFileRoute('/rooms-editor')({
+export const Route = createFileRoute('/_canvas/edit/ships')({
   component: RoomsEditorPage,
 })
 
@@ -14,6 +15,9 @@ const DEFAULT_MAP_WIDTH = 8
 const DEFAULT_MAP_HEIGHT = 8
 
 function RoomsEditorPage() {
+  const service = useGameService()
+  const menuConfig = useMenuConfig()
+
   const {
     data,
     tool,
@@ -42,6 +46,21 @@ function RoomsEditorPage() {
   }
 
   const [view, setView] = useState<'edit' | 'preview'>('edit')
+
+  function handleViewChange(next: 'edit' | 'preview') {
+    if (next === view) return
+    setView(next)
+
+    if (next === 'preview' && data) {
+      service.goToScene('roomsEditor')
+        .then(() => service.loadRoomsLayout(data))
+        .catch((err: unknown) => console.error('[rooms preview]', err))
+    } else if (next === 'edit' && menuConfig) {
+      service.goToScene(menuConfig.sceneKey).catch((err: unknown) => {
+        console.error('[rooms preview]', err)
+      })
+    }
+  }
 
   return (
     <div className="flex flex-col h-full bg-slate-950 text-slate-100 overflow-hidden">
@@ -94,7 +113,7 @@ function RoomsEditorPage() {
               {(['edit', 'preview'] as const).map((v) => (
                 <button
                   key={v}
-                  onClick={() => setView(v)}
+                  onClick={() => handleViewChange(v)}
                   className={[
                     'text-xs px-3 py-1 rounded transition-colors capitalize',
                     view === v
@@ -120,9 +139,7 @@ function RoomsEditorPage() {
                   onToggleDoor={toggleDoor}
                   onRemoveDoor={removeDoor}
                 />
-              ) : (
-                <RoomsEditorPreviewCanvas layout={data} />
-              )
+              ) : null
             ) : (
               <div className="flex flex-col items-center justify-center h-full gap-4 text-slate-500">
                 <p className="text-sm">No layout loaded.</p>

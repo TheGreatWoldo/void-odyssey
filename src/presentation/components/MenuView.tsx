@@ -2,7 +2,8 @@ import { useMenuNavigation } from '@/application/hooks/useMenuNavigation'
 import { MenuButton } from '@/presentation/components/MenuButton'
 import type { IGameService } from '@/shared/game-service'
 import type { MenuConfig } from '@/shared/menu'
-import { useEffect } from 'react'
+import { MENU_ITEM_DURATION_MS, MENU_ITEM_STAGGER_MS } from '@/shared/menu-animation'
+import { useEffect, useRef, useState } from 'react'
 
 interface MenuViewProps {
   config: MenuConfig
@@ -13,6 +14,33 @@ interface MenuViewProps {
 
 export function MenuView({ config, service, onEvent, initialMenuId }: MenuViewProps) {
   const nav = useMenuNavigation(config, initialMenuId)
+
+  // Increment animKey each time the item list changes so animations re-fire.
+  const [animKey, setAnimKey] = useState(0)
+  const prevItemsRef = useRef(nav.currentItems)
+  useEffect(() => {
+    if (nav.currentItems !== prevItemsRef.current) {
+      prevItemsRef.current = nav.currentItems
+      setAnimKey((k) => k + 1)
+      setExiting(false)
+    }
+  }, [nav.currentItems])
+
+  // Deferred navigation: play exit stagger then commit.
+  const [exiting, setExiting] = useState(false)
+  const pendingNavRef = useRef<(() => void) | null>(null)
+
+  const navigateWithExit = (action: () => void) => {
+    if (exiting) return
+    const count = nav.currentItems.length
+    const totalDelay = (count - 1) * MENU_ITEM_STAGGER_MS + MENU_ITEM_DURATION_MS
+    pendingNavRef.current = action
+    setExiting(true)
+    setTimeout(() => {
+      pendingNavRef.current?.()
+      pendingNavRef.current = null
+    }, totalDelay)
+  }
 
   // Switch background scene when the level changes.
   useEffect(() => {
@@ -26,22 +54,9 @@ export function MenuView({ config, service, onEvent, initialMenuId }: MenuViewPr
       {/* Top title bar */}
       {nav.currentTitle && (
         <div className="pointer-events-none flex items-center border-b border-white/20 bg-black/30 px-6 py-3 backdrop-blur-[2px]">
-          <div className="w-32">
-            {nav.canGoBack && (
-              <button
-                onClick={nav.pop}
-                className="pointer-events-auto flex items-center gap-2 text-white/60 hover:text-white transition-colors uppercase tracking-widest text-sm -m-3 p-3"
-              >
-                ← Back
-              </button>
-            )}
-          </div>
-
           <h2 className="flex-1 text-center text-[2.5rem] font-bold tracking-widest text-white/80 uppercase">
             {nav.currentTitle}
           </h2>
-
-          <div className="w-32" />
         </div>
       )}
 
@@ -49,21 +64,29 @@ export function MenuView({ config, service, onEvent, initialMenuId }: MenuViewPr
       <div className="flex flex-1 flex-col items-center justify-center gap-4">
       {/* Menu items */}
       <div className="pointer-events-auto flex w-full max-w-sm flex-col gap-3">
-        {nav.currentItems.map((item) => (
-          <MenuButton
-            key={item.id}
-            label={item.label}
-            leadingIcons={item.leadingIcons}
-            trailingIcons={item.trailingIcons}
-            onClick={() => {
-              if (item.children?.length) {
-                nav.pushItem(item)
-              } else if (item.event) {
-                onEvent(item.event)
-              }
+        {nav.currentItems.map((item, i) => (
+          <div
+            key={`${animKey}-${item.id}`}
+            style={{
+              animation: exiting
+                ? `fade-out-down ${MENU_ITEM_DURATION_MS}ms ease ${i * MENU_ITEM_STAGGER_MS}ms both`
+                : `fade-in-up ${MENU_ITEM_DURATION_MS}ms ease ${i * MENU_ITEM_STAGGER_MS}ms both`,
             }}
-            onIconClick={onEvent}
-          />
+          >
+            <MenuButton
+              label={item.label}
+              leadingIcons={item.leadingIcons}
+              trailingIcons={item.trailingIcons}
+              onClick={() => {
+                if (item.children?.length) {
+                  navigateWithExit(() => nav.pushItem(item))
+                } else if (item.event) {
+                  onEvent(item.event)
+                }
+              }}
+              onIconClick={onEvent}
+            />
+          </div>
         ))}
 
 
@@ -72,7 +95,16 @@ export function MenuView({ config, service, onEvent, initialMenuId }: MenuViewPr
 
       {/* Bottom bar — same height as top bar */}
       <div className="pointer-events-none flex items-center justify-center border-t border-white/20 bg-black/30 px-6 py-3 backdrop-blur-[2px]">
-        <span className="text-[2.5rem]">&nbsp;</span>
+        {nav.canGoBack ? (
+          <button
+            onClick={() => navigateWithExit(nav.pop)}
+            className="pointer-events-auto flex items-center gap-2 text-white/60 hover:text-white transition-colors uppercase tracking-widest text-xl -m-3 p-3"
+          >
+            ← Back
+          </button>
+        ) : (
+          <span className="text-xl">&nbsp;</span>
+        )}
       </div>
     </div>
   )

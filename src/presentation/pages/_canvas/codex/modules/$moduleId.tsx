@@ -21,20 +21,9 @@ function CodexModuleDetailPage() {
 
       {/* Header */}
       <div className="flex items-center border-b border-white/20 bg-black/30 px-6 py-3 backdrop-blur-[2px]">
-        <div className="w-32">
-          <Link
-            to="/codex/modules"
-            className="pointer-events-auto flex items-center gap-2 text-white/60 hover:text-white transition-colors uppercase tracking-widest text-sm -m-3 p-3"
-          >
-            ← Back
-          </Link>
-        </div>
-
         <h1 className="flex-1 text-center text-[2.5rem] font-bold tracking-widest uppercase text-white/80">
           {meta.displayName}
         </h1>
-
-        <div className="w-32" />
       </div>
 
       {/* Content */}
@@ -71,7 +60,12 @@ function CodexModuleDetailPage() {
 
       {/* Footer */}
       <div className="flex items-center justify-center border-t border-white/20 bg-black/30 px-6 py-3 backdrop-blur-[2px]">
-        <span className="text-[2.5rem]">&nbsp;</span>
+        <Link
+          to="/codex/modules"
+          className="pointer-events-auto flex items-center gap-2 text-white/60 hover:text-white transition-colors uppercase tracking-widest text-xl -m-3 p-3"
+        >
+          ← Back
+        </Link>
       </div>
 
     </div>

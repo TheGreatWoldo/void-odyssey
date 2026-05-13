@@ -1,6 +1,7 @@
 import type { RoomDoors, RoomsLayoutData } from '@/shared/rooms-editor'
+import { NEIGHBOR_DELTA } from '@/shared/rooms-editor-geometry'
 import type { SVGProps } from 'react'
-import { NEIGHBOR_DELTA, edgeLineCoords } from './geometry'
+import { edgeDoorWallCoords, edgeLineCoords } from './geometry'
 
 interface Props {
   layout: RoomsLayoutData
@@ -44,6 +45,22 @@ export function RoomWalls({ layout, getLineProps }: Props) {
             )
 
             if (!lineProps) return []
+
+            if (hasDoor) {
+              const [stub1, stub2] = edgeDoorWallCoords(section.position.x, section.position.y, side)
+              return [
+                <line
+                  key={`wall-${room.index}-${section.index}-${side}-a`}
+                  x1={stub1.x1} y1={stub1.y1} x2={stub1.x2} y2={stub1.y2}
+                  {...lineProps}
+                />,
+                <line
+                  key={`wall-${room.index}-${section.index}-${side}-b`}
+                  x1={stub2.x1} y1={stub2.y1} x2={stub2.x2} y2={stub2.y2}
+                  {...lineProps}
+                />,
+              ]
+            }
 
             const { x1, y1, x2, y2 } = edgeLineCoords(section.position.x, section.position.y, side)
 

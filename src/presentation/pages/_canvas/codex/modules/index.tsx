@@ -1,15 +1,21 @@
 import { useGameService } from '@/application/hooks/useGameService'
 import { ModuleCatalog } from '@/domain/models/module/module-catalog'
 import { ModuleId } from '@/domain/models/module/production-module-id'
-import { createFileRoute, Link } from '@tanstack/react-router'
-import { useEffect } from 'react'
+import { MENU_ITEM_DURATION_MS, MENU_ITEM_STAGGER_MS } from '@/shared/menu-animation'
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
+import { useEffect, useState } from 'react'
 
 const MODULE_ENTRIES = (Object.values(ModuleId) as ModuleId[]).sort((a, b) =>
   ModuleCatalog[a].displayName.localeCompare(ModuleCatalog[b].displayName),
 )
 
+const EXIT_STAGGER_MS = MENU_ITEM_STAGGER_MS
+const EXIT_DURATION_MS = MENU_ITEM_DURATION_MS
+
 function CodexModulesPage() {
   const service = useGameService()
+  const navigate = useNavigate()
+  const [exiting, setExiting] = useState(false)
 
   useEffect(() => {
     service.goToScene('greenOnBlack').catch((err: unknown) => {
@@ -17,37 +23,40 @@ function CodexModulesPage() {
     })
   }, [service])
 
+  const handleBack = (e: React.MouseEvent) => {
+    e.preventDefault()
+    if (exiting) return
+    setExiting(true)
+    const totalDelay = (MODULE_ENTRIES.length - 1) * EXIT_STAGGER_MS + EXIT_DURATION_MS
+    setTimeout(() => {
+      navigate({ to: '/', search: { menu: 'codex' } }).catch(() => {})
+    }, totalDelay)
+  }
+
   return (
     <div className="pointer-events-none absolute inset-0 text-white flex flex-col">
 
       {/* Header */}
       <div className="flex items-center border-b border-white/20 bg-black/30 px-6 py-3 backdrop-blur-[2px]">
-        <div className="w-32">
-          <Link
-            to="/"
-            search={{ menu: 'codex' }}
-            className="pointer-events-auto flex items-center gap-2 text-white/60 hover:text-white transition-colors uppercase tracking-widest text-sm -m-3 p-3"
-          >
-            ← Back
-          </Link>
-        </div>
-
         <h1 className="flex-1 text-center text-[2.5rem] font-bold tracking-widest uppercase text-white/80">
           Modules
         </h1>
-
-        <div className="w-32" />
       </div>
 
       {/* Content */}
       <div className="pointer-events-auto flex-1 flex items-center justify-center overflow-y-auto px-8 py-8">
         <div className="w-full max-w-5xl grid grid-cols-3 gap-4">
-          {MODULE_ENTRIES.map((id) => (
+          {MODULE_ENTRIES.map((id, i) => (
             <Link
               key={id}
               to="/codex/modules/$moduleId"
               params={{ moduleId: id }}
               className="pointer-events-auto flex flex-col border border-white/20 bg-black/90 px-5 py-4 uppercase tracking-wider transition-colors hover:border-white/40 hover:text-white cursor-pointer"
+              style={{
+                animation: exiting
+                  ? `fade-out-down ${EXIT_DURATION_MS}ms ease ${i * EXIT_STAGGER_MS}ms both`
+                  : `fade-in-up ${MENU_ITEM_DURATION_MS}ms ease ${i * MENU_ITEM_STAGGER_MS}ms both`,
+              }}
             >
               <span className="text-white/90 text-xl">{ModuleCatalog[id].displayName}</span>
               <span className="text-white/30 text-xs mt-1 self-end">{ModuleCatalog[id].category}</span>
@@ -58,7 +67,13 @@ function CodexModulesPage() {
 
       {/* Footer */}
       <div className="flex items-center justify-center border-t border-white/20 bg-black/30 px-6 py-3 backdrop-blur-[2px]">
-        <span className="text-[2.5rem]">&nbsp;</span>
+        <a
+          href="/"
+          onClick={handleBack}
+          className="pointer-events-auto flex items-center gap-2 text-white/60 hover:text-white transition-colors uppercase tracking-widest text-xl -m-3 p-3"
+        >
+          ← Back
+        </a>
       </div>
 
     </div>

@@ -3,7 +3,9 @@ import { loadMenuConfig } from '@/application/useCases/LoadMenuConfigUseCase'
 import { initI18n } from '@/infrastructure/lib/i18n'
 import { JsonMenuRepository } from '@/infrastructure/menu/JsonMenuRepository'
 import '@/presentation/styles/global.css'
+// @ts-expect-error — no type declarations for fontsource packages
 import '@fontsource/audiowide'
+// @ts-expect-error — no type declarations for fontsource packages
 import '@fontsource/orbitron'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'

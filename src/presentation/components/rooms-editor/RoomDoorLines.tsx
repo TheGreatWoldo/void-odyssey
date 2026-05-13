@@ -1,6 +1,7 @@
 import type { RoomDoors, RoomsLayoutData } from '@/shared/rooms-editor'
+import { DOOR_SIDES } from '@/shared/rooms-editor-geometry'
 import type { SVGProps } from 'react'
-import { DOOR_SIDES, doorLineCoords } from './geometry'
+import { doorLineCoords } from './geometry'
 
 interface Props {
   layout: RoomsLayoutData

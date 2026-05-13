@@ -1,6 +1,7 @@
 import type { EditorTool, RoomDoors, RoomSection, RoomsLayoutData } from '@/shared/rooms-editor'
+import { CELL, DOOR_THICKNESS, NEIGHBOR_DELTA } from '@/shared/rooms-editor-geometry'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { CELL, DOOR_THICKNESS, NEIGHBOR_DELTA, doorLineCoords } from './geometry'
+import { doorLineCoords } from './geometry'
 import { RoomDoorLines } from './RoomDoorLines'
 import { RoomWalls } from './RoomWalls'
 
