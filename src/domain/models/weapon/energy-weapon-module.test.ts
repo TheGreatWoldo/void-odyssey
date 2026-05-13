@@ -30,6 +30,7 @@ describe('createEnergyWeaponModule', () => {
 
   it('rejects blank id', () => {
     const result = makeCannon({ type: ModuleId.PlasmaCannon });
+    void result;
     // Override with blank id via direct call
     const r = createEnergyWeaponModule('  ', 'name', {
       type: ModuleId.PlasmaCannon,

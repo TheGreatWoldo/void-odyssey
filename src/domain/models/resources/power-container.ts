@@ -1,6 +1,6 @@
 import { generateId } from '@/shared/utils';
 
-import type { IStorageNode } from '../storage/storage-node';
+import type { IStorageNode } from '@/domain/models/storage/storage-node';
 import type { Resource } from './resource';
 import { ResourceType } from './resource';
 import type { ResourceContainer, ResourceContainerOptions } from './resource-container';

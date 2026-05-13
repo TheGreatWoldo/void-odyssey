@@ -1,5 +1,5 @@
 import { NodeType } from '@/domain/models/navigation/node-type';
-import { PositionedNodeStub } from '@/domain/models/navigation/route/strategies/node-type-strategy';
+import type { PositionedNodeStub } from '@/domain/models/navigation/route/strategies/node-type-strategy';
 import { fisherYatesShuffle } from '@/shared/math-utils';
 
 /**
@@ -9,7 +9,11 @@ import { fisherYatesShuffle } from '@/shared/math-utils';
  * to claim for its type. The returned array must be a subset of `unassigned`.
  */
 export abstract class TypeAllocationStrategy {
-  constructor(readonly type: NodeType) {}
+  readonly type: NodeType
+
+  constructor(type: NodeType) {
+    this.type = type
+  }
 
   abstract select(
     unassigned: readonly PositionedNodeStub[],

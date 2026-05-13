@@ -1,4 +1,3 @@
-import type { Resource } from '@/domain/models/resources/resource';
 import { ResourceType } from '@/domain/models/resources/resource';
 import type { ContainerMap } from '@/domain/models/resources/resource-container';
 import { createResourceContainer } from '@/domain/models/resources/resource-container';
@@ -65,15 +64,15 @@ export function createProducer(id: string, recipe: Recipe): Producer {
 
   // Pre-allocated mutable buffers reused every tick to avoid per-tick allocations.
   // Indexed against recipe.nonPowerCosts — Power is handled separately via powerBuffer.
-  const costBuffers = recipe.nonPowerCosts.map(r => ({ id: r.id, amount: 0 } as Resource));
+  const costBuffers = recipe.nonPowerCosts.map(r => ({ id: r.id, amount: 0 }))
   // Pre-allocated amounts map passed to recipe.calculateFraction — includes Power when recipe has a cost.
   const amountsBuffer = new Map<ResourceType, number>([
     ...recipe.nonPowerCosts.map(r => [r.id, 0] as [ResourceType, number]),
     ...(recipe.powerCostPerSecond > 0 ? [[ResourceType.Power, 0] as [ResourceType, number]] : []),
   ]);
-  const primaryBuffer: Resource = { id: recipe.primaryOutput, amount: 0 };
-  const byproductBuffers = recipe.byproductsPerSecond.map(r => ({ id: r.id, amount: 0 } as Resource));
-  const powerBuffer: Resource = { id: ResourceType.Power, amount: 0 };
+  const primaryBuffer: { id: ResourceType; amount: number } = { id: recipe.primaryOutput, amount: 0 };
+  const byproductBuffers = recipe.byproductsPerSecond.map(r => ({ id: r.id, amount: 0 }));
+  const powerBuffer: { id: ResourceType; amount: number } = { id: ResourceType.Power, amount: 0 };
 
   function getStock(id: ResourceType): number {
     return storage.get(id);

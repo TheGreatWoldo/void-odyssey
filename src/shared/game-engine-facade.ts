@@ -1,3 +1,4 @@
+import type { RoomsLayoutData } from '@/shared/rooms-editor'
 import type { SceneKey } from '@/shared/scene-key'
 
 /**
@@ -9,5 +10,6 @@ export interface IGameEngineFacade {
   setCanvasInteractive(interactive: boolean): void
   startEngine(): Promise<void>
   goToScene(key: SceneKey): Promise<void>
+  loadRoomsLayout(layout: RoomsLayoutData): void
   dispose(): void
 }

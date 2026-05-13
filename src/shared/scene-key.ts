@@ -6,3 +6,4 @@ export type SceneKey =
   | 'orangeOnBlue'
   | 'magentaOnBlack'
   | 'greenOnBlack'
+  | 'roomsEditor'

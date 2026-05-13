@@ -1,9 +1,9 @@
 import { NodeType } from '@/domain/models/navigation/node-type';
-import { NodePositionStrategy } from '@/domain/models/navigation/route/node-position-strategy';
-import { RouteConnection, RouteGraph, RouteNode } from '@/domain/models/navigation/route/route-node';
+import type { NodePositionStrategy } from '@/domain/models/navigation/route/node-position-strategy';
+import type { RouteConnection, RouteGraph, RouteNode } from '@/domain/models/navigation/route/route-node';
 import { ClosestNeighboursConnectionStrategy } from '@/domain/models/navigation/route/strategies/closest-neighbours-connection-strategy';
-import { NodeConnectionStrategy } from '@/domain/models/navigation/route/strategies/node-connection-strategy';
-import { NodeTypeStrategy, PositionedNodeStub } from '@/domain/models/navigation/route/strategies/node-type-strategy';
+import type { NodeConnectionStrategy } from '@/domain/models/navigation/route/strategies/node-connection-strategy';
+import type { NodeTypeStrategy, PositionedNodeStub } from '@/domain/models/navigation/route/strategies/node-type-strategy';
 import { WeightedRandomNodeTypeStrategy } from '@/domain/models/navigation/route/strategies/weighted-random-node-type-strategy';
 
 /**

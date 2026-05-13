@@ -71,7 +71,8 @@ export interface ProductionModule extends Storable {
   readonly maxOutput: number;
 
   addUpgrade(upgrade: ModuleUpgrade): Result<void, string>;
-  setUpgradeEnabled(upgradeId: string, enabled: boolean): Result<void, string>;
+  enableUpgrade(upgradeId: string): Result<void, string>;
+  disableUpgrade(upgradeId: string): Result<void, string>;
   setCondition(value: number): Result<void, string>;
 
   readonly costMultiplier: number;
@@ -153,12 +154,24 @@ export function createProductionModule(
     return ok(undefined);
   }
 
-  function setUpgradeEnabled(upgradeId: string, upgEnabled: boolean): Result<void, string> {
+  function enableUpgrade(upgradeId: string): Result<void, string> {
     const upgrade = upgradeMap.get(upgradeId);
 
     if (!upgrade) return err(`Upgrade '${upgradeId}' not found on module '${id}'`);
 
-    upgrade.enabled = upgEnabled;
+    upgrade.enabled = true;
+    cachedCostMultiplier = null;
+    cachedUpgrades = null;
+
+    return ok(undefined);
+  }
+
+  function disableUpgrade(upgradeId: string): Result<void, string> {
+    const upgrade = upgradeMap.get(upgradeId);
+
+    if (!upgrade) return err(`Upgrade '${upgradeId}' not found on module '${id}'`);
+
+    upgrade.enabled = false;
     cachedCostMultiplier = null;
     cachedUpgrades = null;
 
@@ -252,7 +265,8 @@ export function createProductionModule(
     get enabled() { return enabled; },
 
     addUpgrade,
-    setUpgradeEnabled,
+    enableUpgrade,
+    disableUpgrade,
 
     get costMultiplier() { return computeCostMultiplier(); },
 

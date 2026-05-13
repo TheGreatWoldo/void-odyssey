@@ -1,4 +1,4 @@
-import { RouteNode } from '@/domain/models/navigation/route/route-node';
+import type { RouteNode } from '@/domain/models/navigation/route/route-node';
 
 /**
  * Aggregate root for the navigable route graph.

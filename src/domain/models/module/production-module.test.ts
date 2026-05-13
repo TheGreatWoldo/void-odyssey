@@ -243,6 +243,8 @@ describe('createProductionModule', () => {
           id: 'u1', name: 'U1',
           costFactor: 1,
           targetResourceType: ResourceType.Food,
+          storableType: 'upgrade' as const,
+          slotCost: 1,
           enabled: true,
         }).ok
       ).toBe(false);
@@ -256,23 +258,39 @@ describe('createProductionModule', () => {
           id: 'u1', name: 'U1',
           costFactor: 0.8,
           targetResourceType: primaryOutputType,
+          storableType: 'upgrade' as const,
+          slotCost: 1,
           enabled: true,
         }).ok
       ).toBe(true);
     });
   });
 
-  describe('setUpgradeEnabled', () => {
-    it('throws when the upgrade id does not exist', () => {
+  describe('enableUpgrade / disableUpgrade', () => {
+    it('throws when the upgrade id does not exist on enableUpgrade', () => {
       const m = makeModule('m', 'M', powerRecipe, { type: ModuleId.ReactorCore });
 
-      expect(m.setUpgradeEnabled('nonexistent', true).ok).toBe(false);
+      expect(m.enableUpgrade('nonexistent').ok).toBe(false);
     });
 
-    it('toggles an installed upgrade', () => {
+    it('throws when the upgrade id does not exist on disableUpgrade', () => {
       const m = makeModule('m', 'M', powerRecipe, { type: ModuleId.ReactorCore });
-      m.addUpgrade({ id: 'u1', name: 'U1', costFactor: 0.8, targetResourceType: primaryOutputType, enabled: true });
-      m.setUpgradeEnabled('u1', false);
+
+      expect(m.disableUpgrade('nonexistent').ok).toBe(false);
+    });
+
+    it('enables an installed upgrade', () => {
+      const m = makeModule('m', 'M', powerRecipe, { type: ModuleId.ReactorCore });
+      m.addUpgrade({ id: 'u1', name: 'U1', costFactor: 0.8, targetResourceType: primaryOutputType, storableType: 'upgrade' as const, slotCost: 1, enabled: false });
+      m.enableUpgrade('u1');
+
+      expect(m.upgrades[0].enabled).toBe(true);
+    });
+
+    it('disables an installed upgrade', () => {
+      const m = makeModule('m', 'M', powerRecipe, { type: ModuleId.ReactorCore });
+      m.addUpgrade({ id: 'u1', name: 'U1', costFactor: 0.8, targetResourceType: primaryOutputType, storableType: 'upgrade' as const, slotCost: 1, enabled: true });
+      m.disableUpgrade('u1');
 
       expect(m.upgrades[0].enabled).toBe(false);
     });
@@ -287,15 +305,15 @@ describe('createProductionModule', () => {
 
     it('accumulates upgrade cost multipliers', () => {
       const m = makeModule('m', 'M', powerRecipe, { type: ModuleId.ReactorCore });
-      m.addUpgrade({ id: 'u1', name: 'U1', costFactor: 0.8, targetResourceType: primaryOutputType, enabled: true });
+      m.addUpgrade({ id: 'u1', name: 'U1', costFactor: 0.8, targetResourceType: primaryOutputType, storableType: 'upgrade' as const, slotCost: 1, enabled: true });
 
       expect(m.costMultiplier).toBeCloseTo(0.8);
     });
 
     it('stacks multiple upgrade costFactors additively', () => {
       const m = makeModule('m', 'M', powerRecipe, { type: ModuleId.ReactorCore });
-      m.addUpgrade({ id: 'u1', name: 'U1', costFactor: 0.8, targetResourceType: primaryOutputType, enabled: true });
-      m.addUpgrade({ id: 'u2', name: 'U2', costFactor: 0.7, targetResourceType: primaryOutputType, enabled: true });
+      m.addUpgrade({ id: 'u1', name: 'U1', costFactor: 0.8, targetResourceType: primaryOutputType, storableType: 'upgrade' as const, slotCost: 1, enabled: true });
+      m.addUpgrade({ id: 'u2', name: 'U2', costFactor: 0.7, targetResourceType: primaryOutputType, storableType: 'upgrade' as const, slotCost: 1, enabled: true });
 
       // additive: 1 + (0.8 - 1) + (0.7 - 1) = 0.5
       expect(m.costMultiplier).toBeCloseTo(0.5);
@@ -303,15 +321,15 @@ describe('createProductionModule', () => {
 
     it('skips disabled upgrades', () => {
       const m = makeModule('m', 'M', powerRecipe, { type: ModuleId.ReactorCore });
-      m.addUpgrade({ id: 'u1', name: 'U1', costFactor: 0.5, targetResourceType: primaryOutputType, enabled: false });
+      m.addUpgrade({ id: 'u1', name: 'U1', costFactor: 0.5, targetResourceType: primaryOutputType, storableType: 'upgrade' as const, slotCost: 1, enabled: false });
 
       expect(m.costMultiplier).toBe(1);
     });
 
     it('clamps to 0 when additive reductions drive the multiplier below zero', () => {
       const m = makeModule('m', 'M', powerRecipe, { type: ModuleId.ReactorCore });
-      m.addUpgrade({ id: 'u1', name: 'U1', costFactor: 0.3, targetResourceType: primaryOutputType, enabled: true });
-      m.addUpgrade({ id: 'u2', name: 'U2', costFactor: 0.3, targetResourceType: primaryOutputType, enabled: true });
+      m.addUpgrade({ id: 'u1', name: 'U1', costFactor: 0.3, targetResourceType: primaryOutputType, storableType: 'upgrade' as const, slotCost: 1, enabled: true });
+      m.addUpgrade({ id: 'u2', name: 'U2', costFactor: 0.3, targetResourceType: primaryOutputType, storableType: 'upgrade' as const, slotCost: 1, enabled: true });
 
       // additive: 1 + (0.3 - 1) + (0.3 - 1) = -0.4 → clamped to 0
       expect(m.costMultiplier).toBe(0);

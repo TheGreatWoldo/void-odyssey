@@ -152,7 +152,8 @@ export function createEnergyWeaponModule(
     disable: () => base.disable(),
 
     addUpgrade: (upgrade: ModuleUpgrade) => base.addUpgrade(upgrade),
-    setUpgradeEnabled: (upgradeId: string, enabled: boolean) => base.setUpgradeEnabled(upgradeId, enabled),
+    enableUpgrade: (upgradeId: string) => base.enableUpgrade(upgradeId),
+    disableUpgrade: (upgradeId: string) => base.disableUpgrade(upgradeId),
 
     get costMultiplier() { return base.costMultiplier; },
 

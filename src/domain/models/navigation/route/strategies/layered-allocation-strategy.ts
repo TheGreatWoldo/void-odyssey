@@ -1,5 +1,5 @@
 import { NodeType } from '@/domain/models/navigation/node-type';
-import { NodeTypeStrategy, PositionedNodeStub } from '@/domain/models/navigation/route/strategies/node-type-strategy';
+import type { NodeTypeStrategy, PositionedNodeStub } from '@/domain/models/navigation/route/strategies/node-type-strategy';
 import { TypeAllocationStrategy } from '@/domain/models/navigation/route/strategies/type-allocation-strategy';
 
 /**
@@ -12,7 +12,11 @@ import { TypeAllocationStrategy } from '@/domain/models/navigation/route/strateg
  * place scarcer or more constrained types first.
  */
 export class LayeredAllocationStrategy implements NodeTypeStrategy {
-  constructor(private readonly strategies: readonly TypeAllocationStrategy[]) {}
+  private readonly strategies: readonly TypeAllocationStrategy[]
+
+  constructor(strategies: readonly TypeAllocationStrategy[]) {
+    this.strategies = strategies
+  }
 
   assignAll(
     nodes: readonly PositionedNodeStub[],

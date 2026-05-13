@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { NodeType } from '@/domain/models/navigation/node-type';
-import { NodePositionContext } from '@/domain/models/navigation/route/node-position-strategy';
+import type { NodePositionContext } from '@/domain/models/navigation/route/node-position-strategy';
 import { generateRouteGraph } from '@/domain/services/route-graph-generator';
 
 class FixedPositionStrategy {

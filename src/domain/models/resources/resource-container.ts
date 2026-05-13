@@ -1,3 +1,4 @@
+import type { ItemContainer } from '@/domain/models/storage/item-container';
 import type { IStorageNode } from '@/domain/models/storage/storage-node';
 import { generateId } from '@/shared/utils';
 import type { Resource } from './resource';
@@ -58,7 +59,7 @@ export interface ResourceContainer extends IStorageNode {
   /** Returns true if all supplied resources are individually satisfiable by this container. */
   hasAll(resources: readonly Resource[]): boolean;
   freeSpace(): number;
-  addContainer(container: ResourceContainer): boolean;
+  addContainer(container: ResourceContainer | ItemContainer): boolean;
   removeContainer(container: ResourceContainer): void;
   getContainers(): readonly ResourceContainer[];
   /** IStorageNode — returns nested ResourceContainers as IStorageNode[]. */
@@ -81,6 +82,7 @@ export function createResourceContainer(
   const perTypeCaps: Partial<Record<ResourceType, number | null>> | null = perTypeCapacity;
   const store = new Map<ResourceType, number>();
   const children: ResourceContainer[] = [];
+  const itemChildren: ItemContainer[] = [];
   let childCapacityUsed = 0;
   // Incrementally tracked to avoid a full Map iteration on every freeSpace() call.
   // Accepts minor float drift over long sessions in exchange for O(1) space queries.
@@ -213,9 +215,13 @@ export function createResourceContainer(
     return totalRefused;
   }
 
-  function addContainer(container: ResourceContainer): boolean {
+  function addContainer(container: ResourceContainer | ItemContainer): boolean {
     if (container.capacity > freeSpace()) return false;
-    children.push(container);
+    if (container.kind === 'item') {
+      itemChildren.push(container);
+    } else {
+      children.push(container);
+    }
     childCapacityUsed += container.capacity;
 
     return true;
@@ -234,7 +240,7 @@ export function createResourceContainer(
   }
 
   function getStorageNodes(): readonly IStorageNode[] {
-    return children;
+    return [...children, ...itemChildren];
   }
 
   function accepts(id: ResourceType): boolean {

@@ -41,7 +41,8 @@ export interface WeaponModuleBase {
   stepRamp(deltaTime: number): void;
   setCondition(value: number): Result<void, string>;
   addUpgrade(upgrade: ModuleUpgrade): Result<void, string>;
-  setUpgradeEnabled(upgradeId: string, enabled: boolean): Result<void, string>;
+  enableUpgrade(upgradeId: string): Result<void, string>;
+  disableUpgrade(upgradeId: string): Result<void, string>;
 }
 
 /**
@@ -80,12 +81,24 @@ export function createWeaponModuleBase(
     return ok(undefined);
   }
 
-  function setUpgradeEnabled(upgradeId: string, upgEnabled: boolean): Result<void, string> {
+  function enableUpgrade(upgradeId: string): Result<void, string> {
     const upgrade = upgradeMap.get(upgradeId);
 
     if (!upgrade) return err(`Upgrade '${upgradeId}' not found on module '${id}'`);
 
-    upgrade.enabled = upgEnabled;
+    upgrade.enabled = true;
+    cachedCostMultiplier = null;
+    cachedUpgrades = null;
+
+    return ok(undefined);
+  }
+
+  function disableUpgrade(upgradeId: string): Result<void, string> {
+    const upgrade = upgradeMap.get(upgradeId);
+
+    if (!upgrade) return err(`Upgrade '${upgradeId}' not found on module '${id}'`);
+
+    upgrade.enabled = false;
     cachedCostMultiplier = null;
     cachedUpgrades = null;
 
@@ -170,7 +183,8 @@ export function createWeaponModuleBase(
     isOperational: () => condition > 0 && enabled,
 
     addUpgrade,
-    setUpgradeEnabled,
+    enableUpgrade,
+    disableUpgrade,
     setThrottle,
     setCondition,
     stepRamp,

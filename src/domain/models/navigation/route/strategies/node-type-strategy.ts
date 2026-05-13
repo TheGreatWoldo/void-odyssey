@@ -1,5 +1,5 @@
 import { NodeType } from '@/domain/models/navigation/node-type';
-import { RouteNode } from '@/domain/models/navigation/route/route-node';
+import type { RouteNode } from '@/domain/models/navigation/route/route-node';
 
 /** A node stub that has been positioned but not yet assigned a type. */
 export type PositionedNodeStub = Omit<RouteNode, 'type'>;
