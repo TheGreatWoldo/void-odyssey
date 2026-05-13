@@ -8,6 +8,8 @@ import type { BackgroundActorArgs } from '../actors/background-actor-args';
 import type { ColorArgs } from '../args/color-args';
 import type { SizeArgs } from '../background-scene-args';
 
+const RANGE_JITTER_FACTOR = 0.15;
+
 export const HueForSizeStrategy = (
   colorArgs: ColorArgs,
   sizeArgs: SizeArgs,
@@ -26,12 +28,12 @@ export const HueForSizeStrategy = (
   // Smaller actors are further away — map lightness and alpha from min→max by size.
   // A small random jitter keeps variation within the parallax band.
   const lightnessBase = getFactorInRange(colorArgs.minLightness, colorArgs.maxLightness, sizeFactor);
-  const lightnessJitter = (colorArgs.maxLightness - colorArgs.minLightness) * 0.15;
+  const lightnessJitter = (colorArgs.maxLightness - colorArgs.minLightness) * RANGE_JITTER_FACTOR;
   const lightness = Math.max(colorArgs.minLightness,
     Math.min(colorArgs.maxLightness, lightnessBase + getRandomInRange(-lightnessJitter, lightnessJitter)));
 
   const alphaBase = getFactorInRange(colorArgs.minAlpha, colorArgs.maxAlpha, sizeFactor);
-  const alphaJitter = (colorArgs.maxAlpha - colorArgs.minAlpha) * 0.15;
+  const alphaJitter = (colorArgs.maxAlpha - colorArgs.minAlpha) * RANGE_JITTER_FACTOR;
   const alpha = Math.max(colorArgs.minAlpha,
     Math.min(colorArgs.maxAlpha, alphaBase + getRandomInRange(-alphaJitter, alphaJitter)));
 

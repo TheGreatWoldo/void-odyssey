@@ -1,5 +1,6 @@
 import type { Doors, Room, RoomsLayout, Section } from '@/domain/models/ship/rooms-layout'
 import type { EditorTool } from '@/shared/rooms-editor'
+import type { Draft } from 'immer'
 import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
 
@@ -64,6 +65,78 @@ function sectionAt(
   return null
 }
 
+function findAdjacentSameColorRooms(
+  data: RoomsLayout,
+  x: number,
+  y: number,
+  color: string,
+): Set<number> {
+  const adjacentIndices = new Set<number>()
+  for (const { dx, dy } of Object.values(NEIGHBOR_OFFSET)) {
+    const hit = sectionAt(data, x + dx, y + dy)
+    if (hit && hit.room.color === color) {
+      adjacentIndices.add(hit.room.index)
+    }
+  }
+  return adjacentIndices
+}
+
+function mergeAdjacentRoomsIntoCheapest(
+  adjacentRooms: Room[],
+  data: Draft<RoomsLayout>,
+): Room {
+  const targetRoom = adjacentRooms[0]
+
+  for (let i = 1; i < adjacentRooms.length; i++) {
+    const toMerge = adjacentRooms[i]
+
+    for (const s of toMerge.sections) {
+      s.room = targetRoom.index
+      s.index = nextSectionIndex(targetRoom)
+      targetRoom.sections.push(s)
+    }
+
+    const roomIdx = data.rooms.indexOf(toMerge)
+    data.rooms.splice(roomIdx, 1)
+  }
+
+  return targetRoom
+}
+
+function inheritDoorsFromNeighbors(
+  data: RoomsLayout,
+  x: number,
+  y: number,
+): Doors {
+  const doors: Doors = { left: false, right: false, top: false, bottom: false }
+
+  for (const [side, { dx, dy }] of Object.entries(NEIGHBOR_OFFSET) as [
+    keyof Doors,
+    { dx: number; dy: number },
+  ][]) {
+    const neighbor = sectionAt(data, x + dx, y + dy)
+    if (neighbor && neighbor.section.doors[OPPOSING[side]]) {
+      doors[side] = true
+    }
+  }
+
+  return doors
+}
+
+function createSection(
+  position: { x: number; y: number },
+  doors: Doors,
+  roomIndex: number,
+  sectionIndex: number,
+): Section {
+  return {
+    room: roomIndex,
+    index: sectionIndex,
+    position,
+    doors,
+  }
+}
+
 interface RoomsEditorState {
   data: RoomsLayout | null
   tool: EditorTool
@@ -118,19 +191,11 @@ export const useRoomsEditorStore = create<RoomsEditorState>()(
         const already = sectionAt(state.data, x, y)
         if (already) return
 
-        // Collect all adjacent same-color rooms (deduplicated by index)
-        const adjacentIndices = new Set<number>()
-        for (const { dx, dy } of Object.values(NEIGHBOR_OFFSET)) {
-          const hit = sectionAt(state.data, x + dx, y + dy)
-          if (hit && hit.room.color === state.selectedColor) {
-            adjacentIndices.add(hit.room.index)
-          }
-        }
+        const adjacentIndices = findAdjacentSameColorRooms(state.data, x, y, state.selectedColor)
 
         let targetRoom: Room
 
         if (adjacentIndices.size === 0) {
-          // No adjacent same-color room — create one
           const nextIndex =
             state.data.rooms.length === 0
               ? 0
@@ -146,43 +211,15 @@ export const useRoomsEditorStore = create<RoomsEditorState>()(
           state.data.rooms.push(newRoom)
           targetRoom = newRoom
         } else {
-          // Use the room with the lowest index as canonical, merge the rest into it
           const adjacentRooms = state.data.rooms
             .filter((r) => adjacentIndices.has(r.index))
             .sort((a, b) => a.index - b.index)
 
-          targetRoom = adjacentRooms[0]
-
-          for (let i = 1; i < adjacentRooms.length; i++) {
-            const toMerge = adjacentRooms[i]
-
-            for (const s of toMerge.sections) {
-              s.room = targetRoom.index
-              s.index = nextSectionIndex(targetRoom)
-              targetRoom.sections.push(s)
-            }
-
-            const roomIdx = state.data.rooms.indexOf(toMerge)
-            state.data.rooms.splice(roomIdx, 1)
-          }
+          targetRoom = mergeAdjacentRoomsIntoCheapest(adjacentRooms, state.data)
         }
 
-        // Inherit doors from adjacent sections that already face this cell
-        const doors: Doors = { left: false, right: false, top: false, bottom: false }
-
-        for (const [side, { dx, dy }] of Object.entries(NEIGHBOR_OFFSET) as [keyof Doors, { dx: number; dy: number }][]) {
-          const neighbor = sectionAt(state.data, x + dx, y + dy)
-          if (neighbor && neighbor.section.doors[OPPOSING[side]]) {
-            doors[side] = true
-          }
-        }
-
-        const section: Section = {
-          room: targetRoom.index,
-          index: nextSectionIndex(targetRoom),
-          position: { x, y },
-          doors,
-        }
+        const doors = inheritDoorsFromNeighbors(state.data, x, y)
+        const section = createSection({ x, y }, doors, targetRoom.index, nextSectionIndex(targetRoom))
 
         targetRoom.sections.push(section)
         recalcRoomBounds(targetRoom)

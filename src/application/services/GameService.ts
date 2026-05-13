@@ -1,5 +1,6 @@
 import type { IGameEngineFacade } from '@/shared/game-engine-facade'
 import type { IGameService } from '@/shared/game-service'
+import type { RoomsLayoutData } from '@/shared/rooms-editor'
 import type { SceneKey } from '@/shared/scene-key'
 
 export class GameService implements IGameService {
@@ -42,5 +43,9 @@ export class GameService implements IGameService {
 
   goToScene(key: SceneKey): Promise<void> {
     return this.engine.goToScene(key)
+  }
+
+  loadRoomsLayout(layout: RoomsLayoutData): void {
+    this.engine.loadRoomsLayout(layout)
   }
 }

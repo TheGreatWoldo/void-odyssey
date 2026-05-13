@@ -4,17 +4,16 @@ import { HueForSizeStrategy } from '@/infrastructure/background/strategies/color
 import { getPositionForArgs } from '@/infrastructure/background/strategies/position-strategy'
 import { getSizeForArgs } from '@/infrastructure/background/strategies/size-strategy'
 import { getVelocityForArgs } from '@/infrastructure/background/strategies/velocity-strategy'
+import { RoomsEditorScene } from '@/infrastructure/rooms-editor/scenes/RoomsEditorScene'
 import type { IGameEngineFacade } from '@/shared/game-engine-facade'
+import type { RoomsLayoutData } from '@/shared/rooms-editor'
 import type { SceneKey } from '@/shared/scene-key'
 import { Color, DisplayMode, Engine } from 'excalibur'
 
-// Compile-time check: SceneKey must match backgroundSceneArgsCatalog keys exactly.
-export type _AssertSceneKeyMatchesCatalog =
-  keyof typeof backgroundSceneArgsCatalog extends SceneKey
-    ? SceneKey extends keyof typeof backgroundSceneArgsCatalog
-      ? true
-      : never
-    : never
+// Compile-time check: background SceneKeys must all be in SceneKey.
+// 'roomsEditor' is intentionally excluded from the background catalog.
+type BackgroundSceneKey = keyof typeof backgroundSceneArgsCatalog
+export type _AssertBackgroundKeysInSceneKey = BackgroundSceneKey extends SceneKey ? true : never
 
 // Set to false when audio unlock via the Excalibur play button is needed.
 const SUPPRESS_PLAY_BUTTON = true
@@ -30,9 +29,11 @@ const backgroundStrategies = {
 export class ExcaliburEngineFacade implements IGameEngineFacade {
   private engine: Engine
   private readonly _canvas: HTMLCanvasElement
+  private readonly roomsEditorScene: RoomsEditorScene
 
   constructor(canvas: HTMLCanvasElement) {
     this._canvas = canvas
+    this.roomsEditorScene = new RoomsEditorScene()
     this.engine = this.buildEngine()
   }
 
@@ -47,6 +48,8 @@ export class ExcaliburEngineFacade implements IGameEngineFacade {
     for (const [key, args] of Object.entries(backgroundSceneArgsCatalog)) {
       engine.addScene(key, new BackgroundScene(args, backgroundStrategies))
     }
+
+    engine.addScene('roomsEditor', this.roomsEditorScene)
 
     return engine
   }
@@ -66,6 +69,10 @@ export class ExcaliburEngineFacade implements IGameEngineFacade {
   goToScene(key: SceneKey): Promise<void> {
     if (this.engine.currentSceneName === key) return Promise.resolve()
     return this.engine.goToScene(key)
+  }
+
+  loadRoomsLayout(layout: RoomsLayoutData): void {
+    this.roomsEditorScene.loadLayout(layout)
   }
 
   dispose(): void {
