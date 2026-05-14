@@ -1,4 +1,5 @@
 import { useGameService } from '@/application/hooks/useGameService'
+import { SceneKey } from '@/shared/scene-key'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { useEffect } from 'react'
 
@@ -6,7 +7,7 @@ function CodexUpgradesPage() {
   const service = useGameService()
 
   useEffect(() => {
-    service.goToScene('greenOnBlack').catch((err: unknown) => {
+    service.goToScene(SceneKey.GreenOnBlack).catch((err: unknown) => {
       console.error('goToScene failed:', err)
     })
   }, [service])

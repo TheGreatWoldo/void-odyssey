@@ -1,7 +1,7 @@
-import type { RoomsLayoutData } from '@/shared/rooms-editor'
-import { CELL, DOOR_SIDES, DOOR_THICKNESS, NEIGHBOR_DELTA } from '@/shared/rooms-editor-geometry'
-import { doorSeamCoords, splitDoorLineCoords } from './geometry'
-import { RoomWalls } from './RoomWalls'
+import { SectionSide, type RoomsLayoutData } from '@/shared/ship-blueprint-editor'
+import { CELL, DOOR_SIDES, DOOR_THICKNESS, NEIGHBOR_DELTA } from '@/shared/ship-blueprint-editor-geometry'
+import { doorSeamCoords, splitDoorLineCoords } from '../shared/geometry'
+import { SectionWalls } from '../shared/SectionWalls'
 
 const PAD = 8
 
@@ -9,7 +9,7 @@ interface Props {
   layout: RoomsLayoutData
 }
 
-export function RoomsEditorPreviewCanvas({ layout }: Props) {
+export function ShipBlueprintEditorPreviewCanvas({ layout }: Props) {
   const { width, height } = layout.mapSize
   const svgWidth = width * CELL
   const svgHeight = height * CELL
@@ -40,7 +40,7 @@ export function RoomsEditorPreviewCanvas({ layout }: Props) {
       )}
 
       {/* Walls — black on inter-room and exterior edges, skipped where a door exists */}
-      <RoomWalls
+      <SectionWalls
         layout={layout}
         getLineProps={(roomIndex, _sectionIndex, _side, neighborRoomIndex, _hasDoor) => {
           if (neighborRoomIndex === roomIndex) return null
@@ -54,7 +54,7 @@ export function RoomsEditorPreviewCanvas({ layout }: Props) {
         room.sections.flatMap((section) =>
           DOOR_SIDES
             .filter((side) => {
-              if (!section.doors[side]) return false
+              if (!section.doors.some((d) => d.side === side)) return false
               const { dx, dy } = NEIGHBOR_DELTA[side]
               const nx = section.position.x + dx
               const ny = section.position.y + dy
@@ -62,14 +62,14 @@ export function RoomsEditorPreviewCanvas({ layout }: Props) {
                 r.sections.some((s) => s.position.x === nx && s.position.y === ny)
               )
               // skip left/top for interior doors — the neighbor's right/bottom will render it
-              if (hasNeighbor && (side === 'left' || side === 'top')) return false
+              if (hasNeighbor && (side === SectionSide.Left || side === SectionSide.Top)) return false
               return true
             })
             .flatMap((side) => {
               const [seg1, seg2] = splitDoorLineCoords(section.position.x, section.position.y, side)
               const seam = doorSeamCoords(section.position.x, section.position.y, side)
 
-              const isVertical = side === 'left' || side === 'right'
+              const isVertical = side === SectionSide.Left || side === SectionSide.Right
               const animAttr1 = isVertical ? 'y2' : 'x2'
               const animAttr2 = isVertical ? 'y1' : 'x1'
 

@@ -2,7 +2,15 @@ import type { MenuConfig } from '@/shared/menu'
 import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
 
-export type GamePhase = 'loading' | 'menu' | 'playing' | 'paused' | 'gameover'
+export const GamePhase = {
+  Loading: 'loading',
+  Menu: 'menu',
+  Playing: 'playing',
+  Paused: 'paused',
+  GameOver: 'gameover',
+} as const
+
+export type GamePhase = typeof GamePhase[keyof typeof GamePhase]
 
 interface GameState {
   phase: GamePhase
@@ -14,7 +22,7 @@ interface GameState {
 
 export const useGameStore = create<GameState>()(
   immer((set) => ({
-    phase: 'loading',
+    phase: GamePhase.Loading,
     setPhase: (phase) =>
       set((state) => {
         state.phase = phase

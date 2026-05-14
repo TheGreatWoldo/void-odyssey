@@ -1,6 +1,6 @@
 import { useGameService } from '@/application/hooks/useGameService'
-import { ModuleCatalog } from '@/domain/models/module/module-catalog'
-import { ModuleId, ModuleSlotCosts } from '@/domain/models/module/production-module-id'
+import { getModuleMeta, isValidModuleId } from '@/application/hooks/useModuleCatalog'
+import { SceneKey } from '@/shared/scene-key'
 import { createFileRoute, Link, notFound } from '@tanstack/react-router'
 import { useEffect } from 'react'
 
@@ -8,10 +8,10 @@ function CodexModuleDetailPage() {
   const service = useGameService()
   const { moduleId } = Route.useParams()
 
-  const meta = ModuleCatalog[moduleId as ModuleId]
+  const meta = getModuleMeta(moduleId)!
 
   useEffect(() => {
-    service.goToScene('greenOnBlack').catch((err: unknown) => {
+    service.goToScene(SceneKey.GreenOnBlack).catch((err: unknown) => {
       console.error('goToScene failed:', err)
     })
   }, [service])
@@ -38,23 +38,22 @@ function CodexModuleDetailPage() {
           </div>
 
           {/* Stats */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-3 gap-4">
             <div className="border border-white/20 bg-black/90 px-5 py-4 flex flex-col gap-1">
               <span className="text-white/40 text-xs uppercase tracking-widest">Category</span>
               <span className="text-white/90 text-base uppercase tracking-wider">{meta.category}</span>
             </div>
 
             <div className="border border-white/20 bg-black/90 px-5 py-4 flex flex-col gap-1">
-              <span className="text-white/40 text-xs uppercase tracking-widest">Slot Cost</span>
-              <span className="text-white/90 text-base uppercase tracking-wider">{ModuleSlotCosts[moduleId as ModuleId]}</span>
-            </div>
-
-            <div className="border border-white/20 bg-black/90 px-5 py-4 flex flex-col gap-1 col-span-2">
               <span className="text-white/40 text-xs uppercase tracking-widest">Primary Output</span>
               <span className="text-white/90 text-base uppercase tracking-wider">{meta.primaryOutput}</span>
             </div>
-          </div>
 
+            <div className="border border-white/20 bg-black/90 px-5 py-4 flex flex-col gap-1">
+              <span className="text-white/40 text-xs uppercase tracking-widest">Slot Cost</span>
+              <span className="text-white/90 text-base uppercase tracking-wider">{meta.slotCost}</span>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -75,7 +74,6 @@ function CodexModuleDetailPage() {
 export const Route = createFileRoute('/_canvas/codex/modules/$moduleId')({
   component: CodexModuleDetailPage,
   beforeLoad: ({ params }) => {
-    const valid = Object.values(ModuleId) as string[]
-    if (!valid.includes(params.moduleId)) throw notFound()
+    if (!isValidModuleId(params.moduleId)) throw notFound()
   },
 })

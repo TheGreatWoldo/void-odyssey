@@ -1,9 +1,10 @@
-import { describe, it, expect } from 'vitest';
-import { ClosestNeighboursConnectionStrategy } from './closest-neighbours-connection-strategy';
+import { NodeType } from '@/domain/models/navigation/node-type';
 import type { RouteNode } from '@/domain/models/navigation/route/route-node';
+import { describe, expect, it } from 'vitest';
+import { ClosestNeighboursConnectionStrategy } from './closest-neighbours-connection-strategy';
 
 function makeNode(id: string, layer: number, wx: number, wy: number): RouteNode {
-  return { id, layer, wx, wy };
+  return { id, layer, wx, wy, indexInLayer: 0, baseWx: wx, baseWy: wy, type: NodeType.Empty };
 }
 
 describe('ClosestNeighboursConnectionStrategy', () => {

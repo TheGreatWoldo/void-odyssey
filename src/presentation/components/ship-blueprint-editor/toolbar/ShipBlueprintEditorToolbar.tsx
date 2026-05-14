@@ -13,7 +13,7 @@ interface Props {
   onAutoRecenterChange: (value: boolean) => void
 }
 
-export function RoomsEditorToolbar({
+export function ShipBlueprintEditorToolbar({
   name,
   mapSize,
   autoRecenter,

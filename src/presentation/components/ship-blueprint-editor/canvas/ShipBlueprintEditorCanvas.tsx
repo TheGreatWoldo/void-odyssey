@@ -1,9 +1,9 @@
-import type { EditorTool, RoomDoors, RoomSection, RoomsLayoutData } from '@/shared/rooms-editor'
-import { CELL, DOOR_THICKNESS, NEIGHBOR_DELTA } from '@/shared/rooms-editor-geometry'
+import { EditorTool, SectionSide, type RoomSection, type RoomsLayoutData } from '@/shared/ship-blueprint-editor'
+import { CELL, DOOR_THICKNESS, NEIGHBOR_DELTA } from '@/shared/ship-blueprint-editor-geometry'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { doorLineCoords } from './geometry'
-import { RoomDoorLines } from './RoomDoorLines'
-import { RoomWalls } from './RoomWalls'
+import { doorLineCoords } from '../shared/geometry'
+import { SectionWalls } from '../shared/SectionWalls'
+import { SectionDoorLines } from './SectionDoorLines'
 
 const CROSS_ARM = 7
 const PAD = CROSS_ARM + 2 // padding so edge crosses are fully visible
@@ -15,8 +15,11 @@ const BP_CROSS = '#e7e5e4' // stone-200
 
 const SECTION_BORDER = '#1e293b'
 
-const OPPOSITE: Record<keyof RoomDoors, keyof RoomDoors> = {
-  left: 'right', right: 'left', top: 'bottom', bottom: 'top',
+const OPPOSITE: Record<SectionSide, SectionSide> = {
+  [SectionSide.Left]: SectionSide.Right,
+  [SectionSide.Right]: SectionSide.Left,
+  [SectionSide.Top]: SectionSide.Bottom,
+  [SectionSide.Bottom]: SectionSide.Top,
 }
 
 interface Props {
@@ -25,11 +28,11 @@ interface Props {
   selectedColor: string
   onPaint: (x: number, y: number) => void
   onErase: (x: number, y: number) => void
-  onToggleDoor: (x: number, y: number, side: keyof RoomDoors) => void
-  onRemoveDoor: (x: number, y: number, side: keyof RoomDoors) => void
+  onToggleDoor: (x: number, y: number, side: SectionSide) => void
+  onRemoveDoor: (x: number, y: number, side: SectionSide) => void
 }
 
-export function RoomsEditorCanvas({
+export function ShipBlueprintEditorCanvas({
   layout,
   tool,
   selectedColor,
@@ -43,7 +46,7 @@ export function RoomsEditorCanvas({
   const svgHeight = height * CELL
 
   const [hovered, setHovered] = useState<{ x: number; y: number } | null>(null)
-  const [hoveredDoor, setHoveredDoor] = useState<{ x: number; y: number; side: keyof RoomDoors } | null>(null)
+  const [hoveredDoor, setHoveredDoor] = useState<{ x: number; y: number; side: SectionSide } | null>(null)
   const isMouseDown = useRef(false)
   const isRightMouseDown = useRef(false)
 
@@ -87,12 +90,12 @@ export function RoomsEditorCanvas({
   }, [layout.rooms])
 
   const handleCellAction = (x: number, y: number) => {
-    if (tool === 'room') onPaint(x, y)
-    else if (tool === 'erase') onErase(x, y)
+    if (tool === EditorTool.Room) onPaint(x, y)
+    else if (tool === EditorTool.Erase) onErase(x, y)
   }
 
   const handleMouseDown = (x: number, y: number, button: number) => {
-    if (tool === 'door') return
+    if (tool === EditorTool.Door) return
     if (button === 2) {
       isRightMouseDown.current = true
       onErase(x, y)
@@ -104,7 +107,7 @@ export function RoomsEditorCanvas({
 
   const handleMouseEnter = (x: number, y: number) => {
     setHovered({ x, y })
-    if (tool === 'door') return
+    if (tool === EditorTool.Door) return
     if (isRightMouseDown.current) onErase(x, y)
     else if (isMouseDown.current) handleCellAction(x, y)
   }
@@ -130,7 +133,7 @@ export function RoomsEditorCanvas({
     const dTop = cellY
     const dBottom = CELL - cellY
     const minDist = Math.min(dLeft, dRight, dTop, dBottom)
-    let side: keyof RoomDoors
+    let side: SectionSide
     if (minDist === dLeft) side = 'left'
     else if (minDist === dRight) side = 'right'
     else if (minDist === dTop) side = 'top'
@@ -149,7 +152,7 @@ export function RoomsEditorCanvas({
 
   const handleSvgClick = (_e: React.MouseEvent<SVGSVGElement>) => {
     if (tool !== 'door' || !hoveredDoor) return
-    const alreadySet = occupiedMap.get(`${hoveredDoor.x},${hoveredDoor.y}`)?.doors[hoveredDoor.side]
+    const alreadySet = occupiedMap.get(`${hoveredDoor.x},${hoveredDoor.y}`)?.doors.some((d) => d.side === hoveredDoor.side)
     if (!alreadySet) onToggleDoor(hoveredDoor.x, hoveredDoor.y, hoveredDoor.side)
   }
 
@@ -169,7 +172,7 @@ export function RoomsEditorCanvas({
       onMouseMove={handleSvgMouseMove}
       onMouseLeave={() => setHoveredDoor(null)}
       onClick={handleSvgClick}
-      style={{ display: 'block', userSelect: 'none', maxWidth: '100%', maxHeight: '100%', width: 'auto', height: 'auto', cursor: tool === 'door' ? 'pointer' : undefined }}
+      style={{ display: 'block', userSelect: 'none', maxWidth: '100%', maxHeight: '100%', width: 'auto', height: 'auto', cursor: tool === EditorTool.Door ? 'pointer' : undefined }}
     >
       {/* Blueprint background — covers full viewBox including padding */}
       <rect x={-PAD} y={-PAD} width={svgWidth + PAD * 2} height={svgHeight + PAD * 2} fill={BP_BG} />
@@ -228,7 +231,7 @@ export function RoomsEditorCanvas({
             onMouseDown={(e) => handleMouseDown(col, row, e.button)}
             onMouseEnter={() => handleMouseEnter(col, row)}
             onMouseLeave={() => setHovered(null)}
-            style={{ cursor: tool === 'room' || tool === 'erase' ? 'crosshair' : 'default' }}
+            style={{ cursor: tool === EditorTool.Room || tool === EditorTool.Erase ? 'crosshair' : 'default' }}
           />
         ))
       )}
@@ -239,8 +242,8 @@ export function RoomsEditorCanvas({
         (() => {
           const isOccupied = occupiedMap.has(`${hovered.x},${hovered.y}`)
           const showHover =
-            (tool === 'room' && !isOccupied) ||
-            (tool === 'erase' && isOccupied) ||
+            (tool === EditorTool.Room && !isOccupied) ||
+            (tool === EditorTool.Erase && isOccupied) ||
             (isRightMouseDown.current && isOccupied)
 
           if (!showHover) return null
@@ -251,7 +254,7 @@ export function RoomsEditorCanvas({
               y={hovered.y * CELL + 1}
               width={CELL - 2}
               height={CELL - 2}
-              fill={tool === 'erase' ? 'rgba(186,5,2,0.4)' : `${selectedColor}88`}
+              fill={tool === EditorTool.Erase ? 'rgba(186,5,2,0.4)' : `${selectedColor}88`}
               style={{ pointerEvents: 'none' }}
             />
           )
@@ -273,14 +276,14 @@ export function RoomsEditorCanvas({
             onMouseLeave={() => setHovered(null)}
             style={{
               cursor:
-                tool === 'room' || tool === 'erase' ? 'crosshair' : 'default',
+                tool === EditorTool.Room || tool === EditorTool.Erase ? 'crosshair' : 'default',
             }}
           />
         ))
       )}
 
       {/* Section borders */}
-      <RoomWalls
+      <SectionWalls
         layout={layout}
         getLineProps={(roomIndex, _sectionIndex, _side, neighborRoomIndex) => {
           const sameRoom = neighborRoomIndex === roomIndex
@@ -294,12 +297,12 @@ export function RoomsEditorCanvas({
       />
 
       {/* Door lines */}
-      <RoomDoorLines
+      <SectionDoorLines
         layout={layout}
         getLineProps={(roomIndex, sectionIndex, side) => {
           const section = sectionMap.get(`${roomIndex}-${sectionIndex}`)
           const { dx, dy } = NEIGHBOR_DELTA[side]
-          const isHovered = tool === 'door' && hoveredDoor !== null && section !== undefined && (
+          const isHovered = tool === EditorTool.Door && hoveredDoor !== null && section !== undefined && (
             (hoveredDoor.x === section.position.x && hoveredDoor.y === section.position.y && hoveredDoor.side === side) ||
             (hoveredDoor.x === section.position.x + dx && hoveredDoor.y === section.position.y + dy && hoveredDoor.side === OPPOSITE[side])
           )
@@ -312,13 +315,13 @@ export function RoomsEditorCanvas({
       />
 
       {/* Door snap preview */}
-      {tool === 'door' && hoveredDoor && (() => {
+      {tool === EditorTool.Door && hoveredDoor && (() => {
         const { x, y, side } = hoveredDoor
         const { dx, dy } = NEIGHBOR_DELTA[side]
         const nx = x + dx
         const ny = y + dy
         const neighborOccupied = occupiedMap.has(`${nx},${ny}`)
-        const isExisting = occupiedMap.get(`${x},${y}`)?.doors[side]
+        const isExisting = occupiedMap.get(`${x},${y}`)?.doors.some((d) => d.side === side)
         if (isExisting) return null
         const { x1, y1, x2, y2 } = doorLineCoords(x, y, side)
         return (

@@ -1,4 +1,4 @@
-import { BackgroundSceneArgs } from '../background-scene-args';
+import { BackgroundSceneArgs } from '@/infrastructure/background/background-scene-args';
 import { backgroundColorArgsCatalog } from './background-color-args-catalog';
 
 export const backgroundSceneArgsCatalog = {

@@ -1,7 +1,7 @@
 import type { IGameEngineFacade } from '@/shared/game-engine-facade'
 import type { IGameService } from '@/shared/game-service'
-import type { RoomsLayoutData } from '@/shared/rooms-editor'
 import type { SceneKey } from '@/shared/scene-key'
+import type { RoomsLayoutData } from '@/shared/ship-blueprint-editor'
 
 export class GameService implements IGameService {
   private started = false

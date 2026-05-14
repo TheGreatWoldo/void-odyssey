@@ -3,10 +3,10 @@ import {
     blendWithBackground,
 } from '@/infrastructure/graphics/color-utils';
 import { BoundingBox, Color, Engine, Scene, Vector } from 'excalibur';
-import { BackgroundActor } from '../actors/background-actor';
-import { defaultBackgroundActorArgs } from '../actors/background-actor-args';
-import { BackgroundSceneArgs } from '../background-scene-args';
-import type { BackgroundStrategies } from '../strategies/background-strategies';
+import { BackgroundActor } from '@/infrastructure/background/actors/background-actor';
+import { defaultBackgroundActorArgs } from '@/infrastructure/background/actors/background-actor-args';
+import { BackgroundSceneArgs } from '@/infrastructure/background/background-scene-args';
+import type { BackgroundStrategies } from '@/infrastructure/background/strategies/background-strategies';
 
 const PRESEED_WINDOW_MS = 60_000;
 

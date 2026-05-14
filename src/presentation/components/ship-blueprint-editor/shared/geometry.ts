@@ -1,17 +1,17 @@
-import type { RoomDoors } from '@/shared/rooms-editor';
-import { CELL, DOOR_THICKNESS, DOOR_WALL_STUB } from '@/shared/rooms-editor-geometry';
+import { SectionSide } from '@/shared/ship-blueprint-editor';
+import { CELL, DOOR_THICKNESS, DOOR_WALL_STUB } from '@/shared/ship-blueprint-editor-geometry';
 
 export function edgeLineCoords(
     cx: number,
     cy: number,
-    side: string,
+    side: SectionSide,
 ): { x1: number; y1: number; x2: number; y2: number } {
     const px = cx * CELL
     const py = cy * CELL
     switch (side) {
-        case 'left': return { x1: px, y1: py, x2: px, y2: py + CELL }
-        case 'right': return { x1: px + CELL, y1: py, x2: px + CELL, y2: py + CELL }
-        case 'top': return { x1: px, y1: py, x2: px + CELL, y2: py }
+        case SectionSide.Left: return { x1: px, y1: py, x2: px, y2: py + CELL }
+        case SectionSide.Right: return { x1: px + CELL, y1: py, x2: px + CELL, y2: py + CELL }
+        case SectionSide.Top: return { x1: px, y1: py, x2: px + CELL, y2: py }
         default: return { x1: px, y1: py + CELL, x2: px + CELL, y2: py + CELL }
     }
 }
@@ -19,7 +19,7 @@ export function edgeLineCoords(
 export function edgeDoorWallCoords(
     cx: number,
     cy: number,
-    side: string,
+    side: SectionSide,
 ): [
         { x1: number; y1: number; x2: number; y2: number },
         { x1: number; y1: number; x2: number; y2: number },
@@ -29,17 +29,17 @@ export function edgeDoorWallCoords(
     const stub = DOOR_WALL_STUB
 
     switch (side) {
-        case 'left':
+        case SectionSide.Left:
             return [
                 { x1: px, y1: py, x2: px, y2: py + stub },
                 { x1: px, y1: py + CELL - stub, x2: px, y2: py + CELL },
             ]
-        case 'right':
+        case SectionSide.Right:
             return [
                 { x1: px + CELL, y1: py, x2: px + CELL, y2: py + stub },
                 { x1: px + CELL, y1: py + CELL - stub, x2: px + CELL, y2: py + CELL },
             ]
-        case 'top':
+        case SectionSide.Top:
             return [
                 { x1: px, y1: py, x2: px + stub, y2: py },
                 { x1: px + CELL - stub, y1: py, x2: px + CELL, y2: py },
@@ -55,7 +55,7 @@ export function edgeDoorWallCoords(
 export function doorLineCoords(
     cx: number,
     cy: number,
-    side: keyof RoomDoors,
+    side: SectionSide,
 ): { x1: number; y1: number; x2: number; y2: number } {
     const px = cx * CELL
     const py = cy * CELL
@@ -63,13 +63,13 @@ export function doorLineCoords(
     const stub = DOOR_WALL_STUB + DOOR_THICKNESS
 
     switch (side) {
-        case 'left':
+        case SectionSide.Left:
             return { x1: px + inset, y1: py + stub, x2: px + inset, y2: py + CELL - stub }
-        case 'right':
+        case SectionSide.Right:
             return { x1: px + CELL - inset, y1: py + stub, x2: px + CELL - inset, y2: py + CELL - stub }
-        case 'top':
+        case SectionSide.Top:
             return { x1: px + stub, y1: py + inset, x2: px + CELL - stub, y2: py + inset }
-        case 'bottom':
+        case SectionSide.Bottom:
             return { x1: px + stub, y1: py + CELL - inset, x2: px + CELL - stub, y2: py + CELL - inset }
     }
 }
@@ -78,7 +78,7 @@ export function doorLineCoords(
 export function splitDoorLineCoords(
     cx: number,
     cy: number,
-    side: keyof RoomDoors,
+    side: SectionSide,
 ): [
         { x1: number; y1: number; x2: number; y2: number },
         { x1: number; y1: number; x2: number; y2: number },
@@ -90,22 +90,22 @@ export function splitDoorLineCoords(
     const half = CELL / 2
 
     switch (side) {
-        case 'left':
+        case SectionSide.Left:
             return [
                 { x1: px + inset, y1: py + stub, x2: px + inset, y2: py + half },
                 { x1: px + inset, y1: py + half, x2: px + inset, y2: py + CELL - stub },
             ]
-        case 'right':
+        case SectionSide.Right:
             return [
                 { x1: px + CELL - inset, y1: py + stub, x2: px + CELL - inset, y2: py + half },
                 { x1: px + CELL - inset, y1: py + half, x2: px + CELL - inset, y2: py + CELL - stub },
             ]
-        case 'top':
+        case SectionSide.Top:
             return [
                 { x1: px + stub, y1: py + inset, x2: px + half, y2: py + inset },
                 { x1: px + half, y1: py + inset, x2: px + CELL - stub, y2: py + inset },
             ]
-        case 'bottom':
+        case SectionSide.Bottom:
             return [
                 { x1: px + stub, y1: py + CELL - inset, x2: px + half, y2: py + CELL - inset },
                 { x1: px + half, y1: py + CELL - inset, x2: px + CELL - stub, y2: py + CELL - inset },
@@ -117,7 +117,7 @@ export function splitDoorLineCoords(
 export function doorSeamCoords(
     cx: number,
     cy: number,
-    side: keyof RoomDoors,
+    side: SectionSide,
 ): { x1: number; y1: number; x2: number; y2: number } {
     const px = cx * CELL
     const py = cy * CELL
@@ -125,50 +125,13 @@ export function doorSeamCoords(
     const half = CELL / 2
 
     switch (side) {
-        case 'left':
+        case SectionSide.Left:
             return { x1: px + inset - inset, y1: py + half, x2: px + inset + inset, y2: py + half }
-        case 'right':
+        case SectionSide.Right:
             return { x1: px + CELL - inset - inset, y1: py + half, x2: px + CELL - inset + inset, y2: py + half }
-        case 'top':
+        case SectionSide.Top:
             return { x1: px + half, y1: py + inset - inset, x2: px + half, y2: py + inset + inset }
-        case 'bottom':
+        case SectionSide.Bottom:
             return { x1: px + half, y1: py + CELL - inset - inset, x2: px + half, y2: py + CELL - inset + inset }
-    }
-}
-
-/** Two wall stubs (one quarter each) that frame the door opening on a cell edge. */
-export function doorFrameCoords(
-    cx: number,
-    cy: number,
-    side: keyof RoomDoors,
-): [
-        { x1: number; y1: number; x2: number; y2: number },
-        { x1: number; y1: number; x2: number; y2: number },
-    ] {
-    const px = cx * CELL
-    const py = cy * CELL
-    const stub = DOOR_WALL_STUB
-
-    switch (side) {
-        case 'left':
-            return [
-                { x1: px, y1: py, x2: px, y2: py + stub },
-                { x1: px, y1: py + CELL - stub, x2: px, y2: py + CELL },
-            ]
-        case 'right':
-            return [
-                { x1: px + CELL, y1: py, x2: px + CELL, y2: py + stub },
-                { x1: px + CELL, y1: py + CELL - stub, x2: px + CELL, y2: py + CELL },
-            ]
-        case 'top':
-            return [
-                { x1: px, y1: py, x2: px + stub, y2: py },
-                { x1: px + CELL - stub, y1: py, x2: px + CELL, y2: py },
-            ]
-        case 'bottom':
-            return [
-                { x1: px, y1: py + CELL, x2: px + stub, y2: py + CELL },
-                { x1: px + CELL - stub, y1: py + CELL, x2: px + CELL, y2: py + CELL },
-            ]
     }
 }

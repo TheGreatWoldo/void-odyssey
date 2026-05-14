@@ -2,7 +2,7 @@ import { useMenuNavigation } from '@/application/hooks/useMenuNavigation'
 import { MenuButton } from '@/presentation/components/MenuButton'
 import type { IGameService } from '@/shared/game-service'
 import type { MenuConfig } from '@/shared/menu'
-import { MENU_ITEM_DURATION_MS, MENU_ITEM_STAGGER_MS } from '@/shared/menu-animation'
+import { MENU_ANIMATIONS_ENABLED, MENU_EXIT_BUFFER_MS, MENU_ITEM_DURATION_MS, MENU_ITEM_STAGGER_MS } from '@/shared/menu-animation'
 import { useEffect, useRef, useState } from 'react'
 
 interface MenuViewProps {
@@ -10,9 +10,10 @@ interface MenuViewProps {
   service: IGameService
   onEvent: (event: string) => void
   initialMenuId?: string
+  onMenuChange?: (menuId: string | undefined) => void
 }
 
-export function MenuView({ config, service, onEvent, initialMenuId }: MenuViewProps) {
+export function MenuView({ config, service, onEvent, initialMenuId, onMenuChange }: MenuViewProps) {
   const nav = useMenuNavigation(config, initialMenuId)
 
   // Increment animKey each time the item list changes so animations re-fire.
@@ -32,8 +33,9 @@ export function MenuView({ config, service, onEvent, initialMenuId }: MenuViewPr
 
   const navigateWithExit = (action: () => void) => {
     if (exiting) return
+    if (!MENU_ANIMATIONS_ENABLED) { action(); return }
     const count = nav.currentItems.length
-    const totalDelay = (count - 1) * MENU_ITEM_STAGGER_MS + MENU_ITEM_DURATION_MS
+    const totalDelay = (count - 1) * MENU_ITEM_STAGGER_MS + MENU_ITEM_DURATION_MS + MENU_EXIT_BUFFER_MS
     pendingNavRef.current = action
     setExiting(true)
     setTimeout(() => {
@@ -79,9 +81,9 @@ export function MenuView({ config, service, onEvent, initialMenuId }: MenuViewPr
               trailingIcons={item.trailingIcons}
               onClick={() => {
                 if (item.children?.length) {
-                  navigateWithExit(() => nav.pushItem(item))
+                  navigateWithExit(() => { nav.pushItem(item); onMenuChange?.(item.id) })
                 } else if (item.event) {
-                  onEvent(item.event)
+                  navigateWithExit(() => onEvent(item.event!))
                 }
               }}
               onIconClick={onEvent}
@@ -97,7 +99,7 @@ export function MenuView({ config, service, onEvent, initialMenuId }: MenuViewPr
       <div className="pointer-events-none flex items-center justify-center border-t border-white/20 bg-black/30 px-6 py-3 backdrop-blur-[2px]">
         {nav.canGoBack ? (
           <button
-            onClick={() => navigateWithExit(nav.pop)}
+            onClick={() => navigateWithExit(() => { nav.pop(); onMenuChange?.(undefined) })}
             className="pointer-events-auto flex items-center gap-2 text-white/60 hover:text-white transition-colors uppercase tracking-widest text-xl -m-3 p-3"
           >
             ← Back

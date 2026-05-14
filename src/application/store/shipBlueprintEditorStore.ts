@@ -1,143 +1,23 @@
-import type { Doors, Room, RoomsLayout, Section } from '@/domain/models/ship/rooms-layout'
-import type { EditorTool } from '@/shared/rooms-editor'
-import type { Draft } from 'immer'
+import type { Room, RoomsLayout, SectionSide } from '@/domain/models/ship/rooms-layout'
+import { DoorState } from '@/domain/models/ship/rooms-layout'
+import {
+    createSection,
+    findAdjacentSameColorRooms,
+    inheritDoorsFromNeighbors,
+    mergeAdjacentRoomsIntoCheapest,
+    NEIGHBOR_OFFSET,
+    nextSectionIndex,
+    OPPOSING,
+    recalcRoomBounds,
+    sectionAt,
+} from '@/domain/services/rooms-layout-operations'
+import { AUTO_COLORS, EditorTool } from '@/shared/ship-blueprint-editor'
 import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
 
 export type { EditorTool }
 
-const AUTO_COLORS = ['#60a5fa', '#22d3ee', '#818cf8', '#38bdf8']
-export { AUTO_COLORS }
-
-const OPPOSING: Record<keyof Doors, keyof Doors> = {
-  left: 'right',
-  right: 'left',
-  top: 'bottom',
-  bottom: 'top',
-}
-
-const NEIGHBOR_OFFSET: Record<keyof Doors, { dx: number; dy: number }> = {
-  left: { dx: -1, dy: 0 },
-  right: { dx: 1, dy: 0 },
-  top: { dx: 0, dy: -1 },
-  bottom: { dx: 0, dy: 1 },
-}
-
-function recalcRoomBounds(room: Room): void {
-  if (room.sections.length === 0) {
-    room.position = { x: 0, y: 0 }
-    room.size = { width: 0, height: 0 }
-    return
-  }
-
-  let minX = Infinity
-  let minY = Infinity
-  let maxX = -Infinity
-  let maxY = -Infinity
-
-  for (const s of room.sections) {
-    if (s.position.x < minX) minX = s.position.x
-    if (s.position.y < minY) minY = s.position.y
-    if (s.position.x > maxX) maxX = s.position.x
-    if (s.position.y > maxY) maxY = s.position.y
-  }
-
-  room.position = { x: minX, y: minY }
-  room.size = { width: maxX - minX + 1, height: maxY - minY + 1 }
-}
-
-function nextSectionIndex(room: Room): number {
-  if (room.sections.length === 0) return 0
-  return Math.max(...room.sections.map((s) => s.index)) + 1
-}
-
-function sectionAt(
-  data: RoomsLayout,
-  x: number,
-  y: number,
-): { room: Room; section: Section } | null {
-  for (const room of data.rooms) {
-    const section = room.sections.find((s) => s.position.x === x && s.position.y === y)
-
-    if (section) return { room, section }
-  }
-
-  return null
-}
-
-function findAdjacentSameColorRooms(
-  data: RoomsLayout,
-  x: number,
-  y: number,
-  color: string,
-): Set<number> {
-  const adjacentIndices = new Set<number>()
-  for (const { dx, dy } of Object.values(NEIGHBOR_OFFSET)) {
-    const hit = sectionAt(data, x + dx, y + dy)
-    if (hit && hit.room.color === color) {
-      adjacentIndices.add(hit.room.index)
-    }
-  }
-  return adjacentIndices
-}
-
-function mergeAdjacentRoomsIntoCheapest(
-  adjacentRooms: Room[],
-  data: Draft<RoomsLayout>,
-): Room {
-  const targetRoom = adjacentRooms[0]
-
-  for (let i = 1; i < adjacentRooms.length; i++) {
-    const toMerge = adjacentRooms[i]
-
-    for (const s of toMerge.sections) {
-      s.room = targetRoom.index
-      s.index = nextSectionIndex(targetRoom)
-      targetRoom.sections.push(s)
-    }
-
-    const roomIdx = data.rooms.indexOf(toMerge)
-    data.rooms.splice(roomIdx, 1)
-  }
-
-  return targetRoom
-}
-
-function inheritDoorsFromNeighbors(
-  data: RoomsLayout,
-  x: number,
-  y: number,
-): Doors {
-  const doors: Doors = { left: false, right: false, top: false, bottom: false }
-
-  for (const [side, { dx, dy }] of Object.entries(NEIGHBOR_OFFSET) as [
-    keyof Doors,
-    { dx: number; dy: number },
-  ][]) {
-    const neighbor = sectionAt(data, x + dx, y + dy)
-    if (neighbor && neighbor.section.doors[OPPOSING[side]]) {
-      doors[side] = true
-    }
-  }
-
-  return doors
-}
-
-function createSection(
-  position: { x: number; y: number },
-  doors: Doors,
-  roomIndex: number,
-  sectionIndex: number,
-): Section {
-  return {
-    room: roomIndex,
-    index: sectionIndex,
-    position,
-    doors,
-  }
-}
-
-interface RoomsEditorState {
+interface ShipBlueprintEditorState {
   data: RoomsLayout | null
   tool: EditorTool
   selectedColor: string
@@ -146,8 +26,8 @@ interface RoomsEditorState {
   newLayout: (name: string, width: number, height: number) => void
   paintSection: (x: number, y: number) => void
   eraseSection: (x: number, y: number) => void
-  toggleDoor: (x: number, y: number, side: keyof Doors) => void
-  removeDoor: (x: number, y: number, side: keyof Doors) => void
+  toggleDoor: (x: number, y: number, side: SectionSide) => void
+  removeDoor: (x: number, y: number, side: SectionSide) => void
   removeRoom: (index: number) => void
   autoRecenter: boolean
 
@@ -159,12 +39,12 @@ interface RoomsEditorState {
   setSelectedColor: (color: string) => void
 }
 
-export const useRoomsEditorStore = create<RoomsEditorState>()(
+export const useShipBlueprintEditorStore = create<ShipBlueprintEditorState>()(
   immer((set) => ({
     data: null,
-    tool: 'room',
+    tool: EditorTool.Room,
     selectedColor: AUTO_COLORS[0],
-    autoRecenter: true,
+    autoRecenter: false,
 
     loadLayout: (layout) =>
       set((state) => {
@@ -253,13 +133,27 @@ export const useRoomsEditorStore = create<RoomsEditorState>()(
         if (!hit) return
 
         const { section } = hit
-        section.doors[side] = !section.doors[side]
+        const existingIdx = section.doors.findIndex((d) => d.side === side)
 
+        if (existingIdx === -1) {
+          section.doors.push({ side, state: DoorState.Closed })
+        } else {
+          section.doors.splice(existingIdx, 1)
+        }
+
+        const doorNowPresent = existingIdx === -1
         const offset = NEIGHBOR_OFFSET[side]
         const neighbor = sectionAt(state.data, x + offset.dx, y + offset.dy)
 
         if (neighbor) {
-          neighbor.section.doors[OPPOSING[side]] = section.doors[side]
+          const opposingSide = OPPOSING[side]
+          const neighborIdx = neighbor.section.doors.findIndex((d) => d.side === opposingSide)
+
+          if (doorNowPresent && neighborIdx === -1) {
+            neighbor.section.doors.push({ side: opposingSide, state: DoorState.Closed })
+          } else if (!doorNowPresent && neighborIdx !== -1) {
+            neighbor.section.doors.splice(neighborIdx, 1)
+          }
         }
       }),
 
@@ -271,13 +165,16 @@ export const useRoomsEditorStore = create<RoomsEditorState>()(
         if (!hit) return
 
         const { section } = hit
-        section.doors[side] = false
+        const idx = section.doors.findIndex((d) => d.side === side)
+        if (idx !== -1) section.doors.splice(idx, 1)
 
         const offset = NEIGHBOR_OFFSET[side]
         const neighbor = sectionAt(state.data, x + offset.dx, y + offset.dy)
 
         if (neighbor) {
-          neighbor.section.doors[OPPOSING[side]] = false
+          const opposingSide = OPPOSING[side]
+          const neighborIdx = neighbor.section.doors.findIndex((d) => d.side === opposingSide)
+          if (neighborIdx !== -1) neighbor.section.doors.splice(neighborIdx, 1)
         }
       }),
 

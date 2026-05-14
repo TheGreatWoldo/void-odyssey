@@ -1,5 +1,5 @@
-import type { RoomsLayoutData } from '@/shared/rooms-editor'
 import type { SceneKey } from '@/shared/scene-key'
+import type { RoomsLayoutData } from '@/shared/ship-blueprint-editor'
 
 export interface IGameService {
   goToScene(key: SceneKey): Promise<void>

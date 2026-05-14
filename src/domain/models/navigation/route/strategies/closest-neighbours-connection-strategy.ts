@@ -1,5 +1,5 @@
-import { RouteConnection, RouteNode } from '@/domain/models/navigation/route/route-node';
-import { NodeConnectionStrategy } from '@/domain/models/navigation/route/strategies/node-connection-strategy';
+import type { RouteConnection, RouteNode } from '@/domain/models/navigation/route/route-node';
+import type { NodeConnectionStrategy } from '@/domain/models/navigation/route/strategies/node-connection-strategy';
 import { fisherYatesShuffle } from '@/shared/math-utils';
 
 function squaredDistance(a: RouteNode, b: RouteNode): number {
@@ -65,7 +65,11 @@ class ConnectionBuilder {
  * pair are rejected to keep the graph visually clean.
  */
 export class ClosestNeighboursConnectionStrategy implements NodeConnectionStrategy {
-  constructor(private readonly neighbourCount = 2) {}
+  private readonly neighbourCount: number
+
+  constructor(neighbourCount = 2) {
+    this.neighbourCount = neighbourCount
+  }
 
   buildConnections(nodes: RouteNode[]): RouteConnection[] {
     const builder = new ConnectionBuilder();

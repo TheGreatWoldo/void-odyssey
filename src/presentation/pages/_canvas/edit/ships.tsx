@@ -1,20 +1,23 @@
 import { useGameService } from '@/application/hooks/useGameService'
 import { useMenuConfig } from '@/application/hooks/useMenuConfig'
-import { useRoomsEditor } from '@/application/hooks/useRoomsEditor'
-import { RoomsEditorCanvas } from '@/presentation/components/rooms-editor/RoomsEditorCanvas'
-import { RoomsEditorToolbar } from '@/presentation/components/rooms-editor/RoomsEditorToolbar'
-import { RoomsPalette } from '@/presentation/components/rooms-editor/RoomsPalette'
+import { useShipBlueprintEditor } from '@/application/hooks/useShipBlueprintEditor'
+import { ShipBlueprintEditorCanvas } from '@/presentation/components/ship-blueprint-editor/canvas/ShipBlueprintEditorCanvas'
+import { ShipBlueprintEditorPalette } from '@/presentation/components/ship-blueprint-editor/palette/ShipBlueprintEditorPalette'
+import { ShipBlueprintEditorPreviewCanvas } from '@/presentation/components/ship-blueprint-editor/preview/ShipBlueprintEditorPreviewCanvas'
+import { ShipBlueprintEditorToolbar } from '@/presentation/components/ship-blueprint-editor/toolbar/ShipBlueprintEditorToolbar'
+import { SceneKey } from '@/shared/scene-key'
+import { EditorTool } from '@/shared/ship-blueprint-editor'
 import { createFileRoute } from '@tanstack/react-router'
 import { useState } from 'react'
 
 export const Route = createFileRoute('/_canvas/edit/ships')({
-  component: RoomsEditorPage,
+  component: ShipBlueprintEditorPage,
 })
 
-const DEFAULT_MAP_WIDTH = 8
-const DEFAULT_MAP_HEIGHT = 8
+const DEFAULT_MAP_WIDTH = 25
+const DEFAULT_MAP_HEIGHT = 13
 
-function RoomsEditorPage() {
+function ShipBlueprintEditorPage() {
   const service = useGameService()
   const menuConfig = useMenuConfig()
 
@@ -39,7 +42,7 @@ function RoomsEditorPage() {
     setAutoRecenter,
     openFile,
     save,
-  } = useRoomsEditor()
+  } = useShipBlueprintEditor()
 
   const handleNew = () => {
     newLayout('untitled', DEFAULT_MAP_WIDTH, DEFAULT_MAP_HEIGHT)
@@ -52,7 +55,7 @@ function RoomsEditorPage() {
     setView(next)
 
     if (next === 'preview' && data) {
-      service.goToScene('roomsEditor')
+      service.goToScene(SceneKey.ShipBlueprintEditor)
         .then(() => service.loadRoomsLayout(data))
         .catch((err: unknown) => console.error('[rooms preview]', err))
     } else if (next === 'edit' && menuConfig) {
@@ -63,9 +66,9 @@ function RoomsEditorPage() {
   }
 
   return (
-    <div className="flex flex-col h-full bg-slate-950 text-slate-100 overflow-hidden">
+    <div className="absolute inset-0 flex flex-col bg-slate-950 text-slate-100 overflow-hidden">
 
-      <RoomsEditorToolbar
+      <ShipBlueprintEditorToolbar
         name={data?.name ?? ''}
         mapSize={data?.mapSize ?? { width: DEFAULT_MAP_WIDTH, height: DEFAULT_MAP_HEIGHT }}
         autoRecenter={autoRecenter}
@@ -92,14 +95,14 @@ function RoomsEditorPage() {
 
       <div className="flex flex-row flex-1 overflow-hidden">
 
-        <RoomsPalette
+        <ShipBlueprintEditorPalette
           rooms={data?.rooms ?? []}
           selectedColor={selectedColor}
           tool={tool}
           mapSize={data?.mapSize ?? { width: DEFAULT_MAP_WIDTH, height: DEFAULT_MAP_HEIGHT }}
           onSelectColor={(color) => {
             setSelectedColor(color)
-            if (tool !== 'room') setTool('room')
+            if (tool !== EditorTool.Room) setTool(EditorTool.Room)
           }}
           onRemoveRoom={removeRoom}
           onToolChange={setTool}
@@ -130,7 +133,7 @@ function RoomsEditorPage() {
           <div className="flex-1 overflow-hidden flex items-center justify-center p-4">
             {data ? (
               view === 'edit' ? (
-                <RoomsEditorCanvas
+                <ShipBlueprintEditorCanvas
                   layout={data}
                   tool={tool}
                   selectedColor={selectedColor}
@@ -139,7 +142,9 @@ function RoomsEditorPage() {
                   onToggleDoor={toggleDoor}
                   onRemoveDoor={removeDoor}
                 />
-              ) : null
+              ) : (
+                <ShipBlueprintEditorPreviewCanvas layout={data} />
+              )
             ) : (
               <div className="flex flex-col items-center justify-center h-full gap-4 text-slate-500">
                 <p className="text-sm">No layout loaded.</p>

@@ -15,6 +15,12 @@ function IndexPage() {
   const navigate = useNavigate()
   const { menu } = Route.useSearch()
 
+  function handleMenuChange(menuId: string | undefined) {
+    navigate({ to: '/', search: { menu: menuId ?? undefined } }).catch((err: unknown) => {
+      console.error('[nav]', err)
+    })
+  }
+
   function handleMenuEvent(event: string) {
     const route = CODEX_ROUTES[event]
     if (route) {
@@ -33,6 +39,7 @@ function IndexPage() {
       config={menuConfig}
       service={service}
       onEvent={handleMenuEvent}
+      onMenuChange={handleMenuChange}
       initialMenuId={menu}
     />
   )

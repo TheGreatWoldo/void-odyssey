@@ -4,9 +4,9 @@ import {
     getRandomInRange,
 } from '@/shared/math-utils';
 import { Color } from 'excalibur';
-import type { BackgroundActorArgs } from '../actors/background-actor-args';
-import type { ColorArgs } from '../args/color-args';
-import type { SizeArgs } from '../background-scene-args';
+import type { BackgroundActorArgs } from '@/infrastructure/background/actors/background-actor-args';
+import type { ColorArgs } from '@/infrastructure/background/args/color-args';
+import type { SizeArgs } from '@/infrastructure/background/background-scene-args';
 
 const RANGE_JITTER_FACTOR = 0.15;
 

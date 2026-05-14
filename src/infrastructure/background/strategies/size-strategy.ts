@@ -1,4 +1,4 @@
-import type { IBackgroundSceneArgs } from '../background-scene-args';
+import type { IBackgroundSceneArgs } from '@/infrastructure/background/background-scene-args';
 
 export function getSizeForArgs(sceneArgs: IBackgroundSceneArgs): number {
   return (

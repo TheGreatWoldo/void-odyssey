@@ -1,4 +1,4 @@
-import { ColorArgs } from '../args/color-args';
+import { ColorArgs } from '@/infrastructure/background/args/color-args';
 
 export type ColorArgsKey = keyof typeof backgroundColorArgsCatalog;
 

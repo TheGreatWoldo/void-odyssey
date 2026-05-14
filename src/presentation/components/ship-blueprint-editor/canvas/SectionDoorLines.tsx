@@ -1,7 +1,7 @@
-import type { RoomDoors, RoomsLayoutData } from '@/shared/rooms-editor'
-import { DOOR_SIDES } from '@/shared/rooms-editor-geometry'
+import type { RoomsLayoutData, SectionSide } from '@/shared/ship-blueprint-editor'
+import { DOOR_SIDES } from '@/shared/ship-blueprint-editor-geometry'
 import type { SVGProps } from 'react'
-import { doorLineCoords } from './geometry'
+import { doorLineCoords } from '../shared/geometry'
 
 interface Props {
   layout: RoomsLayoutData
@@ -11,17 +11,17 @@ interface Props {
   getLineProps: (
     roomIndex: number,
     sectionIndex: number,
-    side: keyof RoomDoors,
+    side: SectionSide,
   ) => SVGProps<SVGLineElement>
 }
 
-export function RoomDoorLines({ layout, getLineProps }: Props) {
+export function SectionDoorLines({ layout, getLineProps }: Props) {
   return (
     <>
       {layout.rooms.flatMap((room) =>
         room.sections.flatMap((section) =>
           DOOR_SIDES
-            .filter((side) => section.doors[side])
+            .filter((side) => section.doors.some((d) => d.side === side))
             .map((side) => {
               const { x1, y1, x2, y2 } = doorLineCoords(
                 section.position.x,

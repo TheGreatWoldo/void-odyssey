@@ -1,13 +1,10 @@
 import { useGameService } from '@/application/hooks/useGameService'
-import { ModuleCatalog } from '@/domain/models/module/module-catalog'
-import { ModuleId } from '@/domain/models/module/production-module-id'
-import { MENU_ITEM_DURATION_MS, MENU_ITEM_STAGGER_MS } from '@/shared/menu-animation'
+import { MODULE_ENTRIES } from '@/application/hooks/useModuleCatalog'
+import { ModuleSlotGrid } from '@/presentation/components/ui/ModuleSlotGrid'
+import { MENU_ANIMATIONS_ENABLED, MENU_EXIT_BUFFER_MS, MENU_ITEM_DURATION_MS, MENU_ITEM_STAGGER_MS } from '@/shared/menu-animation'
+import { SceneKey } from '@/shared/scene-key'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
-
-const MODULE_ENTRIES = (Object.values(ModuleId) as ModuleId[]).sort((a, b) =>
-  ModuleCatalog[a].displayName.localeCompare(ModuleCatalog[b].displayName),
-)
 
 const EXIT_STAGGER_MS = MENU_ITEM_STAGGER_MS
 const EXIT_DURATION_MS = MENU_ITEM_DURATION_MS
@@ -18,19 +15,24 @@ function CodexModulesPage() {
   const [exiting, setExiting] = useState(false)
 
   useEffect(() => {
-    service.goToScene('greenOnBlack').catch((err: unknown) => {
+    service.goToScene(SceneKey.GreenOnBlack).catch((err: unknown) => {
       console.error('goToScene failed:', err)
     })
   }, [service])
 
+  const navigateWithExit = (action: () => void) => {
+    if (exiting) return
+    if (!MENU_ANIMATIONS_ENABLED) { action(); return }
+    setExiting(true)
+    const totalDelay = (MODULE_ENTRIES.length - 1) * EXIT_STAGGER_MS + EXIT_DURATION_MS + MENU_EXIT_BUFFER_MS
+    setTimeout(action, totalDelay)
+  }
+
   const handleBack = (e: React.MouseEvent) => {
     e.preventDefault()
-    if (exiting) return
-    setExiting(true)
-    const totalDelay = (MODULE_ENTRIES.length - 1) * EXIT_STAGGER_MS + EXIT_DURATION_MS
-    setTimeout(() => {
+    navigateWithExit(() => {
       navigate({ to: '/', search: { menu: 'codex' } }).catch(() => {})
-    }, totalDelay)
+    })
   }
 
   return (
@@ -46,20 +48,29 @@ function CodexModulesPage() {
       {/* Content */}
       <div className="pointer-events-auto flex-1 flex items-center justify-center overflow-y-auto px-8 py-8">
         <div className="w-full max-w-5xl grid grid-cols-3 gap-4">
-          {MODULE_ENTRIES.map((id, i) => (
+          {MODULE_ENTRIES.map((entry, i) => (
             <Link
-              key={id}
+              key={entry.id}
               to="/codex/modules/$moduleId"
-              params={{ moduleId: id }}
+              params={{ moduleId: entry.id }}
               className="pointer-events-auto flex flex-col border border-white/20 bg-black/90 px-5 py-4 uppercase tracking-wider transition-colors hover:border-white/40 hover:text-white cursor-pointer"
               style={{
-                animation: exiting
+                animation: !MENU_ANIMATIONS_ENABLED ? undefined : exiting
                   ? `fade-out-down ${EXIT_DURATION_MS}ms ease ${i * EXIT_STAGGER_MS}ms both`
                   : `fade-in-up ${MENU_ITEM_DURATION_MS}ms ease ${i * MENU_ITEM_STAGGER_MS}ms both`,
               }}
+              onClick={(e) => {
+                e.preventDefault()
+                navigateWithExit(() => {
+                  navigate({ to: '/codex/modules/$moduleId', params: { moduleId: entry.id } }).catch(() => {})
+                })
+              }}
             >
-              <span className="text-white/90 text-xl">{ModuleCatalog[id].displayName}</span>
-              <span className="text-white/30 text-xs mt-1 self-end">{ModuleCatalog[id].category}</span>
+              <div className="flex items-start justify-between gap-2">
+                <span className="text-white/90 text-xl">{entry.displayName}</span>
+                <ModuleSlotGrid filled={entry.slotCost} />
+              </div>
+              <span className="text-white/30 text-xs mt-1">{entry.category}</span>
             </Link>
           ))}
         </div>

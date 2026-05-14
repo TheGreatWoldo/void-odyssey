@@ -23,7 +23,7 @@ export type ModuleId = (typeof ModuleId)[keyof typeof ModuleId];
  * Larger or more complex modules occupy more cargo space.
  */
 export const ModuleSlotCosts: Record<ModuleId, number> = {
-  [ModuleId.ReactorCore]:     8,
+  [ModuleId.ReactorCore]:     9,
   [ModuleId.IonEngines]:      6,
   [ModuleId.ShieldGenerator]: 4,
   [ModuleId.LifeSupport]:     4,

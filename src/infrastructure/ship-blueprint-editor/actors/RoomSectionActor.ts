@@ -1,5 +1,5 @@
-import type { RoomSection, RoomsLayoutData } from '@/shared/rooms-editor'
-import { CELL, DOOR_THICKNESS, DOOR_WALL_STUB, NEIGHBOR_DELTA } from '@/shared/rooms-editor-geometry'
+import { SectionSide, type RoomSection, type RoomsLayoutData } from '@/shared/ship-blueprint-editor'
+import { CELL, DOOR_SIDES, DOOR_THICKNESS, DOOR_WALL_STUB, NEIGHBOR_DELTA } from '@/shared/ship-blueprint-editor-geometry'
 import { Actor, Canvas, Color, vec } from 'excalibur'
 
 const WALL_WIDTH = DOOR_THICKNESS * 2
@@ -49,7 +49,7 @@ export class RoomSectionActor extends Actor {
 
     const { x, y } = section.position
 
-    for (const side of ['left', 'right', 'top', 'bottom'] as const) {
+    for (const side of DOOR_SIDES) {
       const { dx, dy } = NEIGHBOR_DELTA[side]
       const nx = x + dx
       const ny = y + dy
@@ -61,19 +61,19 @@ export class RoomSectionActor extends Actor {
       // Same room neighbor — skip (interior seam, not a wall)
       if (neighborSection?.room === section.room) continue
 
-      const hasDoor = section.doors[side]
+      const hasDoor = section.doors.some((d) => d.side === side)
 
       if (hasDoor) {
         // Two stub lines framing the door gap
         const stub = DOOR_WALL_STUB
         ctx.beginPath()
-        if (side === 'left') {
+        if (side === SectionSide.Left) {
           ctx.moveTo(0, 0);       ctx.lineTo(0, stub)
           ctx.moveTo(0, CELL - stub); ctx.lineTo(0, CELL)
-        } else if (side === 'right') {
+        } else if (side === SectionSide.Right) {
           ctx.moveTo(CELL, 0);       ctx.lineTo(CELL, stub)
           ctx.moveTo(CELL, CELL - stub); ctx.lineTo(CELL, CELL)
-        } else if (side === 'top') {
+        } else if (side === SectionSide.Top) {
           ctx.moveTo(0, 0);       ctx.lineTo(stub, 0)
           ctx.moveTo(CELL - stub, 0); ctx.lineTo(CELL, 0)
         } else {
@@ -88,15 +88,15 @@ export class RoomSectionActor extends Actor {
         ctx.strokeStyle = DOOR_COLOR.toHex()
         ctx.lineWidth = DOOR_THICKNESS / 2
         ctx.beginPath()
-        if (side === 'left') {
+        if (side === SectionSide.Left) {
           const px = DOOR_THICKNESS / 2
           ctx.moveTo(px, panelStart); ctx.lineTo(px, half)
           ctx.moveTo(px, half);       ctx.lineTo(px, CELL - panelStart)
-        } else if (side === 'right') {
+        } else if (side === SectionSide.Right) {
           const px = CELL - DOOR_THICKNESS / 2
           ctx.moveTo(px, panelStart); ctx.lineTo(px, half)
           ctx.moveTo(px, half);       ctx.lineTo(px, CELL - panelStart)
-        } else if (side === 'top') {
+        } else if (side === SectionSide.Top) {
           const py = DOOR_THICKNESS / 2
           ctx.moveTo(panelStart, py); ctx.lineTo(half, py)
           ctx.moveTo(half, py);       ctx.lineTo(CELL - panelStart, py)
@@ -114,11 +114,11 @@ export class RoomSectionActor extends Actor {
       } else {
         // Full wall line
         ctx.beginPath()
-        if (side === 'left') {
+        if (side === SectionSide.Left) {
           ctx.moveTo(0, 0); ctx.lineTo(0, CELL)
-        } else if (side === 'right') {
+        } else if (side === SectionSide.Right) {
           ctx.moveTo(CELL, 0); ctx.lineTo(CELL, CELL)
-        } else if (side === 'top') {
+        } else if (side === SectionSide.Top) {
           ctx.moveTo(0, 0); ctx.lineTo(CELL, 0)
         } else {
           ctx.moveTo(0, CELL); ctx.lineTo(CELL, CELL)

@@ -1,5 +1,5 @@
-import type { RoomDoors, RoomsLayoutData } from '@/shared/rooms-editor'
-import { NEIGHBOR_DELTA } from '@/shared/rooms-editor-geometry'
+import type { RoomsLayoutData } from '@/shared/ship-blueprint-editor'
+import { DOOR_SIDES, NEIGHBOR_DELTA } from '@/shared/ship-blueprint-editor-geometry'
 import type { SVGProps } from 'react'
 import { edgeDoorWallCoords, edgeLineCoords } from './geometry'
 
@@ -20,12 +20,12 @@ interface Props {
   ) => SVGProps<SVGLineElement> | null
 }
 
-export function RoomWalls({ layout, getLineProps }: Props) {
+export function SectionWalls({ layout, getLineProps }: Props) {
   return (
     <>
       {layout.rooms.flatMap((room) =>
         room.sections.flatMap((section) =>
-          ['left', 'right', 'top', 'bottom'].flatMap((side) => {
+          DOOR_SIDES.flatMap((side) => {
             const { dx, dy } = NEIGHBOR_DELTA[side]
             const nx = section.position.x + dx
             const ny = section.position.y + dy
@@ -34,7 +34,7 @@ export function RoomWalls({ layout, getLineProps }: Props) {
               r.sections.some((s) => s.position.x === nx && s.position.y === ny)
             )
 
-            const hasDoor = section.doors[side as keyof RoomDoors] === true
+            const hasDoor = section.doors.some((d) => d.side === side)
 
             const lineProps = getLineProps(
               room.index,

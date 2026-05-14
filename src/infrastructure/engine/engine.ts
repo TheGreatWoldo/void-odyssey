@@ -4,14 +4,15 @@ import { HueForSizeStrategy } from '@/infrastructure/background/strategies/color
 import { getPositionForArgs } from '@/infrastructure/background/strategies/position-strategy'
 import { getSizeForArgs } from '@/infrastructure/background/strategies/size-strategy'
 import { getVelocityForArgs } from '@/infrastructure/background/strategies/velocity-strategy'
-import { RoomsEditorScene } from '@/infrastructure/rooms-editor/scenes/RoomsEditorScene'
+import { ShipBlueprintEditorScene } from '@/infrastructure/ship-blueprint-editor/scenes/ShipBlueprintEditorScene'
+import { ShipViewScene } from '@/infrastructure/ship-view/scenes/ShipViewScene'
 import type { IGameEngineFacade } from '@/shared/game-engine-facade'
-import type { RoomsLayoutData } from '@/shared/rooms-editor'
-import type { SceneKey } from '@/shared/scene-key'
+import { SceneKey } from '@/shared/scene-key'
+import type { RoomsLayoutData } from '@/shared/ship-blueprint-editor'
 import { Color, DisplayMode, Engine } from 'excalibur'
 
 // Compile-time check: background SceneKeys must all be in SceneKey.
-// 'roomsEditor' is intentionally excluded from the background catalog.
+// 'shipBlueprintEditor' is intentionally excluded from the background catalog.
 type BackgroundSceneKey = keyof typeof backgroundSceneArgsCatalog
 export type _AssertBackgroundKeysInSceneKey = BackgroundSceneKey extends SceneKey ? true : never
 
@@ -29,11 +30,13 @@ const backgroundStrategies = {
 export class ExcaliburEngineFacade implements IGameEngineFacade {
   private engine: Engine
   private readonly _canvas: HTMLCanvasElement
-  private readonly roomsEditorScene: RoomsEditorScene
+  private readonly shipBlueprintEditorScene: ShipBlueprintEditorScene
+  private readonly shipViewScene: ShipViewScene
 
   constructor(canvas: HTMLCanvasElement) {
     this._canvas = canvas
-    this.roomsEditorScene = new RoomsEditorScene()
+    this.shipBlueprintEditorScene = new ShipBlueprintEditorScene()
+    this.shipViewScene = new ShipViewScene()
     this.engine = this.buildEngine()
   }
 
@@ -49,7 +52,8 @@ export class ExcaliburEngineFacade implements IGameEngineFacade {
       engine.addScene(key, new BackgroundScene(args, backgroundStrategies))
     }
 
-    engine.addScene('roomsEditor', this.roomsEditorScene)
+    engine.addScene(SceneKey.ShipBlueprintEditor, this.shipBlueprintEditorScene)
+    engine.addScene(SceneKey.ShipView, this.shipViewScene)
 
     return engine
   }
@@ -72,7 +76,11 @@ export class ExcaliburEngineFacade implements IGameEngineFacade {
   }
 
   loadRoomsLayout(layout: RoomsLayoutData): void {
-    this.roomsEditorScene.loadLayout(layout)
+    this.shipBlueprintEditorScene.loadLayout(layout)
+  }
+
+  loadShipView(layout: RoomsLayoutData): void {
+    this.shipViewScene.loadLayout(layout)
   }
 
   dispose(): void {

@@ -1,7 +1,7 @@
 import type { IGameService } from '@/shared/game-service'
 import type { SceneKey } from '@/shared/scene-key'
 
-import type { GamePhase } from '@/application/store/gameStore'
+import { GamePhase } from '@/application/store/gameStore'
 
 /**
  * Starts the engine on the given canvas, navigates to the initial scene,
@@ -20,7 +20,7 @@ export async function startEngine(
 
   await service.goToScene(sceneKey)
 
-  setPhase('menu')
+  setPhase(GamePhase.Menu)
 
   return service
 }
