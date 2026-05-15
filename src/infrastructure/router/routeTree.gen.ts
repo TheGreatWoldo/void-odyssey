@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './../../presentation/pages/__root'
 import { Route as CanvasRouteImport } from './../../presentation/pages/_canvas'
 import { Route as CanvasIndexRouteImport } from './../../presentation/pages/_canvas/index'
+import { Route as CanvasPlaySelectShipRouteImport } from './../../presentation/pages/_canvas/play/select-ship'
 import { Route as CanvasEditShipsRouteImport } from './../../presentation/pages/_canvas/edit/ships'
 import { Route as CanvasCodexUpgradesRouteImport } from './../../presentation/pages/_canvas/codex/upgrades'
 import { Route as CanvasCodexModulesIndexRouteImport } from './../../presentation/pages/_canvas/codex/modules/index'
@@ -23,6 +24,11 @@ const CanvasRoute = CanvasRouteImport.update({
 const CanvasIndexRoute = CanvasIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => CanvasRoute,
+} as any)
+const CanvasPlaySelectShipRoute = CanvasPlaySelectShipRouteImport.update({
+  id: '/play/select-ship',
+  path: '/play/select-ship',
   getParentRoute: () => CanvasRoute,
 } as any)
 const CanvasEditShipsRoute = CanvasEditShipsRouteImport.update({
@@ -51,6 +57,7 @@ export interface FileRoutesByFullPath {
   '/': typeof CanvasIndexRoute
   '/codex/upgrades': typeof CanvasCodexUpgradesRoute
   '/edit/ships': typeof CanvasEditShipsRoute
+  '/play/select-ship': typeof CanvasPlaySelectShipRoute
   '/codex/modules/$moduleId': typeof CanvasCodexModulesModuleIdRoute
   '/codex/modules/': typeof CanvasCodexModulesIndexRoute
 }
@@ -58,6 +65,7 @@ export interface FileRoutesByTo {
   '/': typeof CanvasIndexRoute
   '/codex/upgrades': typeof CanvasCodexUpgradesRoute
   '/edit/ships': typeof CanvasEditShipsRoute
+  '/play/select-ship': typeof CanvasPlaySelectShipRoute
   '/codex/modules/$moduleId': typeof CanvasCodexModulesModuleIdRoute
   '/codex/modules': typeof CanvasCodexModulesIndexRoute
 }
@@ -67,6 +75,7 @@ export interface FileRoutesById {
   '/_canvas/': typeof CanvasIndexRoute
   '/_canvas/codex/upgrades': typeof CanvasCodexUpgradesRoute
   '/_canvas/edit/ships': typeof CanvasEditShipsRoute
+  '/_canvas/play/select-ship': typeof CanvasPlaySelectShipRoute
   '/_canvas/codex/modules/$moduleId': typeof CanvasCodexModulesModuleIdRoute
   '/_canvas/codex/modules/': typeof CanvasCodexModulesIndexRoute
 }
@@ -76,6 +85,7 @@ export interface FileRouteTypes {
     | '/'
     | '/codex/upgrades'
     | '/edit/ships'
+    | '/play/select-ship'
     | '/codex/modules/$moduleId'
     | '/codex/modules/'
   fileRoutesByTo: FileRoutesByTo
@@ -83,6 +93,7 @@ export interface FileRouteTypes {
     | '/'
     | '/codex/upgrades'
     | '/edit/ships'
+    | '/play/select-ship'
     | '/codex/modules/$moduleId'
     | '/codex/modules'
   id:
@@ -91,6 +102,7 @@ export interface FileRouteTypes {
     | '/_canvas/'
     | '/_canvas/codex/upgrades'
     | '/_canvas/edit/ships'
+    | '/_canvas/play/select-ship'
     | '/_canvas/codex/modules/$moduleId'
     | '/_canvas/codex/modules/'
   fileRoutesById: FileRoutesById
@@ -113,6 +125,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof CanvasIndexRouteImport
+      parentRoute: typeof CanvasRoute
+    }
+    '/_canvas/play/select-ship': {
+      id: '/_canvas/play/select-ship'
+      path: '/play/select-ship'
+      fullPath: '/play/select-ship'
+      preLoaderRoute: typeof CanvasPlaySelectShipRouteImport
       parentRoute: typeof CanvasRoute
     }
     '/_canvas/edit/ships': {
@@ -150,6 +169,7 @@ interface CanvasRouteChildren {
   CanvasIndexRoute: typeof CanvasIndexRoute
   CanvasCodexUpgradesRoute: typeof CanvasCodexUpgradesRoute
   CanvasEditShipsRoute: typeof CanvasEditShipsRoute
+  CanvasPlaySelectShipRoute: typeof CanvasPlaySelectShipRoute
   CanvasCodexModulesModuleIdRoute: typeof CanvasCodexModulesModuleIdRoute
   CanvasCodexModulesIndexRoute: typeof CanvasCodexModulesIndexRoute
 }
@@ -158,6 +178,7 @@ const CanvasRouteChildren: CanvasRouteChildren = {
   CanvasIndexRoute: CanvasIndexRoute,
   CanvasCodexUpgradesRoute: CanvasCodexUpgradesRoute,
   CanvasEditShipsRoute: CanvasEditShipsRoute,
+  CanvasPlaySelectShipRoute: CanvasPlaySelectShipRoute,
   CanvasCodexModulesModuleIdRoute: CanvasCodexModulesModuleIdRoute,
   CanvasCodexModulesIndexRoute: CanvasCodexModulesIndexRoute,
 }

@@ -3,10 +3,11 @@ import { useMenuConfig } from '@/application/hooks/useMenuConfig'
 import { MenuView } from '@/presentation/components/MenuView'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 
-const CODEX_ROUTES: Partial<Record<string, '/codex/modules' | '/codex/upgrades' | '/edit/ships'>> = {
+const CODEX_ROUTES: Partial<Record<string, '/codex/modules' | '/codex/upgrades' | '/edit/ships' | '/play/select-ship'>> = {
+  'play:new-game':  '/play/select-ship',
   'codex:modules':  '/codex/modules',
   'codex:upgrades': '/codex/upgrades',
-  'edit:ships': '/edit/ships',
+  'edit:ships':     '/edit/ships',
 }
 
 function IndexPage() {

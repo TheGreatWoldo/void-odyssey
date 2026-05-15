@@ -2,7 +2,7 @@
   "version": "1.0",
   "name": "donut",
   "layoutSectionSize": 4,
-  "mapSectionSize": 40,
+  "mapSectionSize": 60,
   "mapSize": {
     "width": 7,
     "height": 7

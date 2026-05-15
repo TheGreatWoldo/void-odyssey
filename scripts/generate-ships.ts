@@ -7,14 +7,17 @@ import { buildMap, buildNavigationGrid, getMapDimensions, getRooms } from 'sprit
 const LAYOUTS_DIR = path.resolve(import.meta.dirname, '..', 'src', 'assets', 'layouts');
 const SHIPS_DIR = path.resolve(import.meta.dirname, '..', 'src', 'assets', 'ships');
 
+// The size of a section in the source layout images (in pixels).
 const LAYOUT_SECTION_SIZE = 4;
-const MAP_SECTION_SIZE = 40;
+// The size of a section in the generated map images (in pixels).
+const MAP_SECTION_SIZE = 60;
 const WALL_SIZE = 6;
 
 const MAP_COLORS = {
     floor: '#C8C8C8',
-    wall: '#2A2A2A',
-    door: '#C8C8C8',
+    wall:  '#2A2A2A',
+    door:  '#C8C8C8',
+    text:  '#2A2A2A',
 };
 
 // --- helpers ---
@@ -174,6 +177,9 @@ async function processRoomsJsonForMap(jsonPath: string, outputDir: string): Prom
         sectionSize: MAP_SECTION_SIZE,
         wallSize: WALL_SIZE,
         showRoomNumbers: false,
+        showSectionLines: true,
+        sectionLineAdjust: 10,
+        showDoors: false,
         colors: MAP_COLORS,
     };
 
