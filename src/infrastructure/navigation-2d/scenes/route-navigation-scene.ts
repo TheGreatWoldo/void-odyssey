@@ -24,7 +24,7 @@ import {
 
 const BACKGROUND_COLOR = Color.fromRGB(6, 8, 20);
 const ROUTE_COUNT = 3;
-const ROUTE_GAP_WORLD = 50;
+const ROUTE_GAP_WORLD = 10;
 const SCROLL_TWEEN_DURATION_MS = 1200;
 
 export class RouteNavigationScene extends Scene {
