@@ -66,13 +66,15 @@ export function MenuView({ config, service, onEvent, initialMenuId, onMenuChange
       <div className="flex flex-1 flex-col items-center justify-center gap-4">
       {/* Menu items */}
       <div className="pointer-events-auto flex w-full max-w-sm flex-col gap-3">
-        {nav.currentItems.map((item, i) => (
+        {nav.currentItems.map((item, i) => {
+          const reverseIndex = nav.currentItems.length - 1 - i
+          return (
           <div
             key={`${animKey}-${item.id}`}
             style={{
               animation: exiting
-                ? `fade-out-down ${MENU_ITEM_DURATION_MS}ms ease ${i * MENU_ITEM_STAGGER_MS}ms both`
-                : `fade-in-up ${MENU_ITEM_DURATION_MS}ms ease ${i * MENU_ITEM_STAGGER_MS}ms both`,
+                ? `fade-out-down ${MENU_ITEM_DURATION_MS}ms ease ${reverseIndex * MENU_ITEM_STAGGER_MS}ms both`
+                : `fade-in-up ${MENU_ITEM_DURATION_MS}ms ease ${reverseIndex * MENU_ITEM_STAGGER_MS}ms both`,
             }}
           >
             <MenuButton
@@ -89,7 +91,7 @@ export function MenuView({ config, service, onEvent, initialMenuId, onMenuChange
               onIconClick={onEvent}
             />
           </div>
-        ))}
+        )})}
 
 
       </div>

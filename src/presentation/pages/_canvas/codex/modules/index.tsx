@@ -48,7 +48,9 @@ function CodexModulesPage() {
       {/* Content */}
       <div className="pointer-events-auto flex-1 flex items-center justify-center overflow-y-auto px-8 py-8">
         <div className="w-full max-w-5xl grid grid-cols-3 gap-4">
-          {MODULE_ENTRIES.map((entry, i) => (
+          {MODULE_ENTRIES.map((entry, i) => {
+            const reverseIndex = MODULE_ENTRIES.length - 1 - i
+            return (
             <Link
               key={entry.id}
               to="/codex/modules/$moduleId"
@@ -56,8 +58,8 @@ function CodexModulesPage() {
               className="pointer-events-auto flex flex-col border border-white/20 bg-black/90 px-5 py-4 uppercase tracking-wider transition-colors hover:border-white/40 hover:text-white cursor-pointer"
               style={{
                 animation: !MENU_ANIMATIONS_ENABLED ? undefined : exiting
-                  ? `fade-out-down ${EXIT_DURATION_MS}ms ease ${i * EXIT_STAGGER_MS}ms both`
-                  : `fade-in-up ${MENU_ITEM_DURATION_MS}ms ease ${i * MENU_ITEM_STAGGER_MS}ms both`,
+                  ? `fade-out-down ${EXIT_DURATION_MS}ms ease ${reverseIndex * EXIT_STAGGER_MS}ms both`
+                  : `fade-in-up ${MENU_ITEM_DURATION_MS}ms ease ${reverseIndex * MENU_ITEM_STAGGER_MS}ms both`,
               }}
               onClick={(e) => {
                 e.preventDefault()
@@ -72,7 +74,7 @@ function CodexModulesPage() {
               </div>
               <span className="text-white/30 text-xs mt-1">{entry.category}</span>
             </Link>
-          ))}
+          )})}
         </div>
       </div>
 
