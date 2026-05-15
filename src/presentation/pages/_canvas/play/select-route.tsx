@@ -1,4 +1,3 @@
-import { useFps } from '@/application/hooks/useFps';
 import { useGameService } from '@/application/hooks/useGameService';
 import {
     useHoveredNodeMeta,
@@ -17,7 +16,6 @@ export const Route = createFileRoute('/_canvas/play/select-route')({
 
 function RouteNavigationPage() {
   const game = useGameService();
-  const fps = useFps();
   const navigate = useNavigate();
 
   const hoveredNode = useHoveredRouteNode();
@@ -49,9 +47,11 @@ function RouteNavigationPage() {
   }, [hoveredNode, hoveredNodeRevealed, hoveredNodeMeta]);
 
   useEffect(() => {
+    game.setCanvasInteractive(true);
     game.goToScene(SceneKey.RouteNavigation);
 
     return () => {
+      game.setCanvasInteractive(false);
       game.goToScene(SceneKey.OrangeOnBlack);
     };
   }, [game]);
@@ -77,11 +77,6 @@ function RouteNavigationPage() {
 
       {/* Content */}
       <div className="flex-1 relative">
-
-        {/* FPS counter — top-left corner */}
-        <div className="absolute top-2 left-2 z-50 text-xs text-slate-400 font-mono pointer-events-none select-none">
-          {fps} fps
-        </div>
 
         {/* Hover tooltip — top centre */}
         {displayMeta && (

@@ -9,10 +9,10 @@ import {
 import { type NodeDrawingStrategy, NodeVisualState } from './node-drawing-strategy';
 
 /** Logical display size in world pixels. */
-const HEX_SIZE = 48;
+const HEX_SIZE = 96;
 
 /** Outer radius (center to vertex) of the hexagon, in logical pixels. */
-const HEX_RADIUS = 14;
+const HEX_RADIUS = 28;
 
 /**
  * Oversampling factor passed to Excalibur's `quality` option.

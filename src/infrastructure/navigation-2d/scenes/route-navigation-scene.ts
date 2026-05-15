@@ -60,6 +60,7 @@ export class RouteNavigationScene extends Scene {
   private cameraY = 0;
   private cameraTargetY = 0;
   private wheelHandler: ((e: WheelEvent) => void) | null = null;
+  private _preload: Promise<void> | null = null;
   private _logFrame = 0;
   private _lastLoggedZoom = 0;
   private _lastLoggedDrawWidth = 0;
@@ -72,7 +73,7 @@ export class RouteNavigationScene extends Scene {
     this.add(this.starfieldActor);
     this.starfieldActor.generate();
 
-    void this.drawingStrategy.preload?.();
+    this._preload = this.drawingStrategy.preload?.() ?? Promise.resolve();
   }
 
   override onActivate(_ctx: SceneActivationContext<unknown>): void {
@@ -96,7 +97,9 @@ export class RouteNavigationScene extends Scene {
       passive: false,
     });
 
-    this.rebuildAllRoutes();
+    void (this._preload ?? Promise.resolve()).then(() => {
+      this.rebuildAllRoutes();
+    });
   }
 
   override onDeactivate(_ctx: SceneActivationContext): void {
@@ -226,7 +229,7 @@ export class RouteNavigationScene extends Scene {
         node,
         vec(node.wx, node.wy + yOffset),
         this.drawingStrategy,
-        graphContext
+        graphContext,        
       );
 
       this.nodeActorSets[slotIndex].push(actor);
@@ -248,7 +251,7 @@ export class RouteNavigationScene extends Scene {
   }
 
   private updateCameraGlide(delta: number): void {
-    const decay = 1 - Math.exp(-delta * 0.01);
+    const decay = 1 - Math.exp(-delta * 0.0025);
 
     this.cameraY += (this.cameraTargetY - this.cameraY) * decay;
   }

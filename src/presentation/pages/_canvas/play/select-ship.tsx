@@ -90,7 +90,7 @@ function SelectShipPage() {
                     >
                     <CarouselContent className="items-stretch">
                         {SHIP_ENTRIES.map(entry => (
-                            <CarouselItem key={entry.id} className="h-[620px]">
+                            <CarouselItem key={entry.id} className="h-155">
                                 <div className="flex flex-col gap-4 border border-white/20 bg-black/90 px-6 py-5 h-full">
 
                                     {/* Name + stats */}

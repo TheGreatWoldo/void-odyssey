@@ -94,7 +94,7 @@ export const useRouteNavigationStore = create<
       hoveredNodeRevealed: false,
       sectorName: 'Unknown Sector',
       drawDebug: false,
-      revealAllNodes: false,
+      revealAllNodes: true,
       defaultScannerRange: 2,
       currentNodeId: null,
       scannedNodeIds: [],
