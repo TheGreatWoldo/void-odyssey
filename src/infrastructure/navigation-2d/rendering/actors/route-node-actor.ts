@@ -48,6 +48,8 @@ export class RouteNodeActor extends Actor {
       const visualState = this._computeVisualState(currentActor, scannerRange);
       const scanned = this._computeScanned(scannerRange, currentActor);
 
+      console.log('[RouteNodeActor] pointerenter', this.routeNode.id, { visualState, scanned });
+
       if (
         visualState === NodeVisualState.Reachable ||
         visualState === NodeVisualState.Known ||
