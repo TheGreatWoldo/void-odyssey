@@ -3,7 +3,7 @@ import { CELL, DOOR_THICKNESS, NEIGHBOR_DELTA } from '@/shared/ship-blueprint-ed
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { doorLineCoords } from '../shared/geometry'
 import { SectionWalls } from '../shared/SectionWalls'
-import { SectionDoorLines } from './SectionDoorLines'
+import { SectionDoor } from './SectionDoor'
 
 const CROSS_ARM = 7
 const PAD = CROSS_ARM + 2 // padding so edge crosses are fully visible
@@ -297,7 +297,7 @@ export function ShipBlueprintEditorCanvas({
       />
 
       {/* Door lines */}
-      <SectionDoorLines
+      <SectionDoor
         layout={layout}
         getLineProps={(roomIndex, sectionIndex, side) => {
           const section = sectionMap.get(`${roomIndex}-${sectionIndex}`)

@@ -3,7 +3,6 @@ import { CELL, DOOR_SIDES, DOOR_THICKNESS, DOOR_WALL_STUB, NEIGHBOR_DELTA } from
 import { Actor, Canvas, Color, vec } from 'excalibur'
 
 const WALL_WIDTH = DOOR_THICKNESS * 2
-const FILL_COLOR = Color.fromHex('#ffffff')
 const WALL_COLOR = Color.fromHex('#000000')
 const DOOR_COLOR = Color.fromHex('#9ca3af')
 
@@ -39,10 +38,6 @@ export class RoomSectionActor extends Actor {
     section: RoomSection,
     layout: RoomsLayoutData,
   ): void {
-    // Fill
-    ctx.fillStyle = FILL_COLOR.toHex()
-    ctx.fillRect(0, 0, CELL, CELL)
-
     ctx.strokeStyle = WALL_COLOR.toHex()
     ctx.lineWidth = WALL_WIDTH
     ctx.lineCap = 'square'

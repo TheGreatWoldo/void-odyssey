@@ -15,7 +15,7 @@ interface Props {
   ) => SVGProps<SVGLineElement>
 }
 
-export function SectionDoorLines({ layout, getLineProps }: Props) {
+export function SectionDoor({ layout, getLineProps }: Props) {
   return (
     <>
       {layout.rooms.flatMap((room) =>
