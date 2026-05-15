@@ -4,6 +4,8 @@ import { HueForSizeStrategy } from '@/infrastructure/background/strategies/color
 import { getPositionForArgs } from '@/infrastructure/background/strategies/position-strategy'
 import { getSizeForArgs } from '@/infrastructure/background/strategies/size-strategy'
 import { getVelocityForArgs } from '@/infrastructure/background/strategies/velocity-strategy'
+import { ParallaxStarfield } from '@/infrastructure/navigation-2d/rendering/parallax-starfield'
+import { RouteNavigationScene } from '@/infrastructure/navigation-2d/scenes/route-navigation-scene'
 import { ShipBlueprintEditorScene } from '@/infrastructure/ship-blueprint-editor/scenes/ShipBlueprintEditorScene'
 import { ShipViewScene } from '@/infrastructure/ship-view/scenes/ShipViewScene'
 import type { IGameEngineFacade } from '@/shared/game-engine-facade'
@@ -32,11 +34,15 @@ export class ExcaliburEngineFacade implements IGameEngineFacade {
   private readonly _canvas: HTMLCanvasElement
   private readonly shipBlueprintEditorScene: ShipBlueprintEditorScene
   private readonly shipViewScene: ShipViewScene
+  private readonly routeNavigationScene: RouteNavigationScene
+  private _targetSceneKey: SceneKey | null = null
 
   constructor(canvas: HTMLCanvasElement) {
     this._canvas = canvas
+    ParallaxStarfield.warmCache()
     this.shipBlueprintEditorScene = new ShipBlueprintEditorScene()
     this.shipViewScene = new ShipViewScene()
+    this.routeNavigationScene = new RouteNavigationScene()
     this.engine = this.buildEngine()
   }
 
@@ -54,6 +60,7 @@ export class ExcaliburEngineFacade implements IGameEngineFacade {
 
     engine.addScene(SceneKey.ShipBlueprintEditor, this.shipBlueprintEditorScene)
     engine.addScene(SceneKey.ShipView, this.shipViewScene)
+    engine.addScene(SceneKey.RouteNavigation, this.routeNavigationScene)
 
     return engine
   }
@@ -71,8 +78,17 @@ export class ExcaliburEngineFacade implements IGameEngineFacade {
   }
 
   goToScene(key: SceneKey): Promise<void> {
+    this._targetSceneKey = key
+
     if (this.engine.currentSceneName === key) return Promise.resolve()
-    return this.engine.goToScene(key)
+
+    return this.engine.goToScene(key).then(() => {
+      // If a later call changed the target while this transition was in-flight,
+      // transition to the latest target now (last-write-wins).
+      if (this._targetSceneKey !== null && this._targetSceneKey !== key) {
+        void this.goToScene(this._targetSceneKey)
+      }
+    })
   }
 
   loadRoomsLayout(layout: RoomsLayoutData): void {

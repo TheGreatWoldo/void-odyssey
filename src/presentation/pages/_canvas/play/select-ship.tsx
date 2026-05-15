@@ -166,7 +166,9 @@ function SelectShipPage() {
 
                 <button
                     type="button"
-                    onClick={() => {}}
+                    onClick={() => navigateWithExit(() => {
+                        navigate({ to: '/play/select-route' }).catch(() => {})
+                    })}
                     className="pointer-events-auto flex items-center gap-2 text-white/60 hover:text-white transition-colors uppercase tracking-widest text-xl -m-3 p-3"
                 >
                     Next <ChevronRight size={20} />

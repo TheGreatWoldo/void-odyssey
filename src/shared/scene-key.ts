@@ -8,6 +8,7 @@ export const SceneKey = {
   GreenOnBlack: 'greenOnBlack',
   ShipBlueprintEditor: 'shipBlueprintEditor',
   ShipView: 'shipView',
+  RouteNavigation: 'routeNavigation',
 } as const
 
 export type SceneKey = typeof SceneKey[keyof typeof SceneKey]
