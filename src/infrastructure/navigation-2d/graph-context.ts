@@ -1,13 +1,15 @@
+import type { IRouteActorState } from '@/shared/route-actor-state';
 import type { RouteConnection } from '@/domain/models/navigation/route/route-node';
 import type { RouteConnectionActor } from '@/infrastructure/navigation-2d/rendering/actors/route-connection-actor';
 import type { RouteNodeActor } from '@/infrastructure/navigation-2d/rendering/actors/route-node-actor';
 
 /**
  * Shared graph state owned by the scene and passed to actors.
- * Actors read from this context rather than polling the Zustand store
- * for game-logic state.
+ * Actors read from this context and the state port for game-logic state.
  */
 export class GraphContext {
+  readonly statePort: IRouteActorState;
+
   currentNodeActor: RouteNodeActor | null = null;
 
   /** Called by the scene when the player moves to a node. */
@@ -17,6 +19,10 @@ export class GraphContext {
   private _connectionActorsFrom = new Map<string, RouteConnectionActor[]>();
   private _connectionActorsTo = new Map<string, RouteConnectionActor[]>();
   private _connections: RouteConnection[] = [];
+
+  constructor(statePort: IRouteActorState) {
+    this.statePort = statePort;
+  }
 
   registerNode(actor: RouteNodeActor): void {
     this._nodeActors.set(actor.routeNode.id, actor);

@@ -1,33 +1,36 @@
-import { useRouteNavigationStore } from '@/application/store/routeNavigationStore';
 import type { RouteGraphAggregate } from '@/domain/models/navigation/route/route-graph-aggregate';
 import type { RouteNode } from '@/domain/models/navigation/route/route-node';
+import type { GraphContext } from '@/infrastructure/navigation-2d/graph-context';
 
 /**
- * Infrastructure implementation of RouteGraphAggregate backed by the Zustand
- * route navigation store.
+ * Infrastructure implementation of RouteGraphAggregate backed by a per-slot
+ * GraphContext. The context adapts a Zustand store to the IRouteActorState
+ * interface, keeping application dependencies isolated from actor code.
  */
 export class ZustandRouteGraphAggregate implements RouteGraphAggregate {
+  private readonly graphContext: GraphContext;
+
+  constructor(graphContext: GraphContext) {
+    this.graphContext = graphContext;
+  }
+
   getCurrentNode(): RouteNode | null {
-    const { currentNodeId, nodes } = useRouteNavigationStore.getState();
-
-    if (currentNodeId === null) return null;
-
-    return nodes.find((n) => n.id === currentNodeId) ?? null;
+    return this.graphContext.currentNodeActor?.routeNode ?? null;
   }
 
   markNodeScanned(id: string): void {
-    useRouteNavigationStore.getState().actions.markNodeScanned(id);
+    this.graphContext.statePort.markNodeScanned(id);
   }
 
   markNodeVisited(id: string): void {
-    useRouteNavigationStore.getState().actions.markNodeVisited(id);
+    this.graphContext.statePort.markNodeVisited(id);
   }
 
   isNodeScanned(id: string): boolean {
-    return useRouteNavigationStore.getState().scannedNodeIds.includes(id);
+    return this.graphContext.statePort.isNodeScanned(id);
   }
 
   isNodeVisited(id: string): boolean {
-    return useRouteNavigationStore.getState().visitedNodeIds.includes(id);
+    return this.graphContext.statePort.isNodeVisited(id);
   }
 }

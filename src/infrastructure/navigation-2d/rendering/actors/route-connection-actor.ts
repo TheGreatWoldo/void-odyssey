@@ -1,4 +1,3 @@
-import { useRouteNavigationStore } from '@/application/store/routeNavigationStore';
 import { isForwardReachable } from '@/domain/models/navigation/route/route-graph-utils';
 import type { RouteConnection, RouteNode } from '@/domain/models/navigation/route/route-node';
 import { GraphContext } from '@/infrastructure/navigation-2d/graph-context';
@@ -196,7 +195,7 @@ export class RouteConnectionActor extends Actor {
   override onPreUpdate(_engine: unknown, delta: number): void {
     const currentActor = this.graphContext.currentNodeActor;
     const currentNodeId = currentActor?.routeNode.id ?? null;
-    const scannerRange = useRouteNavigationStore.getState().defaultScannerRange;
+    const scannerRange = this.graphContext.statePort.getScannerRange();
     const connections = this.graphContext.allConnections();
 
     let next: ConnectionVisualState = 'normal';

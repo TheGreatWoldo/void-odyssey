@@ -1,11 +1,10 @@
-import { useRouteNavigationStore } from '@/application/store/routeNavigationStore';
 import { isForwardReachable } from '@/domain/models/navigation/route/route-graph-utils';
 import type { RouteNode } from '@/domain/models/navigation/route/route-node';
 import { GraphContext } from '@/infrastructure/navigation-2d/graph-context';
 import { Actor, CollisionType, Vector } from 'excalibur';
 
-import type { NodeDrawingStrategy } from '../strategies/node-drawing-strategy';
-import { NodeVisualState } from '../strategies/node-drawing-strategy';
+import type { NodeDrawingStrategy } from '@/infrastructure/navigation-2d/rendering/strategies/node-drawing-strategy';
+import { NodeVisualState } from '@/infrastructure/navigation-2d/rendering/strategies/node-drawing-strategy';
 
 const HIT_RADIUS = 20;
 
@@ -43,26 +42,22 @@ export class RouteNodeActor extends Actor {
 
   override onInitialize(): void {
     this.on('pointerenter', () => {
-      const scannerRange = useRouteNavigationStore.getState().defaultScannerRange;
+      const scannerRange = this.graphContext.statePort.getScannerRange();
       const currentActor = this.graphContext.currentNodeActor;
       const visualState = this._computeVisualState(currentActor, scannerRange);
       const scanned = this._computeScanned(scannerRange, currentActor);
-
-      console.log('[RouteNodeActor] pointerenter', this.routeNode.id, { visualState, scanned });
 
       if (
         visualState === NodeVisualState.Reachable ||
         visualState === NodeVisualState.Known ||
         scanned
       ) {
-        useRouteNavigationStore
-          .getState()
-          .actions.setHovered(this.routeNode, scanned);
+        this.graphContext.statePort.setHovered(this.routeNode, scanned);
       }
     });
 
     this.on('pointerleave', () => {
-      useRouteNavigationStore.getState().actions.setHovered(null);
+      this.graphContext.statePort.setHovered(null);
     });
 
     this.on('pointerup', () => {
@@ -73,7 +68,7 @@ export class RouteNodeActor extends Actor {
   }
 
   override onPreUpdate(): void {
-    const scannerRange = useRouteNavigationStore.getState().defaultScannerRange;
+    const scannerRange = this.graphContext.statePort.getScannerRange();
     const currentActor = this.graphContext.currentNodeActor;
     const next = this._computeVisualState(currentActor, scannerRange);
     const nextScanned = this._computeScanned(scannerRange, currentActor);
@@ -87,9 +82,7 @@ export class RouteNodeActor extends Actor {
 
     if (nextScanned && !this.scanned) {
       this.scanned = true;
-      useRouteNavigationStore
-        .getState()
-        .actions.markNodeScanned(this.routeNode.id);
+      this.graphContext.statePort.markNodeScanned(this.routeNode.id);
     }
 
     this.graphics.use(
@@ -133,7 +126,7 @@ export class RouteNodeActor extends Actor {
     scannerRange: number,
     currentActor: RouteNodeActor | null
   ): boolean {
-    if (useRouteNavigationStore.getState().revealAllNodes) return true;
+    if (this.graphContext.statePort.getRevealAllNodes()) return true;
 
     if (this.scanned) return true;
 

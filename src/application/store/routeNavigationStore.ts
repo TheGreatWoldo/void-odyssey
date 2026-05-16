@@ -2,23 +2,11 @@ import { NodeType } from '@/domain/models/navigation/node-type';
 import type {
     GraphBoundingBox,
     RouteConnection,
-    RouteGraph,
     RouteNode,
 } from '@/domain/models/navigation/route/route-node';
-import { ROUTE_ALLOCATION_CATALOG } from '@/domain/models/navigation/route/strategies/route-allocation-catalog';
-import { generateRouteGraph } from '@/domain/services/route-graph-generator';
-import { RandomBezierCurveProvider } from '@/infrastructure/navigation-2d/curve/random-bezier-curve-provider';
-import { BezierNodePositionStrategy } from '@/infrastructure/navigation-2d/positioning/bezier-node-position-strategy';
 import { create } from 'zustand';
 import { subscribeWithSelector } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
-
-/**
- * Shared Bézier curve provider for the navigation route.
- * Lives outside Zustand state to avoid Immer proxying a class instance.
- * `generate()` is called once per graph regeneration before nodes are positioned.
- */
-export const bezierProvider = new RandomBezierCurveProvider(2, 0.06);
 
 export interface RouteNavigationState {
   /** Number of intermediate layers between start and end. */
@@ -27,7 +15,7 @@ export interface RouteNavigationState {
   minBranches: number;
   /** Maximum nodes in an intermediate layer. */
   maxBranches: number;
-  /** Read-only topology — do not mutate after generate(). */
+  /** Read-only topology — set by RouteSlotActor.rebuild(); do not mutate directly. */
   nodes: RouteNode[];
   connections: RouteConnection[];
   totalLayers: number;
@@ -56,7 +44,6 @@ export interface RouteNavigationState {
 }
 
 export interface RouteNavigationStateActions {
-  generate: () => void;
   setRouteSteps: (n: number) => void;
   setMinBranches: (n: number) => void;
   setMaxBranches: (n: number) => void;
@@ -71,116 +58,96 @@ export interface RouteNavigationStateActions {
   ) => void;
 }
 
-export const useRouteNavigationStore = create<
-  RouteNavigationState & { actions: RouteNavigationStateActions }
->()(
-  subscribeWithSelector(
-    immer((set) => ({
-      routeSteps: 10,
-      minBranches: 2,
-      maxBranches: 3,
-      nodes: [],
-      connections: [],
-      totalLayers: 0,
-      boundingBox: {
-        minWx: -960,
-        minWy: -540,
-        maxWx: 960,
-        maxWy: 540,
-        width: 1920,
-        height: 1080,
-      },
-      hoveredNode: null,
-      hoveredNodeRevealed: false,
-      sectorName: 'Unknown Sector',
-      drawDebug: false,
-      revealAllNodes: true,
-      defaultScannerRange: 2,
-      currentNodeId: null,
-      scannedNodeIds: [],
-      visitedNodeIds: [],
-      pendingSystemEntry: null,
-
-      actions: {
-        generate: () => {
-          bezierProvider.generate();
-          set((state) => {
-            const result: RouteGraph = generateRouteGraph(
-              state.routeSteps,
-              state.minBranches,
-              state.maxBranches,
-              new BezierNodePositionStrategy(bezierProvider),
-              undefined,
-              ROUTE_ALLOCATION_CATALOG.standard.strategy
-            );
-
-            state.nodes = result.nodes;
-            state.connections = result.connections;
-            state.totalLayers = result.totalLayers;
-            state.boundingBox = result.boundingBox;
-            state.hoveredNode = null;
-            state.currentNodeId = null;
-            state.scannedNodeIds = [];
-            state.visitedNodeIds = [];
-            state.pendingSystemEntry = null;
-          });
+export function createRouteNavigationStore() {
+  return create<RouteNavigationState & { actions: RouteNavigationStateActions }>()(
+    subscribeWithSelector(
+      immer((set) => ({
+        routeSteps: 10,
+        minBranches: 2,
+        maxBranches: 3,
+        nodes: [],
+        connections: [],
+        totalLayers: 0,
+        boundingBox: {
+          minWx: -960,
+          minWy: -540,
+          maxWx: 960,
+          maxWy: 540,
+          width: 1920,
+          height: 1080,
         },
+        hoveredNode: null,
+        hoveredNodeRevealed: false,
+        sectorName: 'Unknown Sector',
+        drawDebug: false,
+        revealAllNodes: true,
+        defaultScannerRange: 2,
+        currentNodeId: null,
+        scannedNodeIds: [],
+        visitedNodeIds: [],
+        pendingSystemEntry: null,
 
-        setRouteSteps: (n: number) =>
-          set((state) => {
-            state.routeSteps = n;
-          }),
+        actions: {
+          setRouteSteps: (n: number) =>
+            set((state) => {
+              state.routeSteps = n;
+            }),
 
-        setMinBranches: (n: number) =>
-          set((state) => {
-            state.minBranches = n;
-          }),
+          setMinBranches: (n: number) =>
+            set((state) => {
+              state.minBranches = n;
+            }),
 
-        setMaxBranches: (n: number) =>
-          set((state) => {
-            state.maxBranches = n;
-          }),
+          setMaxBranches: (n: number) =>
+            set((state) => {
+              state.maxBranches = n;
+            }),
 
-        setHovered: (node: RouteNode | null, revealed = false) =>
-          set((state) => {
-            state.hoveredNode = node;
-            state.hoveredNodeRevealed = revealed;
-          }),
+          setHovered: (node: RouteNode | null, revealed = false) =>
+            set((state) => {
+              state.hoveredNode = node;
+              state.hoveredNodeRevealed = revealed;
+            }),
 
-        setDrawDebug: (value: boolean) =>
-          set((state) => {
-            state.drawDebug = value;
-          }),
+          setDrawDebug: (value: boolean) =>
+            set((state) => {
+              state.drawDebug = value;
+            }),
 
-        setRevealAllNodes: (value: boolean) =>
-          set((state) => {
-            state.revealAllNodes = value;
-          }),
+          setRevealAllNodes: (value: boolean) =>
+            set((state) => {
+              state.revealAllNodes = value;
+            }),
 
-        setCurrentNode: (id: string | null) =>
-          set((state) => {
-            state.currentNodeId = id;
-          }),
+          setCurrentNode: (id: string | null) =>
+            set((state) => {
+              state.currentNodeId = id;
+            }),
 
-        markNodeScanned: (id: string) =>
-          set((state) => {
-            if (!state.scannedNodeIds.includes(id)) {
-              state.scannedNodeIds.push(id);
-            }
-          }),
+          markNodeScanned: (id: string) =>
+            set((state) => {
+              if (!state.scannedNodeIds.includes(id)) {
+                state.scannedNodeIds.push(id);
+              }
+            }),
 
-        markNodeVisited: (id: string) =>
-          set((state) => {
-            if (!state.visitedNodeIds.includes(id)) {
-              state.visitedNodeIds.push(id);
-            }
-          }),
+          markNodeVisited: (id: string) =>
+            set((state) => {
+              if (!state.visitedNodeIds.includes(id)) {
+                state.visitedNodeIds.push(id);
+              }
+            }),
 
-        setPendingSystemEntry: (entry) =>
-          set((state) => {
-            state.pendingSystemEntry = entry;
-          }),
-      },
-    }))
-  )
-);
+          setPendingSystemEntry: (entry) =>
+            set((state) => {
+              state.pendingSystemEntry = entry;
+            }),
+        },
+      }))
+    )
+  );
+}
+
+export type RouteNavigationStore = ReturnType<typeof createRouteNavigationStore>;
+
+export const useRouteNavigationStore = createRouteNavigationStore();

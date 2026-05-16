@@ -1,7 +1,7 @@
 import type { Color, Vector } from 'excalibur';
-import type { BackgroundActorArgs } from '../actors/background-actor-args';
-import type { ColorArgs } from '../args/color-args';
-import type { IBackgroundSceneArgs, SizeArgs } from '../background-scene-args';
+import type { BackgroundActorArgs } from '@/infrastructure/background/actors/background-actor-args';
+import type { ColorArgs } from '@/infrastructure/background/args/color-args';
+import type { IBackgroundSceneArgs, SizeArgs } from '@/infrastructure/background/background-scene-args';
 import type { PositionResult } from './position-strategy';
 
 export type SizeStrategy = (
