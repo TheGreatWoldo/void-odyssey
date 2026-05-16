@@ -1,8 +1,8 @@
 import { EditorTool, SectionSide, type RoomSection, type RoomsLayoutData } from '@/shared/ship-blueprint-editor'
 import { CELL, DOOR_THICKNESS, NEIGHBOR_DELTA } from '@/shared/ship-blueprint-editor-geometry'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { doorLineCoords } from '../shared/geometry'
-import { SectionWalls } from '../shared/SectionWalls'
+import { doorLineCoords } from '@/presentation/components/ship-blueprint-editor/shared/geometry'
+import { SectionWalls } from '@/presentation/components/ship-blueprint-editor/shared/SectionWalls'
 import { SectionDoor } from './SectionDoor'
 
 const CROSS_ARM = 7

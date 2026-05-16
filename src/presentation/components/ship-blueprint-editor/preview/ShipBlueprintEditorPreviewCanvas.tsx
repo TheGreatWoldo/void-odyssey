@@ -1,7 +1,7 @@
 import { SectionSide, type RoomsLayoutData } from '@/shared/ship-blueprint-editor'
 import { CELL, DOOR_SIDES, DOOR_THICKNESS, NEIGHBOR_DELTA } from '@/shared/ship-blueprint-editor-geometry'
-import { doorSeamCoords, splitDoorLineCoords } from '../shared/geometry'
-import { SectionWalls } from '../shared/SectionWalls'
+import { doorSeamCoords, splitDoorLineCoords } from '@/presentation/components/ship-blueprint-editor/shared/geometry'
+import { SectionWalls } from '@/presentation/components/ship-blueprint-editor/shared/SectionWalls'
 
 const PAD = 8
 

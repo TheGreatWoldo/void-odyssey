@@ -1,7 +1,7 @@
 import type { RoomsLayoutData, SectionSide } from '@/shared/ship-blueprint-editor'
 import { DOOR_SIDES } from '@/shared/ship-blueprint-editor-geometry'
 import type { SVGProps } from 'react'
-import { doorLineCoords } from '../shared/geometry'
+import { doorLineCoords } from '@/presentation/components/ship-blueprint-editor/shared/geometry'
 
 interface Props {
   layout: RoomsLayoutData

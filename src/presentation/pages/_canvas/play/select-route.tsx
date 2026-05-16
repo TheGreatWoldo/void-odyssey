@@ -60,9 +60,6 @@ function RouteNavigationPage() {
     if (!pendingSystemEntry) return;
 
     setPendingSystemEntry(null);
-    // Navigate to the system scene when implemented:
-    // navigate({ to: '/system/$type', params: { type: pendingSystemEntry.nodeType } });
-    console.log('System entry:', pendingSystemEntry);
   }, [pendingSystemEntry, setPendingSystemEntry]);
 
   return (

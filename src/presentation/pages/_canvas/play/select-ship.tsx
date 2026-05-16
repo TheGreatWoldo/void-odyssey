@@ -1,5 +1,5 @@
 import { useGameService } from '@/application/hooks/useGameService'
-import { SHIP_ENTRIES, SHIP_MAP_CANVAS } from '@/application/hooks/useShipCatalog'
+import { SHIP_ENTRIES, SHIP_MAP_CANVAS } from '@/application/services/shipCatalog'
 import { type CarouselApi, Carousel, CarouselContent, CarouselItem } from '@/presentation/components/ui/carousel'
 import { MENU_ANIMATIONS_ENABLED, MENU_EXIT_BUFFER_MS, MENU_ITEM_DURATION_MS } from '@/shared/menu-animation'
 import { SceneKey } from '@/shared/scene-key'
