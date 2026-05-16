@@ -1,5 +1,5 @@
 import { useGameService } from '@/application/hooks/useGameService'
-import { MODULE_ENTRIES } from '@/application/hooks/useModuleCatalog'
+import { MODULE_ENTRIES } from '@/application/services/moduleCatalog'
 import { ModuleSlotGrid } from '@/presentation/components/ui/ModuleSlotGrid'
 import { MENU_ANIMATIONS_ENABLED, MENU_EXIT_BUFFER_MS, MENU_ITEM_DURATION_MS, MENU_ITEM_STAGGER_MS } from '@/shared/menu-animation'
 import { SceneKey } from '@/shared/scene-key'
