@@ -69,10 +69,10 @@ function CodexModulesPage() {
               }}
             >
               <div className="flex items-start justify-between gap-2">
-                <span className="text-white/90 text-xl">{entry.displayName}</span>
+                <span className="text-white/90 text-xl whitespace-nowrap">{entry.displayName}</span>
                 <ModuleSlotGrid filled={entry.slotCost} />
               </div>
-              <span className="text-white/30 text-xs mt-1">{entry.category}</span>
+              <span className="text-white/30 text-xs mt-1">{entry.category} / {entry.primaryOutput}</span>
             </Link>
           )})}
         </div>

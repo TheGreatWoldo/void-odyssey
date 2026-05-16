@@ -6,6 +6,7 @@ export interface ModuleEntry {
   displayName: string
   category: string
   slotCost: number
+  primaryOutput: string
 }
 
 export interface ModuleMetaView {
@@ -23,6 +24,7 @@ export const MODULE_ENTRIES: readonly ModuleEntry[] = (Object.values(ModuleId) a
     displayName: ModuleCatalog[id].displayName,
     category: ModuleCatalog[id].category,
     slotCost: ModuleSlotCosts[id],
+    primaryOutput: ModuleCatalog[id].primaryOutput,
   }))
 
 const VALID_MODULE_IDS = new Set<string>(Object.values(ModuleId))
