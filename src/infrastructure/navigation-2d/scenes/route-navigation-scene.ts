@@ -1,18 +1,12 @@
-import { useRouteNavigationStore } from '@/application/store/routeNavigationStore';
-import type { RouteConnection, RouteNode } from '@/domain/models/navigation/route/route-node';
-import { ROUTE_ALLOCATION_CATALOG } from '@/domain/models/navigation/route/strategies/route-allocation-catalog';
+import { createRouteNavigationStore, type RouteNavigationStore } from '@/application/store/routeNavigationStore';
 import {
-    generateRouteGraph,
     LAYER_GRID_HEIGHT,
     LAYER_GRID_WIDTH,
 } from '@/domain/services/route-graph-generator';
-import { RandomBezierCurveProvider } from '@/infrastructure/navigation-2d/curve/random-bezier-curve-provider';
-import { GraphContext } from '@/infrastructure/navigation-2d/graph-context';
-import { BezierNodePositionStrategy } from '@/infrastructure/navigation-2d/positioning/bezier-node-position-strategy';
-import { RouteConnectionActor } from '@/infrastructure/navigation-2d/rendering/actors/route-connection-actor';
-import { RouteNodeActor } from '@/infrastructure/navigation-2d/rendering/actors/route-node-actor';
+import { RouteSlotActor } from '@/infrastructure/navigation-2d/rendering/actors/route-slot-actor';
 import { StarfieldActor } from '@/infrastructure/navigation-2d/rendering/actors/starfield-actor';
 import { HexagonNodeDrawingStrategy } from '@/infrastructure/navigation-2d/rendering/strategies/hexagon-node-drawing-strategy';
+import type { IRouteActorState } from '@/shared/route-actor-state';
 import {
     Color,
     Engine,
@@ -24,32 +18,15 @@ import {
 
 const BACKGROUND_COLOR = Color.fromRGB(6, 8, 20);
 const ROUTE_COUNT = 3;
-const ROUTE_GAP_WORLD = 10;
+const ROUTE_GAP_WORLD = -1300;
 const SCROLL_TWEEN_DURATION_MS = 1200;
 
 export class RouteNavigationScene extends Scene {
   private readonly drawingStrategy = new HexagonNodeDrawingStrategy();
   private readonly starfieldActor = new StarfieldActor();
 
-  private readonly graphContexts: GraphContext[] = Array.from(
-    { length: ROUTE_COUNT },
-    () => new GraphContext()
-  );
-
-  private readonly bezierProviders: RandomBezierCurveProvider[] = Array.from(
-    { length: ROUTE_COUNT },
-    () => new RandomBezierCurveProvider(2, 0.06)
-  );
-
-  private nodeActorSets: RouteNodeActor[][] = Array.from(
-    { length: ROUTE_COUNT },
-    () => []
-  );
-
-  private connectionActorSets: RouteConnectionActor[][] = Array.from(
-    { length: ROUTE_COUNT },
-    () => []
-  );
+  private readonly slots: RouteSlotActor[] = [];
+  private _graphParamsStore: RouteNavigationStore | null = null;
 
   private graphWidth = 0;
   private routeSlotHeight = 0;
@@ -69,6 +46,28 @@ export class RouteNavigationScene extends Scene {
     this.add(this.starfieldActor);
     this.starfieldActor.generate();
 
+    // Create one slot per route, each with its own store and state port adapter
+    for (let i = 0; i < ROUTE_COUNT; i++) {
+      const store = createRouteNavigationStore();
+
+      if (i === 0) this._graphParamsStore = store;
+
+      // Adapter: present store API as IRouteActorState to isolate actors from application
+      const statePort: IRouteActorState = {
+        getScannerRange: () => store.getState().defaultScannerRange,
+        getRevealAllNodes: () => store.getState().revealAllNodes,
+        setHovered: (node, revealed) => store.getState().actions.setHovered(node, revealed),
+        markNodeScanned: (id) => store.getState().actions.markNodeScanned(id),
+        markNodeVisited: (id) => store.getState().actions.markNodeVisited(id),
+        isNodeScanned: (id) => store.getState().scannedNodeIds.includes(id),
+        isNodeVisited: (id) => store.getState().visitedNodeIds.includes(id),
+      };
+
+      const slot = new RouteSlotActor(this.drawingStrategy, statePort);
+      this.slots.push(slot);
+      this.add(slot);
+    }
+
     this._preload = this.drawingStrategy.preload?.() ?? Promise.resolve();
   }
 
@@ -79,6 +78,8 @@ export class RouteNavigationScene extends Scene {
 
     this.wheelHandler = (e: WheelEvent) => {
       e.preventDefault();
+
+      if (this._tweenElapsed < SCROLL_TWEEN_DURATION_MS) return;
 
       if (e.deltaY > 0) {
         this.activeRoute = Math.min(ROUTE_COUNT - 1, this.activeRoute + 1);
@@ -119,10 +120,8 @@ export class RouteNavigationScene extends Scene {
   // ---- Private helpers --------------------------------------------------
 
   private rebuildAllRoutes(): void {
-    this.clearAllActors();
-
     const { routeSteps, minBranches, maxBranches } =
-      useRouteNavigationStore.getState();
+      this._graphParamsStore!.getState();
 
     const totalLayers = routeSteps + 2;
 
@@ -130,18 +129,7 @@ export class RouteNavigationScene extends Scene {
     this.routeSlotHeight = totalLayers * LAYER_GRID_HEIGHT + ROUTE_GAP_WORLD;
 
     for (let i = 0; i < ROUTE_COUNT; i++) {
-      this.bezierProviders[i].generate();
-
-      const result = generateRouteGraph(
-        routeSteps,
-        minBranches,
-        maxBranches,
-        new BezierNodePositionStrategy(this.bezierProviders[i]),
-        undefined,
-        ROUTE_ALLOCATION_CATALOG.standard.strategy
-      );
-
-      this.buildSlot(i, result.nodes, result.connections, i * this.routeSlotHeight);
+      this.slots[i].rebuild(routeSteps, minBranches, maxBranches, i * this.routeSlotHeight);
     }
 
     this.activeRoute = 0;
@@ -149,64 +137,6 @@ export class RouteNavigationScene extends Scene {
     this._tweenFrom = 0;
     this._tweenTo = 0;
     this._tweenElapsed = SCROLL_TWEEN_DURATION_MS;
-  }
-
-  private buildSlot(
-    slotIndex: number,
-    nodes: RouteNode[],
-    connections: RouteConnection[],
-    yOffset: number
-  ): void {
-    const graphContext = this.graphContexts[slotIndex];
-
-    graphContext.setTopology(connections);
-
-    const nodeById = new Map(nodes.map((n) => [n.id, n]));
-    const offset = vec(0, yOffset);
-
-    for (const conn of connections) {
-      const from = nodeById.get(conn.fromId);
-      const to = nodeById.get(conn.toId);
-
-      if (!from || !to) continue;
-
-      const actor = RouteConnectionActor.fromNodes(
-        conn,
-        from,
-        to,
-        graphContext,
-        offset
-      );
-
-      this.connectionActorSets[slotIndex].push(actor);
-      graphContext.registerConnection(actor);
-      this.add(actor);
-    }
-
-    for (const node of nodes) {
-      const actor = new RouteNodeActor(
-        node,
-        vec(node.wx, node.wy + yOffset),
-        this.drawingStrategy,
-        graphContext,        
-      );
-
-      this.nodeActorSets[slotIndex].push(actor);
-      graphContext.registerNode(actor);
-      this.add(actor);
-    }
-  }
-
-  private clearAllActors(): void {
-    for (let i = 0; i < ROUTE_COUNT; i++) {
-      for (const actor of this.connectionActorSets[i]) actor.kill();
-      this.connectionActorSets[i] = [];
-
-      for (const actor of this.nodeActorSets[i]) actor.kill();
-      this.nodeActorSets[i] = [];
-
-      this.graphContexts[i].clear();
-    }
   }
 
   private updateCameraGlide(delta: number): void {
@@ -226,6 +156,4 @@ export class RouteNavigationScene extends Scene {
     this.camera.zoom = engine.canvas.clientWidth / this.graphWidth;
     this.camera.pos = vec(0, this._cameraY);
   }
-
 }
-

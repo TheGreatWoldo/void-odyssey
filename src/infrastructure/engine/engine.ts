@@ -52,7 +52,7 @@ export class ExcaliburEngineFacade implements IGameEngineFacade {
       displayMode: DisplayMode.FillContainer,
       backgroundColor: Color.fromHex('#000000'),
       suppressPlayButton: SUPPRESS_PLAY_BUTTON,
-      maxFps: 30,
+      maxFps: 60,
     })
 
     for (const [key, args] of Object.entries(backgroundSceneArgsCatalog)) {
