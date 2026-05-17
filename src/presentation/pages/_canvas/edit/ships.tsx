@@ -66,7 +66,7 @@ function ShipBlueprintEditorPage() {
   }
 
   return (
-    <div className="absolute inset-0 flex flex-col bg-slate-950 text-slate-100 overflow-hidden">
+    <div className="pointer-events-auto absolute inset-0 flex flex-col bg-slate-950 text-slate-100 overflow-hidden">
 
       <ShipBlueprintEditorToolbar
         name={data?.name ?? ''}

@@ -13,22 +13,18 @@ export function RootLayout({ children }: RootLayoutProps) {
       style={{
         position: 'fixed',
         inset: 0,
-        zIndex: 1,
+        zIndex: 2,
         pointerEvents: 'none',
         overflow: 'hidden',
-        background: 'black',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
       }}
     >
       <div
         style={{
           width: 1600,
           height: 900,
-          flexShrink: 0,
-          zoom: scale,
-          pointerEvents: 'auto',
+          transform: `scale(${scale})`,
+          transformOrigin: 'top left',
+          pointerEvents: 'none',
         }}
       >
         {children}

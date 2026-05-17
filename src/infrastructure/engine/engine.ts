@@ -13,6 +13,9 @@ import { SceneKey } from '@/shared/scene-key'
 import type { RoomsLayoutData } from '@/shared/ship-blueprint-editor'
 import { Color, DisplayMode, Engine } from 'excalibur'
 
+const VIRTUAL_WIDTH = 1600
+const VIRTUAL_HEIGHT = 900
+
 // Compile-time check: background SceneKeys must all be in SceneKey.
 // 'shipBlueprintEditor' is intentionally excluded from the background catalog.
 type BackgroundSceneKey = keyof typeof backgroundSceneArgsCatalog
@@ -20,6 +23,7 @@ export type _AssertBackgroundKeysInSceneKey = BackgroundSceneKey extends SceneKe
 
 // Set to false when audio unlock via the Excalibur play button is needed.
 const SUPPRESS_PLAY_BUTTON = true
+const MAX_PIXEL_RATIO = 2
 
 const backgroundStrategies = {
   sizeStrategy: (scene: Parameters<typeof getSizeForArgs>[0]) => getSizeForArgs(scene),
@@ -36,6 +40,7 @@ export class ExcaliburEngineFacade implements IGameEngineFacade {
   private readonly shipViewScene: ShipViewScene
   private readonly routeNavigationScene: RouteNavigationScene
   private _targetSceneKey: SceneKey | null = null
+  private _transitioningTo: SceneKey | null = null
 
   constructor(canvas: HTMLCanvasElement) {
     this._canvas = canvas
@@ -49,7 +54,10 @@ export class ExcaliburEngineFacade implements IGameEngineFacade {
   private buildEngine(): Engine {
     const engine = new Engine({
       canvasElement: this._canvas,
-      displayMode: DisplayMode.FillContainer,
+      width: VIRTUAL_WIDTH,
+      height: VIRTUAL_HEIGHT,
+      displayMode: DisplayMode.FitContainer,
+      pixelRatio: Math.min(window.devicePixelRatio || 1, MAX_PIXEL_RATIO),
       backgroundColor: Color.fromHex('#000000'),
       suppressPlayButton: SUPPRESS_PLAY_BUTTON,
       maxFps: 60,
@@ -81,9 +89,15 @@ export class ExcaliburEngineFacade implements IGameEngineFacade {
   goToScene(key: SceneKey): Promise<void> {
     this._targetSceneKey = key
 
+    // If a transition is already in-flight, don't start a competing engine transition.
+    // The current transition's .then() will redirect to _targetSceneKey when it lands.
+    if (this._transitioningTo !== null) return Promise.resolve()
+
     if (this.engine.currentSceneName === key) return Promise.resolve()
 
+    this._transitioningTo = key
     return this.engine.goToScene(key).then(() => {
+      this._transitioningTo = null
       // If a later call changed the target while this transition was in-flight,
       // transition to the latest target now (last-write-wins).
       if (this._targetSceneKey !== null && this._targetSceneKey !== key) {

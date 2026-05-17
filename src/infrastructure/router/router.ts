@@ -1,11 +1,9 @@
-import type { RouterContext } from '@/shared/router-context'
 import { createRouter } from '@tanstack/react-router'
 import { routeTree } from './routeTree.gen'
 
-export function createAppRouter(context: RouterContext) {
+export function createAppRouter() {
   return createRouter({
     routeTree,
-    context,
   })
 }
 

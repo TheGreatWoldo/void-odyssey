@@ -1,8 +1,7 @@
 import { RootLayout } from '@/presentation/components/RootLayout'
-import type { RouterContext } from '@/shared/router-context'
-import { Outlet, createRootRouteWithContext } from '@tanstack/react-router'
+import { Outlet, createRootRoute } from '@tanstack/react-router'
 
-export const Route = createRootRouteWithContext<RouterContext>()({
+export const Route = createRootRoute({
   component: () => (
     <RootLayout>
       <Outlet />
