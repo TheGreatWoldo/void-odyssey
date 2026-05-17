@@ -1,3 +1,4 @@
+import type { RandomNumberGenerator } from '@/shared/random';
 import { vec, Vector } from 'excalibur';
 
 export function lineThroughPointParallelToVector(
@@ -31,11 +32,12 @@ export function perpendicularVector(v: Vector): Vector {
 
 export function randomPointOnLine(
   pointOne: Vector | null,
-  pointTwo: Vector | null
+  pointTwo: Vector | null,
+  rng: RandomNumberGenerator = Math.random,
 ): Vector | null {
   if (!pointOne || !pointTwo) return null;
 
-  const t = Math.random();
+  const t = rng();
 
   return vec(
     pointOne.x + t * (pointTwo.x - pointOne.x),

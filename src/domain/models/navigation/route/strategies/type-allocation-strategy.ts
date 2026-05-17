@@ -1,6 +1,7 @@
 import { NodeType } from '@/domain/models/navigation/node-type';
 import type { PositionedNodeStub } from '@/domain/models/navigation/route/strategies/node-type-strategy';
 import { fisherYatesShuffle } from '@/shared/math-utils';
+import type { RandomNumberGenerator } from '@/shared/random';
 
 /**
  * Base class for all type allocation strategies used by LayeredAllocationStrategy.
@@ -17,7 +18,8 @@ export abstract class TypeAllocationStrategy {
 
   abstract select(
     unassigned: readonly PositionedNodeStub[],
-    totalLayers: number
+    totalLayers: number,
+    rng?: RandomNumberGenerator,
   ): PositionedNodeStub[];
 }
 
@@ -58,14 +60,16 @@ export class AbsoluteTypeAllocation extends TypeAllocationStrategy {
 
   select(
     unassigned: readonly PositionedNodeStub[],
-    totalLayers: number
+    totalLayers: number,
+    rng: RandomNumberGenerator = Math.random,
   ): PositionedNodeStub[] {
     const candidates = fisherYatesShuffle(
       unassigned.filter(
         (n) =>
           this.eligibleStopIndex === undefined ||
           this.eligibleStopIndex(n.stopIndex, totalLayers)
-      )
+      ),
+      rng,
     );
 
     const placed: PositionedNodeStub[] = [];
@@ -85,6 +89,7 @@ export class AbsoluteTypeAllocation extends TypeAllocationStrategy {
       const placedIds = new Set(placed.map((n) => n.id));
       const overflow = fisherYatesShuffle(
         unassigned.filter((n) => !placedIds.has(n.id))
+      , rng
       );
 
       for (const node of overflow) {
@@ -127,13 +132,14 @@ export class ProbabilisticTypeAllocation extends TypeAllocationStrategy {
 
   select(
     unassigned: readonly PositionedNodeStub[],
-    totalLayers: number
+    totalLayers: number,
+    rng: RandomNumberGenerator = Math.random,
   ): PositionedNodeStub[] {
     return unassigned.filter(
       (n) =>
         (this.eligibleStopIndex === undefined ||
           this.eligibleStopIndex(n.stopIndex, totalLayers)) &&
-        Math.random() < this.chance
+        rng() < this.chance
     );
   }
 }

@@ -41,7 +41,7 @@ export class WeightedRandomNodeTypeStrategy implements NodeTypeStrategy {
     this.pool = pool;
   }
 
-  resolveType(_ctx: NodeTypeContext): NodeType {
-    return this.pool[Math.floor(Math.random() * this.pool.length)];
+  resolveType(ctx: NodeTypeContext): NodeType {
+    return this.pool[Math.floor(ctx.rng() * this.pool.length)];
   }
 }

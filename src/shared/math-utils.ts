@@ -1,11 +1,20 @@
-export function getRandomInRange(min: number, max: number): number {
-  return min + Math.random() * (max - min);
+import type { RandomNumberGenerator } from '@/shared/random';
+
+export function getRandomInRange(
+  min: number,
+  max: number,
+  rng: RandomNumberGenerator = Math.random,
+): number {
+  return min + rng() * (max - min);
 }
 
 /** Fisher-Yates in-place shuffle. Mutates and returns the array. */
-export function fisherYatesShuffle<T>(arr: T[]): T[] {
+export function fisherYatesShuffle<T>(
+  arr: T[],
+  rng: RandomNumberGenerator = Math.random,
+): T[] {
   for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
+    const j = Math.floor(rng() * (i + 1));
 
     [arr[i], arr[j]] = [arr[j], arr[i]];
   }

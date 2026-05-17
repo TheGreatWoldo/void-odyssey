@@ -1,6 +1,7 @@
 import type { RouteConnection, RouteNode, RouteStop } from '@/domain/models/navigation/route/route-node';
 import type { NodeConnectionStrategy } from '@/domain/models/navigation/route/strategies/node-connection-strategy';
 import { fisherYatesShuffle } from '@/shared/math-utils';
+import type { RandomNumberGenerator } from '@/shared/random';
 
 function squaredDistance(a: RouteNode, b: RouteNode): number {
   const dx = a.wx - b.wx;
@@ -71,10 +72,13 @@ export class ClosestNeighboursConnectionStrategy implements NodeConnectionStrate
     this.neighbourCount = neighbourCount
   }
 
-  buildConnections(stops: RouteStop[]): RouteConnection[] {
+  buildConnections(
+    stops: RouteStop[],
+    rng: RandomNumberGenerator = Math.random,
+  ): RouteConnection[] {
     const builder = new ConnectionBuilder();
 
-    this.linkClosestNeighbors(stops, builder);
+    this.linkClosestNeighbors(stops, builder, rng);
     this.ensureIncomingConnections(stops, builder);
 
     return builder.getConnections();
@@ -82,13 +86,14 @@ export class ClosestNeighboursConnectionStrategy implements NodeConnectionStrate
 
   private linkClosestNeighbors(
     stops: RouteStop[],
-    builder: ConnectionBuilder
+    builder: ConnectionBuilder,
+    rng: RandomNumberGenerator,
   ): void {
     for (let stopIdx = 0; stopIdx < stops.length - 1; stopIdx++) {
       const currentStopNodes = stops[stopIdx].nodes;
       const nextStopNodes = stops[stopIdx + 1].nodes;
 
-      const shuffled = fisherYatesShuffle([...currentStopNodes]);
+      const shuffled = fisherYatesShuffle([...currentStopNodes], rng);
 
       for (const node of shuffled) {
         const sorted = [...nextStopNodes].sort(

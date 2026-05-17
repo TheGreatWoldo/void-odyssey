@@ -1,3 +1,5 @@
+import type { BackgroundActorArgs } from '@/infrastructure/background/actors/background-actor-args';
+import type { IBackgroundSceneArgs } from '@/infrastructure/background/background-scene-args';
 import {
     intersectionOfLines2D,
     lineThroughPointParallelToVector,
@@ -11,9 +13,8 @@ import {
     getQuadrantForVelocity,
     Quadrant,
 } from '@/infrastructure/utils/quadrant-utils';
+import type { RandomNumberGenerator } from '@/shared/random';
 import { Vector } from 'excalibur';
-import type { BackgroundActorArgs } from '@/infrastructure/background/actors/background-actor-args';
-import type { IBackgroundSceneArgs } from '@/infrastructure/background/background-scene-args';
 
 export type PositionResult = {
   startingPosition: Vector;
@@ -39,7 +40,8 @@ export class PositionStrategyDebugResult implements PositionResult {
 
 function computePosition(
   sceneArgs: IBackgroundSceneArgs,
-  actorArgs: BackgroundActorArgs
+  actorArgs: BackgroundActorArgs,
+  rng: RandomNumberGenerator = Math.random,
 ): PositionStrategyDebugResult {
   const result = new PositionStrategyDebugResult();
   const angle = sceneArgs.angleBase * (Math.PI / 180);
@@ -104,7 +106,8 @@ function computePosition(
       : 0;
   result.startingPosition = randomPointOnLine(
     result.intersection1,
-    result.intersection2
+    result.intersection2,
+    rng,
   ) ?? new Vector(0, 0);
 
   return result;
@@ -112,14 +115,16 @@ function computePosition(
 
 export function getPositionForArgs(
   sceneArgs: IBackgroundSceneArgs,
-  actorArgs: BackgroundActorArgs
+  actorArgs: BackgroundActorArgs,
+  rng: RandomNumberGenerator = Math.random,
 ): PositionResult {
-  return computePosition(sceneArgs, actorArgs);
+  return computePosition(sceneArgs, actorArgs, rng);
 }
 
 export function getPositionDebugInfoForArgs(
   sceneArgs: IBackgroundSceneArgs,
-  actorArgs: BackgroundActorArgs
+  actorArgs: BackgroundActorArgs,
+  rng: RandomNumberGenerator = Math.random,
 ): PositionStrategyDebugResult {
-  return computePosition(sceneArgs, actorArgs);
+  return computePosition(sceneArgs, actorArgs, rng);
 }

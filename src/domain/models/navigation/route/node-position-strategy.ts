@@ -1,3 +1,5 @@
+import type { RandomNumberGenerator } from '@/shared/random';
+
 export interface NodePositionContext {
   layer: number;
   indexInLayer: number;
@@ -9,6 +11,8 @@ export interface NodePositionContext {
   graphWidth: number;
   /** Total graph height in world pixels (centred at origin: y ∈ [-h/2, h/2]). */
   graphHeight: number;
+  /** Deterministic RNG for positional jitter. */
+  rng: RandomNumberGenerator;
 }
 
 export interface NodePositionStrategy {

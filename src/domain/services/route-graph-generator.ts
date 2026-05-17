@@ -5,6 +5,7 @@ import { ClosestNeighboursConnectionStrategy } from '@/domain/models/navigation/
 import type { NodeConnectionStrategy } from '@/domain/models/navigation/route/strategies/node-connection-strategy';
 import type { NodeTypeStrategy, PositionedNodeStub } from '@/domain/models/navigation/route/strategies/node-type-strategy';
 import { WeightedRandomNodeTypeStrategy } from '@/domain/models/navigation/route/strategies/weighted-random-node-type-strategy';
+import type { RandomNumberGenerator } from '@/shared/random';
 
 /**
  * Generates a neural-network-style directed graph:
@@ -34,13 +35,14 @@ export function generateRouteGraph(
   maxBranches: number,
   positionStrategy: NodePositionStrategy,
   connectionStrategy: NodeConnectionStrategy = new ClosestNeighboursConnectionStrategy(),
-  typeStrategy: NodeTypeStrategy = new WeightedRandomNodeTypeStrategy()
+  typeStrategy: NodeTypeStrategy = new WeightedRandomNodeTypeStrategy(),
+  rng: RandomNumberGenerator = Math.random,
 ): RouteGraph {
   const steps = Math.max(0, Math.floor(routeSteps));
   const lo = Math.max(1, Math.floor(minBranches));
   const hi = Math.max(lo, Math.floor(maxBranches));
 
-  const randBranches = () => lo + Math.floor(Math.random() * (hi - lo + 1));
+  const randBranches = () => lo + Math.floor(rng() * (hi - lo + 1));
 
   // Stop sizes: [1, <random>, <random>, …, 1]
   const totalStops = steps + 2; // start + intermediate stops + end
@@ -67,6 +69,7 @@ export function generateRouteGraph(
     maxLayerSize: maxStopSize,
     graphWidth,
     graphHeight,
+    rng,
   });
   const startNode: RouteNode = {
     id: 'node-l0-i0',
@@ -94,6 +97,7 @@ export function generateRouteGraph(
         maxLayerSize: maxStopSize,
         graphWidth,
         graphHeight,
+        rng,
       });
 
       const stub: PositionedNodeStub = {
@@ -114,7 +118,7 @@ export function generateRouteGraph(
   // Assign types — bulk when supported, per-node otherwise
   let nodeIndex = 0;
   if (typeStrategy.assignAll) {
-    const typeMap = typeStrategy.assignAll(intermediateStubs, totalStops);
+    const typeMap = typeStrategy.assignAll(intermediateStubs, totalStops, rng);
 
     for (let stopIdx = 1; stopIdx < totalStops - 1; stopIdx++) {
       const stopNodes = stops[stopIdx].nodes;
@@ -141,6 +145,7 @@ export function generateRouteGraph(
           node: stub,
           assignedNodes: allNodes,
           totalLayers: totalStops,
+          rng,
         });
         const node: RouteNode = { ...stub, stopIndex: stopIdx, type };
 
@@ -161,6 +166,7 @@ export function generateRouteGraph(
     maxLayerSize: maxStopSize,
     graphWidth,
     graphHeight,
+    rng,
   });
   const endNode: RouteNode = {
     id: `node-l${endStopIdx}-i0`,
@@ -171,7 +177,7 @@ export function generateRouteGraph(
   allNodes.push(endNode);
   stops.push({ index: endStopIdx, nodes: [endNode] });
 
-  const connections: RouteConnection[] = connectionStrategy.buildConnections(stops);
+  const connections: RouteConnection[] = connectionStrategy.buildConnections(stops, rng);
 
   const minWx = Math.min(...allNodes.map((n) => n.wx));
   const maxWx = Math.max(...allNodes.map((n) => n.wx));

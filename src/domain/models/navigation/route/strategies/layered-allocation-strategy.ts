@@ -1,6 +1,7 @@
 import { NodeType } from '@/domain/models/navigation/node-type';
 import type { NodeTypeStrategy, PositionedNodeStub } from '@/domain/models/navigation/route/strategies/node-type-strategy';
 import { TypeAllocationStrategy } from '@/domain/models/navigation/route/strategies/type-allocation-strategy';
+import type { RandomNumberGenerator } from '@/shared/random';
 
 /**
  * Assigns node types by visiting each TypeAllocationStrategy in priority order
@@ -20,14 +21,15 @@ export class LayeredAllocationStrategy implements NodeTypeStrategy {
 
   assignAll(
     nodes: readonly PositionedNodeStub[],
-    totalLayers: number
+    totalLayers: number,
+    rng: RandomNumberGenerator = Math.random,
   ): ReadonlyMap<string, NodeType> {
     const result = new Map<string, NodeType>();
     const unassigned = new Set(nodes.map((n) => n.id));
 
     for (const strategy of this.strategies) {
       const currentPool = nodes.filter((n) => unassigned.has(n.id));
-      const selected = strategy.select(currentPool, totalLayers);
+      const selected = strategy.select(currentPool, totalLayers, rng);
 
       for (const node of selected) {
         result.set(node.id, strategy.type);

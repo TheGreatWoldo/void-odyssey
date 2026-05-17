@@ -1,5 +1,6 @@
 import { NodeType } from '@/domain/models/navigation/node-type';
 import type { RouteNode } from '@/domain/models/navigation/route/route-node';
+import type { RandomNumberGenerator } from '@/shared/random';
 
 /** A node stub that has been positioned but not yet assigned a type. */
 export type PositionedNodeStub = Omit<RouteNode, 'type'>;
@@ -16,6 +17,8 @@ export interface NodeTypeContext {
   assignedNodes: readonly RouteNode[];
   /** Total number of layers in the graph (including start and end). */
   totalLayers: number;
+  /** Deterministic RNG for graph generation. */
+  rng: RandomNumberGenerator;
 }
 
 /**
@@ -38,6 +41,7 @@ export interface NodeTypeStrategy {
    */
   assignAll?(
     nodes: readonly PositionedNodeStub[],
-    totalLayers: number
+    totalLayers: number,
+    rng?: RandomNumberGenerator,
   ): ReadonlyMap<string, NodeType>;
 }

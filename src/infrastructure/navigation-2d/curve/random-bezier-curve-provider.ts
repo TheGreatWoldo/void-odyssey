@@ -1,3 +1,4 @@
+import type { RandomNumberGenerator } from '@/shared/random';
 import type { BezierCurveProvider } from './bezier-curve-provider';
 
 const PADDING_X = 0.1;
@@ -53,9 +54,9 @@ export class RandomBezierCurveProvider implements BezierCurveProvider {
     return this._controlPoints;
   }
 
-  generate(): void {
+  generate(rng: RandomNumberGenerator = Math.random): void {
     const N = this.segmentCount;
-    const r = () => Math.random();
+    const r = rng;
     const x0 = PADDING_X;
     const x3 = 1 - PADDING_X;
     const span = x3 - x0;

@@ -1,18 +1,20 @@
-import {
-    blendFactorForSize,
-    blendWithBackground,
-} from '@/infrastructure/graphics/color-utils';
-import { BoundingBox, Color, Engine, Scene, Vector } from 'excalibur';
 import { BackgroundActor } from '@/infrastructure/background/actors/background-actor';
 import { defaultBackgroundActorArgs } from '@/infrastructure/background/actors/background-actor-args';
 import { BackgroundSceneArgs } from '@/infrastructure/background/background-scene-args';
 import type { BackgroundStrategies } from '@/infrastructure/background/strategies/background-strategies';
+import {
+    blendFactorForSize,
+    blendWithBackground,
+} from '@/infrastructure/graphics/color-utils';
+import { createSeededRandom, hashStringToSeed, type RandomNumberGenerator } from '@/shared/random';
+import { BoundingBox, Color, Engine, Scene } from 'excalibur';
 
 const PRESEED_WINDOW_MS = 60_000;
 
 export class BackgroundScene extends Scene {
   private elapsed = 0;
   private spawnIntervalMs: number;
+  private rng: RandomNumberGenerator = Math.random;
   sceneArgs: BackgroundSceneArgs;
   protected readonly strategies: BackgroundStrategies;
 
@@ -27,12 +29,10 @@ export class BackgroundScene extends Scene {
     this.backgroundColor = this.strategies.backgroundColorStrategy(
       this.sceneArgs.backgroundColor,
       this.sceneArgs,
-      defaultBackgroundActorArgs()
+      defaultBackgroundActorArgs(),
+      this.rng,
     );
-    this.camera.pos = new Vector(
-      this.engine.drawWidth / 2,
-      this.engine.drawHeight / 2
-    );
+    this.resetRandom();
     this.preSeed();
   }
 
@@ -54,11 +54,17 @@ export class BackgroundScene extends Scene {
     this.backgroundColor = this.strategies.backgroundColorStrategy(
       this.sceneArgs.backgroundColor,
       this.sceneArgs,
-      defaultBackgroundActorArgs()
+      defaultBackgroundActorArgs(),
+      this.rng,
     );
     if (this.isInitialized) {
+      this.resetRandom();
       this.preSeed();
     }
+  }
+
+  private resetRandom(): void {
+    this.rng = createSeededRandom(hashStringToSeed(JSON.stringify(this.sceneArgs)));
   }
 
   private preSeed(): void {
@@ -71,22 +77,21 @@ export class BackgroundScene extends Scene {
 
   private spawnActor(timeAlreadyElapsedMs = 0): void {
     const args = defaultBackgroundActorArgs();
-    const w = this.engine?.drawWidth ?? 1920;
-    const h = this.engine?.drawHeight ?? 1080;
     const cameraViewport = this.engine
-      ? this.camera.viewport
-      : new BoundingBox(0, 0, w, h);
+      ? this.engine.getWorldBounds()
+      : new BoundingBox(0, 0, 1920, 1080);
 
     args.viewport = cameraViewport;
-    args.size = this.strategies.sizeStrategy(this.sceneArgs, args);
+    args.size = this.strategies.sizeStrategy(this.sceneArgs, args, this.rng);
     args.color = [
       this.strategies.actorColorStrategy(
         this.sceneArgs.actorColor,
         this.sceneArgs,
-        args
+        args,
+        this.rng,
       ),
     ];
-    args.velocity = this.strategies.velocityStrategy(this.sceneArgs, args);
+    args.velocity = this.strategies.velocityStrategy(this.sceneArgs, args, this.rng);
 
     const blendFactor = blendFactorForSize(
       args.size,
@@ -97,7 +102,7 @@ export class BackgroundScene extends Scene {
 
     args.color = args.color.map((c) => blendWithBackground(c, bg, blendFactor));
 
-    const placement = this.strategies.positionStrategy(this.sceneArgs, args);
+    const placement = this.strategies.positionStrategy(this.sceneArgs, args, this.rng);
     const direction = args.velocity.normalize();
     const speed = args.velocity.magnitude;
     const offset =

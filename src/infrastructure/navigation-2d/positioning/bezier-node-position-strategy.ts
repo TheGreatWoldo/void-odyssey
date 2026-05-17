@@ -43,6 +43,7 @@ export class BezierNodePositionStrategy implements NodePositionStrategy {
     maxLayerSize,
     graphWidth,
     graphHeight,
+    rng,
   }: NodePositionContext): {
     wx: number;
     wy: number;
@@ -72,7 +73,7 @@ export class BezierNodePositionStrategy implements NodePositionStrategy {
       const bx = clampX(cwx);
       const by = clampY(cwy);
 
-      return { ...this._withJitter(bx, by), baseWx: bx, baseWy: by };
+      return { ...this._withJitter(bx, by, rng), baseWx: bx, baseWy: by };
     }
 
     const a = this.provider.sampleAt(Math.max(0, t - EPS));
@@ -91,12 +92,16 @@ export class BezierNodePositionStrategy implements NodePositionStrategy {
     const baseWx = clampX(cwx + offset * perpX);
     const baseWy = clampY(cwy + offset * perpY);
 
-    return { ...this._withJitter(baseWx, baseWy), baseWx, baseWy };
+    return { ...this._withJitter(baseWx, baseWy, rng), baseWx, baseWy };
   }
 
-  private _withJitter(wx: number, wy: number): { wx: number; wy: number } {
-    const angle = Math.random() * 2 * Math.PI;
-    const r = JITTER_RADIUS_PX * Math.sqrt(Math.random());
+  private _withJitter(
+    wx: number,
+    wy: number,
+    rng: NodePositionContext['rng']
+  ): { wx: number; wy: number } {
+    const angle = rng() * 2 * Math.PI;
+    const r = JITTER_RADIUS_PX * Math.sqrt(rng());
 
     return { wx: wx + r * Math.cos(angle), wy: wy + r * Math.sin(angle) };
   }

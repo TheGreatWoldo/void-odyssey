@@ -1,10 +1,13 @@
 import { ColorArgs } from '@/infrastructure/background/args/color-args';
+import type { RandomNumberGenerator } from '@/shared/random';
 
 export type ColorArgsKey = keyof typeof backgroundColorArgsCatalog;
 
-export function getRandomColorArgs(): ColorArgs {
+export function getRandomColorArgs(
+  rng: RandomNumberGenerator = Math.random,
+): ColorArgs {
   const keys = Object.keys(backgroundColorArgsCatalog) as ColorArgsKey[];
-  const randomKey = keys[Math.floor(Math.random() * keys.length)];
+  const randomKey = keys[Math.floor(rng() * keys.length)];
 
   return backgroundColorArgsCatalog[randomKey];
 }

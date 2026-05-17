@@ -3,6 +3,7 @@ import type { BackgroundActorArgs } from './background-actor-args';
 
 export class BackgroundActor extends Actor {
   private readonly options: BackgroundActorArgs;
+  private readonly circle: Circle;
   private hasBeenSeen = false;
 
   public get size(): number {
@@ -17,23 +18,28 @@ export class BackgroundActor extends Actor {
     this.options = options;
     this.vel = options.velocity;
     this.z = options.size;
-    const color =
-      options.color[Math.floor(Math.random() * options.color.length)];
+    const color = options.color[0];
 
-    this.graphics.use(new Circle({ radius: options.size, color }));
+    this.circle = new Circle({ radius: options.size, color });
+    this.graphics.use(this.circle);
+  }
+
+  public override onInitialize(): void {
+    this.circle.quality = this.scene!.engine.pixelRatio;
+    this.circle.flagDirty();
   }
 
   public override onPreUpdate(): void {
     const engine = this.scene!.engine;
-    const cam = this.scene!.camera.pos;
-    const hw = engine.drawWidth / 2;
-    const hh = engine.drawHeight / 2;
+    const viewport = engine.getWorldBounds();
     const r = this.width / 2;
     const inView =
-      this.pos.x + r >= cam.x - hw &&
-      this.pos.x - r <= cam.x + hw &&
-      this.pos.y + r >= cam.y - hh &&
-      this.pos.y - r <= cam.y + hh;
+      this.pos.x + r >= viewport.left &&
+      this.pos.x - r <= viewport.right &&
+      this.pos.y + r >= viewport.top &&
+      this.pos.y - r <= viewport.bottom;
+
+    const cam = this.scene!.camera.pos;
 
     if (inView) {
       this.hasBeenSeen = true;
