@@ -1,10 +1,10 @@
-import type { IRouteActorState } from '@/shared/route-actor-state';
 import { ROUTE_ALLOCATION_CATALOG } from '@/domain/models/navigation/route/strategies/route-allocation-catalog';
 import { generateRouteGraph } from '@/domain/services/route-graph-generator';
 import { RandomBezierCurveProvider } from '@/infrastructure/navigation-2d/curve/random-bezier-curve-provider';
 import { GraphContext } from '@/infrastructure/navigation-2d/graph-context';
 import { BezierNodePositionStrategy } from '@/infrastructure/navigation-2d/positioning/bezier-node-position-strategy';
 import type { NodeDrawingStrategy } from '@/infrastructure/navigation-2d/rendering/strategies/node-drawing-strategy';
+import type { IRouteActorState } from '@/infrastructure/navigation-2d/route-actor-state';
 import { Actor, CollisionType, vec } from 'excalibur';
 
 import { RouteConnectionActor } from './route-connection-actor';
@@ -63,7 +63,8 @@ export class RouteSlotActor extends Actor {
 
     this.graphContext.setTopology(result.connections);
 
-    const nodeById = new Map(result.nodes.map((n) => [n.id, n]));
+    const allNodes = result.stops.flatMap((s) => s.nodes);
+    const nodeById = new Map(allNodes.map((n) => [n.id, n]));
     const offset = vec(0, yOffset);
 
     for (const conn of result.connections) {
@@ -85,7 +86,7 @@ export class RouteSlotActor extends Actor {
       this.scene?.add(actor);
     }
 
-    for (const node of result.nodes) {
+    for (const node of allNodes) {
       const actor = new RouteNodeActor(
         node,
         vec(node.wx, node.wy + yOffset),

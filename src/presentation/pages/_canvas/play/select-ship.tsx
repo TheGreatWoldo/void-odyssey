@@ -1,5 +1,5 @@
 import { useGameService } from '@/application/hooks/useGameService'
-import { SHIP_ENTRIES, SHIP_MAP_CANVAS } from '@/application/services/shipCatalog'
+import { SHIP_ENTRIES, SHIP_MAP_CANVAS } from '@/application/hooks/useShipCatalog'
 import { type CarouselApi, Carousel, CarouselContent, CarouselItem } from '@/presentation/components/ui/carousel'
 import { MENU_ANIMATIONS_ENABLED, MENU_EXIT_BUFFER_MS, MENU_ITEM_DURATION_MS } from '@/shared/menu-animation'
 import { SceneKey } from '@/shared/scene-key'
@@ -56,7 +56,7 @@ function SelectShipPage() {
         <div className="pointer-events-none absolute inset-0 text-white flex flex-col">
 
             {/* Header */}
-            <div className="flex items-center border-b border-white/20 bg-black/30 px-6 py-3 backdrop-blur-[2px]">
+            <div className="flex items-center border-b border-white/20 bg-black/30 px-6 py-1 backdrop-blur-[2px]">
                 <h1 className="flex-1 text-center text-[2.5rem] font-bold tracking-widest uppercase text-white/80">
                     Select Ship
                 </h1>
@@ -64,21 +64,20 @@ function SelectShipPage() {
 
             {/* Content */}
             <div
-                className="pointer-events-auto flex-1 flex flex-col items-center justify-center px-4 py-0 gap-3"
+                className="pointer-events-auto flex-1 flex flex-col items-center px-4 py-4 gap-3"
                 style={{
                     animation: !MENU_ANIMATIONS_ENABLED ? undefined : exiting
                         ? `fade-out-down ${EXIT_DURATION_MS}ms ease both`
                         : `fade-in-up ${MENU_ITEM_DURATION_MS}ms ease both`,
                 }}
             >
-                <div className="flex items-stretch w-full max-w-4xl gap-1 overflow-hidden">
+                <div className="flex-1 flex items-stretch w-full gap-4 overflow-hidden">
 
                     {/* Prev arrow */}
                     <button
                         type="button"
                         onClick={() => api?.scrollPrev()}
-                        className="flex-none flex items-center justify-center w-20 bg-black/60 border border-white/20 text-white/50 hover:bg-black/80 hover:text-white transition-colors"
-                        style={{ minHeight: '620px' }}
+                        className="flex-none flex items-center justify-center w-40 bg-black/60 border border-white/20 text-white/50 hover:bg-black/80 hover:text-white transition-colors"
                     >
                         <ChevronLeft size={28} />
                     </button>
@@ -86,11 +85,11 @@ function SelectShipPage() {
                     <Carousel
                         opts={{ loop: true }}
                         setApi={setApi}
-                        className="flex-1 min-w-0"
+                        className="flex-1 min-w-0 h-full"
                     >
-                    <CarouselContent className="items-stretch">
+                    <CarouselContent className="items-stretch h-full">
                         {SHIP_ENTRIES.map(entry => (
-                            <CarouselItem key={entry.id} className="h-155">
+                            <CarouselItem key={entry.id} className="h-full">
                                 <div className="flex flex-col gap-4 border border-white/20 bg-black/90 px-6 py-5 h-full">
 
                                     {/* Name + stats */}
@@ -145,8 +144,7 @@ function SelectShipPage() {
                     <button
                         type="button"
                         onClick={() => api?.scrollNext()}
-                        className="flex-none flex items-center justify-center w-20 bg-black/60 border border-white/20 text-white/50 hover:bg-black/80 hover:text-white transition-colors"
-                        style={{ minHeight: '620px' }}
+                        className="flex-none flex items-center justify-center w-40 bg-black/60 border border-white/20 text-white/50 hover:bg-black/80 hover:text-white transition-colors"
                     >
                         <ChevronRight size={28} />
                     </button>
@@ -155,7 +153,7 @@ function SelectShipPage() {
             </div>
 
             {/* Footer */}
-            <div className="flex items-center justify-center gap-8 border-t border-white/20 bg-black/30 px-6 py-3 backdrop-blur-[2px]">
+            <div className="flex items-center justify-center gap-8 border-t border-white/20 bg-black/30 px-6 py-1 backdrop-blur-[2px]">
                 <a
                     href="/"
                     onClick={handleBack}

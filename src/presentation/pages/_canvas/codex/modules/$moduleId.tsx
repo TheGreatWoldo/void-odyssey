@@ -1,5 +1,5 @@
 import { useGameService } from '@/application/hooks/useGameService'
-import { getModuleMeta, isValidModuleId } from '@/application/services/moduleCatalog'
+import { getModuleMeta, isValidModuleId } from '@/application/hooks/useModuleCatalog'
 import { SceneKey } from '@/shared/scene-key'
 import { createFileRoute, Link, notFound } from '@tanstack/react-router'
 import { useEffect } from 'react'

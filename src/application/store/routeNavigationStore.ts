@@ -53,15 +53,17 @@ export interface RouteNavigationStateActions {
   setCurrentNode: (id: string | null) => void;
   markNodeScanned: (id: string) => void;
   markNodeVisited: (id: string) => void;
+  isNodeScanned: (id: string) => boolean;
+  isNodeVisited: (id: string) => boolean;
   setPendingSystemEntry: (
     entry: { nodeId: string; nodeType: NodeType } | null
   ) => void;
 }
 
-export function createRouteNavigationStore() {
-  return create<RouteNavigationState & { actions: RouteNavigationStateActions }>()(
-    subscribeWithSelector(
-      immer((set) => ({
+export const useRouteNavigationStore = create<RouteNavigationState & { actions: RouteNavigationStateActions }>()(
+  subscribeWithSelector(
+    immer((set, get) => {
+      return {
         routeSteps: 10,
         minBranches: 2,
         maxBranches: 3,
@@ -138,16 +140,26 @@ export function createRouteNavigationStore() {
               }
             }),
 
-          setPendingSystemEntry: (entry) =>
+          isNodeScanned: (id: string): boolean => {
+            return get().scannedNodeIds.includes(id);
+          },
+
+          isNodeVisited: (id: string): boolean => {
+            return get().visitedNodeIds.includes(id);
+          },
+
+          setPendingSystemEntry: (entry: { nodeId: string; nodeType: NodeType } | null) =>
             set((state) => {
               state.pendingSystemEntry = entry;
             }),
         },
-      }))
-    )
-  );
+      };
+    })
+  )
+);
+
+export type RouteNavigationStore = ReturnType<typeof useRouteNavigationStore.getState>;
+
+export function createRouteNavigationStore() {
+  return useRouteNavigationStore;
 }
-
-export type RouteNavigationStore = ReturnType<typeof createRouteNavigationStore>;
-
-export const useRouteNavigationStore = createRouteNavigationStore();

@@ -2,10 +2,8 @@ import { NodeType } from '@/domain/models/navigation/node-type';
 
 export interface RouteNode {
   id: string;
-  /** Layer index: 0 = start, 1..steps = intermediate, steps+1 = end */
-  layer: number;
-  /** Index within the layer */
-  indexInLayer: number;
+  /** Index of the stop this node belongs to: 0 = start, 1..steps = intermediate, steps+1 = end */
+  stopIndex: number;
   /** World position in pixels, centred at the world origin. */
   wx: number;
   wy: number;
@@ -13,6 +11,13 @@ export interface RouteNode {
   baseWx: number;
   baseWy: number;
   type: NodeType;
+}
+
+export interface RouteStop {
+  /** Stop index: 0 = start, 1..steps = intermediate, steps+1 = end */
+  index: number;
+  /** Nodes at this stop */
+  nodes: RouteNode[];
 }
 
 export interface RouteConnection {
@@ -32,10 +37,10 @@ export interface GraphBoundingBox {
 }
 
 export interface RouteGraph {
-  nodes: RouteNode[];
+  stops: RouteStop[];
   connections: RouteConnection[];
-  /** Total number of layers including start and end */
-  totalLayers: number;
+  /** Total number of stops (stops.length) — provided for convenience */
+  totalStops: number;
   /** Axis-aligned bounding box of all node positions in world pixels */
   boundingBox: GraphBoundingBox;
 }

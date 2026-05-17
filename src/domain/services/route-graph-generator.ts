@@ -1,6 +1,6 @@
 import { NodeType } from '@/domain/models/navigation/node-type';
 import type { NodePositionStrategy } from '@/domain/models/navigation/route/node-position-strategy';
-import type { RouteConnection, RouteGraph, RouteNode } from '@/domain/models/navigation/route/route-node';
+import type { RouteConnection, RouteGraph, RouteNode, RouteStop } from '@/domain/models/navigation/route/route-node';
 import { ClosestNeighboursConnectionStrategy } from '@/domain/models/navigation/route/strategies/closest-neighbours-connection-strategy';
 import type { NodeConnectionStrategy } from '@/domain/models/navigation/route/strategies/node-connection-strategy';
 import type { NodeTypeStrategy, PositionedNodeStub } from '@/domain/models/navigation/route/strategies/node-type-strategy';
@@ -42,124 +42,141 @@ export function generateRouteGraph(
 
   const randBranches = () => lo + Math.floor(Math.random() * (hi - lo + 1));
 
-  // Layer sizes: [1, <random>, <random>, …, 1]
-  const totalLayers = steps + 2; // start + intermediate layers + end
-  const layerSizes: number[] = [
+  // Stop sizes: [1, <random>, <random>, …, 1]
+  const totalStops = steps + 2; // start + intermediate stops + end
+  const stopSizes: number[] = [
     1,
     ...Array.from({ length: steps }, randBranches),
     1,
   ];
 
-  const graphWidth = totalLayers * LAYER_GRID_WIDTH;
-  const graphHeight = totalLayers * LAYER_GRID_HEIGHT;
+  const graphWidth = totalStops * LAYER_GRID_WIDTH;
+  const graphHeight = totalStops * LAYER_GRID_HEIGHT;
 
-  const nodes: RouteNode[] = [];
-  const layerMap = new Map<number, RouteNode[]>();
+  const stops: RouteStop[] = [];
+  const allNodes: RouteNode[] = [];
 
-  const addNode = (node: RouteNode) => {
-    nodes.push(node);
-    const bucket = layerMap.get(node.layer);
+  const maxStopSize = Math.max(...stopSizes);
 
-    if (bucket) bucket.push(node);
-    else layerMap.set(node.layer, [node]);
-  };
-
-  const maxLayerSize = Math.max(...layerSizes);
-
-  // Add the start node
+  // Add the start stop
   const startPos = positionStrategy.getPosition({
     layer: 0,
     indexInLayer: 0,
-    totalLayers,
+    totalLayers: totalStops,
     layerSize: 1,
-    maxLayerSize,
+    maxLayerSize: maxStopSize,
     graphWidth,
     graphHeight,
   });
-  addNode({
+  const startNode: RouteNode = {
     id: 'node-l0-i0',
-    layer: 0,
-    indexInLayer: 0,
+    stopIndex: 0,
     ...startPos,
     type: NodeType.Start,
-  });
+  };
+  allNodes.push(startNode);
+  stops.push({ index: 0, nodes: [startNode] });
 
   // Position all intermediate nodes (type assignment comes after)
   const intermediateStubs: PositionedNodeStub[] = [];
+  const intermediateNodesByStop: (RouteNode | null)[] = [];
 
-  for (let l = 1; l < totalLayers - 1; l++) {
-    const size = layerSizes[l];
+  for (let stopIdx = 1; stopIdx < totalStops - 1; stopIdx++) {
+    const stopSize = stopSizes[stopIdx];
+    const stopNodes: RouteNode[] = [];
 
-    for (let i = 0; i < size; i++) {
+    for (let i = 0; i < stopSize; i++) {
       const { wx, wy, baseWx, baseWy } = positionStrategy.getPosition({
-        layer: l,
+        layer: stopIdx,
         indexInLayer: i,
-        totalLayers,
-        layerSize: size,
-        maxLayerSize,
+        totalLayers: totalStops,
+        layerSize: stopSize,
+        maxLayerSize: maxStopSize,
         graphWidth,
         graphHeight,
       });
 
-      intermediateStubs.push({
-        id: `node-l${l}-i${i}`,
-        layer: l,
-        indexInLayer: i,
+      const stub: PositionedNodeStub = {
+        id: `node-l${stopIdx}-i${i}`,
+        stopIndex: stopIdx,
         wx,
         wy,
         baseWx,
         baseWy,
-      });
+      };
+      intermediateStubs.push(stub);
+      intermediateNodesByStop.push(null);
     }
+
+    stops.push({ index: stopIdx, nodes: stopNodes });
   }
 
   // Assign types — bulk when supported, per-node otherwise
+  let nodeIndex = 0;
   if (typeStrategy.assignAll) {
-    const typeMap = typeStrategy.assignAll(intermediateStubs, totalLayers);
+    const typeMap = typeStrategy.assignAll(intermediateStubs, totalStops);
 
-    for (const stub of intermediateStubs) {
-      const type = typeMap.get(stub.id) ?? NodeType.Empty;
+    for (let stopIdx = 1; stopIdx < totalStops - 1; stopIdx++) {
+      const stopNodes = stops[stopIdx].nodes;
+      const stopSize = stopSizes[stopIdx];
 
-      addNode({ ...stub, type });
+      for (let i = 0; i < stopSize; i++) {
+        const stub = intermediateStubs[nodeIndex];
+        const type = typeMap.get(stub.id) ?? NodeType.Empty;
+        const node: RouteNode = { ...stub, stopIndex: stopIdx, type };
+
+        stopNodes.push(node);
+        allNodes.push(node);
+        nodeIndex++;
+      }
     }
   } else if (typeStrategy.resolveType) {
-    for (const stub of intermediateStubs) {
-      const type = typeStrategy.resolveType({
-        node: stub,
-        assignedNodes: nodes,
-        totalLayers,
-      });
+    for (let stopIdx = 1; stopIdx < totalStops - 1; stopIdx++) {
+      const stopNodes = stops[stopIdx].nodes;
+      const stopSize = stopSizes[stopIdx];
 
-      addNode({ ...stub, type });
+      for (let i = 0; i < stopSize; i++) {
+        const stub = intermediateStubs[nodeIndex];
+        const type = typeStrategy.resolveType({
+          node: stub,
+          assignedNodes: allNodes,
+          totalLayers: totalStops,
+        });
+        const node: RouteNode = { ...stub, stopIndex: stopIdx, type };
+
+        stopNodes.push(node);
+        allNodes.push(node);
+        nodeIndex++;
+      }
     }
   }
 
-  // Add the end node
-  const endLayer = totalLayers - 1;
+  // Add the end stop
+  const endStopIdx = totalStops - 1;
   const endPos = positionStrategy.getPosition({
-    layer: endLayer,
+    layer: endStopIdx,
     indexInLayer: 0,
-    totalLayers,
+    totalLayers: totalStops,
     layerSize: 1,
-    maxLayerSize,
+    maxLayerSize: maxStopSize,
     graphWidth,
     graphHeight,
   });
-
-  addNode({
-    id: `node-l${endLayer}-i0`,
-    layer: endLayer,
-    indexInLayer: 0,
+  const endNode: RouteNode = {
+    id: `node-l${endStopIdx}-i0`,
+    stopIndex: endStopIdx,
     ...endPos,
     type: NodeType.End,
-  });
+  };
+  allNodes.push(endNode);
+  stops.push({ index: endStopIdx, nodes: [endNode] });
 
-  const connections: RouteConnection[] = connectionStrategy.buildConnections(nodes);
+  const connections: RouteConnection[] = connectionStrategy.buildConnections(stops);
 
-  const minWx = Math.min(...nodes.map((n) => n.wx));
-  const maxWx = Math.max(...nodes.map((n) => n.wx));
-  const minWy = Math.min(...nodes.map((n) => n.wy));
-  const maxWy = Math.max(...nodes.map((n) => n.wy));
+  const minWx = Math.min(...allNodes.map((n) => n.wx));
+  const maxWx = Math.max(...allNodes.map((n) => n.wx));
+  const minWy = Math.min(...allNodes.map((n) => n.wy));
+  const maxWy = Math.max(...allNodes.map((n) => n.wy));
 
   const boundingBox = {
     minWx,
@@ -170,5 +187,5 @@ export function generateRouteGraph(
     height: maxWy - minWy,
   };
 
-  return { nodes, connections, totalLayers, boundingBox };
+  return { stops, connections, totalStops, boundingBox };
 }

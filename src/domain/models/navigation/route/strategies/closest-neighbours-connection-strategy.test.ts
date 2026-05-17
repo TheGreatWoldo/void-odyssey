@@ -1,10 +1,14 @@
 import { NodeType } from '@/domain/models/navigation/node-type';
-import type { RouteNode } from '@/domain/models/navigation/route/route-node';
+import type { RouteNode, RouteStop } from '@/domain/models/navigation/route/route-node';
 import { describe, expect, it } from 'vitest';
 import { ClosestNeighboursConnectionStrategy } from './closest-neighbours-connection-strategy';
 
-function makeNode(id: string, layer: number, wx: number, wy: number): RouteNode {
-  return { id, layer, wx, wy, indexInLayer: 0, baseWx: wx, baseWy: wy, type: NodeType.Empty };
+function makeNode(id: string, wx: number, wy: number): RouteNode {
+  return { id, wx, wy, baseWx: wx, baseWy: wy, stopIndex: 0, type: NodeType.Empty };
+}
+
+function makeStops(...nodeGroups: RouteNode[][]): RouteStop[] {
+  return nodeGroups.map((nodes, idx) => ({ index: idx, nodes }));
 }
 
 describe('ClosestNeighboursConnectionStrategy', () => {
@@ -14,24 +18,26 @@ describe('ClosestNeighboursConnectionStrategy', () => {
       expect(strategy.buildConnections([])).toEqual([]);
     });
 
-    it('returns empty array for single layer', () => {
+    it('returns empty array for single stop', () => {
       const strategy = new ClosestNeighboursConnectionStrategy(2);
       const nodes = [
-        makeNode('a', 0, 0, 0),
-        makeNode('b', 0, 1, 1),
+        makeNode('a', 0, 0),
+        makeNode('b', 1, 1),
       ];
-      expect(strategy.buildConnections(nodes)).toEqual([]);
+      const stops = makeStops(nodes);
+      expect(strategy.buildConnections(stops)).toEqual([]);
     });
 
-    it('connects nodes to up to N closest neighbors in next layer', () => {
+    it('connects nodes to up to N closest neighbors in next stop', () => {
       const strategy = new ClosestNeighboursConnectionStrategy(2);
-      const nodes = [
-        makeNode('a0', 0, 0, 0),
-        makeNode('b0', 1, 0, 0),
-        makeNode('b1', 1, 1, 1),
-        makeNode('b2', 1, 10, 10),
+      const stop0 = [makeNode('a0', 0, 0)];
+      const stop1 = [
+        makeNode('b0', 0, 0),
+        makeNode('b1', 1, 1),
+        makeNode('b2', 10, 10),
       ];
-      const conns = strategy.buildConnections(nodes);
+      const stops = makeStops(stop0, stop1);
+      const conns = strategy.buildConnections(stops);
 
       // a0 should attempt to connect to closest neighbors
       const a0Conns = conns.filter(c => c.fromId === 'a0');
@@ -41,27 +47,31 @@ describe('ClosestNeighboursConnectionStrategy', () => {
 
     it('does not create duplicate connections', () => {
       const strategy = new ClosestNeighboursConnectionStrategy(3);
-      const nodes = [
-        makeNode('a0', 0, 0, 0),
-        makeNode('b0', 1, 0, 0),
-        makeNode('b1', 1, 1, 1),
+      const stop0 = [makeNode('a0', 0, 0)];
+      const stop1 = [
+        makeNode('b0', 0, 0),
+        makeNode('b1', 1, 1),
       ];
-      const conns = strategy.buildConnections(nodes);
+      const stops = makeStops(stop0, stop1);
+      const conns = strategy.buildConnections(stops);
 
       const pairs = conns.map(c => `${c.fromId}|${c.toId}`);
       const uniquePairs = new Set(pairs);
       expect(pairs).toHaveLength(uniquePairs.size);
     });
 
-    it('rejects crossing edges in the same layer pair', () => {
+    it('rejects crossing edges in the same stop pair', () => {
       const strategy = new ClosestNeighboursConnectionStrategy(2);
-      const nodes = [
-        makeNode('a0', 0, 0, 0),
-        makeNode('a1', 0, 0, 10),
-        makeNode('b0', 1, 1, 5),
-        makeNode('b1', 1, -1, 5),
+      const stop0 = [
+        makeNode('a0', 0, 0),
+        makeNode('a1', 0, 10),
       ];
-      const conns = strategy.buildConnections(nodes);
+      const stop1 = [
+        makeNode('b0', 1, 5),
+        makeNode('b1', -1, 5),
+      ];
+      const stops = makeStops(stop0, stop1);
+      const conns = strategy.buildConnections(stops);
 
       // a0→b0 and a1→b1 would cross a0→b1 and a1→b0
       // Should reject one of the crossing pairs
@@ -72,17 +82,20 @@ describe('ClosestNeighboursConnectionStrategy', () => {
 
     it('guarantees every non-start node has at least one incoming connection', () => {
       const strategy = new ClosestNeighboursConnectionStrategy(1);
-      const nodes = [
-        makeNode('a0', 0, 0, 0),
-        makeNode('b0', 1, 100, 100),
-        makeNode('b1', 1, 101, 101),
-        makeNode('c0', 2, 0, 0),
-        makeNode('c1', 2, 200, 200),
+      const stop0 = [makeNode('a0', 0, 0)];
+      const stop1 = [
+        makeNode('b0', 100, 100),
+        makeNode('b1', 101, 101),
       ];
-      const conns = strategy.buildConnections(nodes);
+      const stop2 = [
+        makeNode('c0', 0, 0),
+        makeNode('c1', 200, 200),
+      ];
+      const stops = makeStops(stop0, stop1, stop2);
+      const conns = strategy.buildConnections(stops);
 
       const hasIncoming = new Set(conns.map(c => c.toId));
-      const nonStartNodes = nodes.filter(n => n.layer > 0);
+      const nonStartNodes = stops.slice(1).flatMap(s => s.nodes);
       for (const node of nonStartNodes) {
         expect(hasIncoming.has(node.id)).toBe(true);
       }
@@ -90,13 +103,13 @@ describe('ClosestNeighboursConnectionStrategy', () => {
 
     it('uses fallback (closest node) when all candidates cross', () => {
       const strategy = new ClosestNeighboursConnectionStrategy(1);
-      // Construct a scenario where fallback is needed
-      const nodes = [
-        makeNode('a0', 0, 0, 0),
-        makeNode('a1', 0, 0, 100),
-        makeNode('b0', 1, 50, 50),
+      const stop0 = [
+        makeNode('a0', 0, 0),
+        makeNode('a1', 0, 100),
       ];
-      const conns = strategy.buildConnections(nodes);
+      const stop1 = [makeNode('b0', 50, 50)];
+      const stops = makeStops(stop0, stop1);
+      const conns = strategy.buildConnections(stops);
 
       // b0 should have at least one incoming connection (fallback to closest)
       const incomingToB0 = conns.filter(c => c.toId === 'b0');
@@ -104,51 +117,55 @@ describe('ClosestNeighboursConnectionStrategy', () => {
     });
 
     it('respects neighbourCount parameter as upper limit', () => {
-      const nodes = [
-        makeNode('a0', 0, 0, 0),
-        makeNode('b0', 1, 0, 0),
-        makeNode('b1', 1, 1, 1),
-        makeNode('b2', 1, 2, 2),
-        makeNode('b3', 1, 3, 3),
+      const stop0 = [makeNode('a0', 0, 0)];
+      const stop1 = [
+        makeNode('b0', 0, 0),
+        makeNode('b1', 1, 1),
+        makeNode('b2', 2, 2),
+        makeNode('b3', 3, 3),
       ];
+      const stops = makeStops(stop0, stop1);
 
       const strategy1 = new ClosestNeighboursConnectionStrategy(1);
-      const conns1 = strategy1.buildConnections(nodes);
+      const conns1 = strategy1.buildConnections(stops);
       const a0FromCount1 = conns1.filter(c => c.fromId === 'a0').length;
 
       const strategy3 = new ClosestNeighboursConnectionStrategy(3);
-      const conns3 = strategy3.buildConnections(nodes);
+      const conns3 = strategy3.buildConnections(stops);
       const a0FromCount3 = conns3.filter(c => c.fromId === 'a0').length;
 
       // Strategy with neighbourCount=3 should allow more outgoing from a0 than =1
       expect(a0FromCount3).toBeGreaterThanOrEqual(a0FromCount1);
     });
 
-    it('handles multiple layers correctly', () => {
+    it('handles multiple stops correctly', () => {
       const strategy = new ClosestNeighboursConnectionStrategy(2);
-      const nodes = [
-        makeNode('a0', 0, 0, 0),
-        makeNode('b0', 1, 0, 0),
-        makeNode('b1', 1, 1, 1),
-        makeNode('c0', 2, 0, 0),
-        makeNode('c1', 2, 1, 1),
+      const stop0 = [makeNode('a0', 0, 0)];
+      const stop1 = [
+        makeNode('b0', 0, 0),
+        makeNode('b1', 1, 1),
       ];
-      const conns = strategy.buildConnections(nodes);
+      const stop2 = [
+        makeNode('c0', 0, 0),
+        makeNode('c1', 1, 1),
+      ];
+      const stops = makeStops(stop0, stop1, stop2);
+      const conns = strategy.buildConnections(stops);
 
-      const layer0To1 = conns.filter(c => {
-        const from = nodes.find(n => n.id === c.fromId);
-        const to = nodes.find(n => n.id === c.toId);
-        return from && to && from.layer === 0 && to.layer === 1;
+      const stop0To1 = conns.filter(c => {
+        const fromInStop0 = stop0.some(n => n.id === c.fromId);
+        const toInStop1 = stop1.some(n => n.id === c.toId);
+        return fromInStop0 && toInStop1;
       });
 
-      const layer1To2 = conns.filter(c => {
-        const from = nodes.find(n => n.id === c.fromId);
-        const to = nodes.find(n => n.id === c.toId);
-        return from && to && from.layer === 1 && to.layer === 2;
+      const stop1To2 = conns.filter(c => {
+        const fromInStop1 = stop1.some(n => n.id === c.fromId);
+        const toInStop2 = stop2.some(n => n.id === c.toId);
+        return fromInStop1 && toInStop2;
       });
 
-      expect(layer0To1.length).toBeGreaterThan(0);
-      expect(layer1To2.length).toBeGreaterThan(0);
+      expect(stop0To1.length).toBeGreaterThan(0);
+      expect(stop1To2.length).toBeGreaterThan(0);
     });
   });
 });

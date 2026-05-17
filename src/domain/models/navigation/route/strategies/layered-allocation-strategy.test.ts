@@ -5,8 +5,8 @@ import { LayeredAllocationStrategy } from '@/domain/models/navigation/route/stra
 import type { PositionedNodeStub } from '@/domain/models/navigation/route/strategies/node-type-strategy';
 import { AbsoluteTypeAllocation } from '@/domain/models/navigation/route/strategies/type-allocation-strategy';
 
-function makeNode(id: string, layer: number): PositionedNodeStub {
-  return { id, layer, indexInLayer: 0, wx: 0, wy: 0, baseWx: 0, baseWy: 0 };
+function makeNode(id: string, stopIndex: number): PositionedNodeStub {
+  return { id, stopIndex, wx: 0, wy: 0, baseWx: 0, baseWy: 0 };
 }
 
 describe('LayeredAllocationStrategy', () => {

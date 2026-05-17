@@ -4,34 +4,34 @@ import type { RouteNode } from '@/domain/models/navigation/route/route-node';
 
 /** Selects the node currently under the pointer (or null). */
 export function useHoveredRouteNode(): RouteNode | null {
-  return useRouteNavigationStore((state) => state.hoveredNode);
+  return useRouteNavigationStore(state => state.hoveredNode);
 }
 
 /** True when the hovered node's type has been revealed by scanners. */
 export function useHoveredRouteNodeRevealed(): boolean {
-  return useRouteNavigationStore((state) => state.hoveredNodeRevealed);
+  return useRouteNavigationStore(state => state.hoveredNodeRevealed);
 }
 
 /** The pending system entry set when the ship arrives at a node. */
 export function usePendingSystemEntry() {
-  return useRouteNavigationStore((state) => state.pendingSystemEntry);
+  return useRouteNavigationStore(state => state.pendingSystemEntry);
 }
 
 /** All route navigation store actions. */
 export function useRouteNavigationActions() {
-  return useRouteNavigationStore((state) => state.actions);
+  return useRouteNavigationStore(state => state.actions);
 }
 
 /** Current debug draw toggle. */
 export function useRouteDrawDebug(): boolean {
-  return useRouteNavigationStore((state) => state.drawDebug);
+  return useRouteNavigationStore(state => state.drawDebug);
 }
 
 /** Current route generation parameters. */
 export function useRouteGraphParams() {
-  const routeSteps = useRouteNavigationStore((state) => state.routeSteps);
-  const minBranches = useRouteNavigationStore((state) => state.minBranches);
-  const maxBranches = useRouteNavigationStore((state) => state.maxBranches);
+  const routeSteps = useRouteNavigationStore(state => state.routeSteps);
+  const minBranches = useRouteNavigationStore(state => state.minBranches);
+  const maxBranches = useRouteNavigationStore(state => state.maxBranches);
 
   return { routeSteps, minBranches, maxBranches };
 }
@@ -41,7 +41,7 @@ export function useRouteGraphParams() {
  * hovered node, or null when nothing is hovered.
  */
 export function useHoveredNodeMeta(): NodeTypeMeta | null {
-  return useRouteNavigationStore((state) => {
+  return useRouteNavigationStore(state => {
     if (state.hoveredNode === null) return null;
 
     return NODE_TYPE_META[state.hoveredNode.type] ?? null;

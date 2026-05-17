@@ -1,7 +1,7 @@
-import type { IRouteActorState } from '@/shared/route-actor-state';
 import type { RouteConnection } from '@/domain/models/navigation/route/route-node';
 import type { RouteConnectionActor } from '@/infrastructure/navigation-2d/rendering/actors/route-connection-actor';
 import type { RouteNodeActor } from '@/infrastructure/navigation-2d/rendering/actors/route-node-actor';
+import type { IRouteActorState } from '@/infrastructure/navigation-2d/route-actor-state';
 
 /**
  * Shared graph state owned by the scene and passed to actors.

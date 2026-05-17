@@ -1,10 +1,10 @@
-import * as React from "react"
 import useEmblaCarousel, {
-  type UseEmblaCarouselType,
+    type UseEmblaCarouselType,
 } from "embla-carousel-react"
+import * as React from "react"
 
-import { cn } from "@/shared/utils"
 import { Button } from "@/presentation/components/ui/button"
+import { cn } from "@/shared/utils"
 import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react"
 
 type CarouselApi = UseEmblaCarouselType[1]
@@ -136,7 +136,7 @@ function CarouselContent({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       ref={carouselRef}
-      className="overflow-hidden"
+      className="overflow-hidden h-full"
       data-slot="carousel-content"
     >
       <div
@@ -230,11 +230,8 @@ function CarouselNext({
 }
 
 export {
-  type CarouselApi,
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselPrevious,
-  CarouselNext,
-  useCarousel,
+    Carousel,
+    CarouselContent,
+    CarouselItem, CarouselNext, CarouselPrevious, useCarousel, type CarouselApi
 }
+

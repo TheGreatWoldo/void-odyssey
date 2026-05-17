@@ -1,5 +1,5 @@
-import type { RouteConnection, RouteNode } from '@/domain/models/navigation/route/route-node';
+import type { RouteConnection, RouteStop } from '@/domain/models/navigation/route/route-node';
 
 export interface NodeConnectionStrategy {
-  buildConnections(nodes: RouteNode[]): RouteConnection[];
+  buildConnections(stops: RouteStop[]): RouteConnection[];
 }

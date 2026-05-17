@@ -109,7 +109,7 @@ export class RouteNodeActor extends Actor {
       return NodeVisualState.Current;
     }
 
-    if (currentActor && this.routeNode.layer <= currentActor.routeNode.layer) {
+    if (currentActor && this.routeNode.stopIndex <= currentActor.routeNode.stopIndex) {
       return this.scanned ? NodeVisualState.Past : NodeVisualState.Unknown;
     }
 
@@ -134,7 +134,7 @@ export class RouteNodeActor extends Actor {
 
     if (this._isReachable() && scannerRange >= 1) return true;
 
-    const stepsAhead = this.routeNode.layer - currentActor.routeNode.layer;
+    const stepsAhead = this.routeNode.stopIndex - currentActor.routeNode.stopIndex;
 
     if (
       stepsAhead > 1 &&

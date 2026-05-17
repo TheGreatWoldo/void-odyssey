@@ -1,4 +1,4 @@
-import type { RouteConnection, RouteNode } from '@/domain/models/navigation/route/route-node';
+import type { RouteConnection, RouteNode, RouteStop } from '@/domain/models/navigation/route/route-node';
 import type { NodeConnectionStrategy } from '@/domain/models/navigation/route/strategies/node-connection-strategy';
 import { fisherYatesShuffle } from '@/shared/math-utils';
 
@@ -25,18 +25,18 @@ function doesCross(
 class ConnectionBuilder {
   private readonly connections: RouteConnection[] = [];
   private readonly addedKeys = new Set<string>();
-  private readonly byLayerPair = new Map<
+  private readonly byStopPair = new Map<
     string,
     Array<{ from: RouteNode; to: RouteNode }>
   >();
 
-  addConnection(from: RouteNode, to: RouteNode): boolean {
+  addConnection(from: RouteNode, to: RouteNode, fromStopIdx: number, toStopIdx: number): boolean {
     const key = `${from.id}|${to.id}`;
 
     if (this.addedKeys.has(key)) return false;
 
-    const pairKey = `${from.layer}>${to.layer}`;
-    const existing = this.byLayerPair.get(pairKey) ?? [];
+    const pairKey = `${fromStopIdx}>${toStopIdx}`;
+    const existing = this.byStopPair.get(pairKey) ?? [];
     const crosses = existing.some((e) => doesCross(from, to, e.from, e.to));
 
     if (crosses) return false;
@@ -44,7 +44,7 @@ class ConnectionBuilder {
     this.addedKeys.add(key);
     this.connections.push({ fromId: from.id, toId: to.id });
     existing.push({ from, to });
-    this.byLayerPair.set(pairKey, existing);
+    this.byStopPair.set(pairKey, existing);
 
     return true;
   }
@@ -60,8 +60,8 @@ class ConnectionBuilder {
 
 /**
  * Connects each node to its N spatially closest nodes in the immediately
- * next layer. Connections are directed from lower to higher layer;
- * duplicate pairs are deduplicated. Crossing edges within the same layer
+ * next stop. Connections are directed from lower to higher stop index;
+ * duplicate pairs are deduplicated. Crossing edges within the same stop
  * pair are rejected to keep the graph visually clean.
  */
 export class ClosestNeighboursConnectionStrategy implements NodeConnectionStrategy {
@@ -71,78 +71,66 @@ export class ClosestNeighboursConnectionStrategy implements NodeConnectionStrate
     this.neighbourCount = neighbourCount
   }
 
-  buildConnections(nodes: RouteNode[]): RouteConnection[] {
+  buildConnections(stops: RouteStop[]): RouteConnection[] {
     const builder = new ConnectionBuilder();
-    const byLayer = this.groupNodesByLayer(nodes);
 
-    this.linkClosestNeighbors(byLayer, builder);
-    this.ensureIncomingConnections(nodes, byLayer, builder);
+    this.linkClosestNeighbors(stops, builder);
+    this.ensureIncomingConnections(stops, builder);
 
     return builder.getConnections();
   }
 
-  private groupNodesByLayer(nodes: RouteNode[]): Map<number, RouteNode[]> {
-    const byLayer = new Map<number, RouteNode[]>();
-
-    for (const node of nodes) {
-      const bucket = byLayer.get(node.layer);
-      if (bucket) bucket.push(node);
-      else byLayer.set(node.layer, [node]);
-    }
-
-    return byLayer;
-  }
-
   private linkClosestNeighbors(
-    byLayer: Map<number, RouteNode[]>,
+    stops: RouteStop[],
     builder: ConnectionBuilder
   ): void {
-    for (const layerNodes of byLayer.values()) {
-      const shuffled = fisherYatesShuffle([...layerNodes]);
+    for (let stopIdx = 0; stopIdx < stops.length - 1; stopIdx++) {
+      const currentStopNodes = stops[stopIdx].nodes;
+      const nextStopNodes = stops[stopIdx + 1].nodes;
+
+      const shuffled = fisherYatesShuffle([...currentStopNodes]);
 
       for (const node of shuffled) {
-        const nextLayer = byLayer.get(node.layer + 1);
-        if (!nextLayer) continue;
-
-        const sorted = [...nextLayer].sort(
+        const sorted = [...nextStopNodes].sort(
           (a, b) => squaredDistance(node, a) - squaredDistance(node, b)
         );
 
         let count = 0;
         for (const neighbour of sorted) {
           if (count >= this.neighbourCount) break;
-          if (builder.addConnection(node, neighbour)) count++;
+          if (builder.addConnection(node, neighbour, stopIdx, stopIdx + 1)) count++;
         }
       }
     }
   }
 
   private ensureIncomingConnections(
-    nodes: RouteNode[],
-    byLayer: Map<number, RouteNode[]>,
+    stops: RouteStop[],
     builder: ConnectionBuilder
   ): void {
     const conns = builder.getConnections();
     const hasIncoming = new Set(conns.map(c => c.toId));
 
-    for (const node of nodes) {
-      if (hasIncoming.has(node.id)) continue;
+    for (let stopIdx = 1; stopIdx < stops.length; stopIdx++) {
+      const currentStop = stops[stopIdx];
+      const prevStop = stops[stopIdx - 1];
 
-      const prevLayer = byLayer.get(node.layer - 1);
-      if (!prevLayer) continue;
+      for (const node of currentStop.nodes) {
+        if (hasIncoming.has(node.id)) continue;
 
-      const candidates = this.findClosestNodes(node, prevLayer);
+        const candidates = this.findClosestNodes(node, prevStop.nodes);
 
-      for (const candidate of candidates) {
-        if (builder.addConnection(candidate, node)) {
-          hasIncoming.add(node.id);
-          break;
+        for (const candidate of candidates) {
+          if (builder.addConnection(candidate, node, stopIdx - 1, stopIdx)) {
+            hasIncoming.add(node.id);
+            break;
+          }
         }
-      }
 
-      if (!hasIncoming.has(node.id)) {
-        this.addFallbackConnection(builder, candidates, node);
-        hasIncoming.add(node.id);
+        if (!hasIncoming.has(node.id)) {
+          this.addFallbackConnection(builder, candidates, node, stopIdx - 1, stopIdx);
+          hasIncoming.add(node.id);
+        }
       }
     }
   }
@@ -156,13 +144,15 @@ export class ClosestNeighboursConnectionStrategy implements NodeConnectionStrate
   private addFallbackConnection(
     builder: ConnectionBuilder,
     candidates: RouteNode[],
-    target: RouteNode
+    target: RouteNode,
+    fromStopIdx: number,
+    toStopIdx: number
   ): void {
     if (candidates.length === 0) return;
 
     const fallback = candidates[0];
     if (!builder.hasConnection(fallback.id, target.id)) {
-      builder.addConnection(fallback, target);
+      builder.addConnection(fallback, target, fromStopIdx, toStopIdx);
     }
   }
 }

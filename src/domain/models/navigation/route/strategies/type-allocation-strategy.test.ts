@@ -7,8 +7,8 @@ import {
     ProbabilisticTypeAllocation,
 } from '@/domain/models/navigation/route/strategies/type-allocation-strategy';
 
-function makeNode(id: string, layer: number): PositionedNodeStub {
-  return { id, layer, indexInLayer: 0, wx: 0, wy: 0, baseWx: 0, baseWy: 0 };
+function makeNode(id: string, stopIndex: number): PositionedNodeStub {
+  return { id, stopIndex, wx: 0, wy: 0, baseWx: 0, baseWy: 0 };
 }
 
 // ---------------------------------------------------------------------------
@@ -52,18 +52,18 @@ describe('AbsoluteTypeAllocation', () => {
     expect(selected.length).toBe(2);
   });
 
-  it('respects the eligibleLayer filter', () => {
+  it('respects the eligibleStopIndex filter', () => {
     const strategy = new AbsoluteTypeAllocation({
       type: NodeType.Combat,
       min: 0,
       max: 10,
-      eligibleLayer: (l) => l === 3,
+      eligibleStopIndex: (s) => s === 3,
     });
     const nodes = [makeNode('a', 1), makeNode('b', 2), makeNode('c', 3)];
 
     const selected = strategy.select(nodes, 10);
 
-    expect(selected.every((n) => n.layer === 3)).toBe(true);
+    expect(selected.every((n) => n.stopIndex === 3)).toBe(true);
   });
 
   it('returns only nodes that are subsets of the input', () => {
@@ -110,17 +110,17 @@ describe('ProbabilisticTypeAllocation', () => {
     expect(strategy.select(nodes, 10)).toHaveLength(3);
   });
 
-  it('respects the eligibleLayer filter', () => {
+  it('respects the eligibleStopIndex filter', () => {
     const strategy = new ProbabilisticTypeAllocation({
       type: NodeType.Store,
       chance: 1,
-      eligibleLayer: (l) => l >= 3,
+      eligibleStopIndex: (s) => s >= 3,
     });
     const nodes = [makeNode('a', 1), makeNode('b', 2), makeNode('c', 3), makeNode('d', 4)];
 
     const selected = strategy.select(nodes, 10);
 
-    expect(selected.every((n) => n.layer >= 3)).toBe(true);
+    expect(selected.every((n) => n.stopIndex >= 3)).toBe(true);
   });
 
   it('has the correct node type', () => {

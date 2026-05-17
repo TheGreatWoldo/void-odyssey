@@ -1,4 +1,3 @@
-import type { NodeType } from '@/domain/models/navigation/node-type';
 import type { RouteNode } from '@/domain/models/navigation/route/route-node';
 
 /**

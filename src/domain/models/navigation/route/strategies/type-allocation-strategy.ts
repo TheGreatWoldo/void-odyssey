@@ -26,7 +26,7 @@ export interface AbsoluteTypeAllocationOptions {
   min: number;
   max: number;
   minLayerSpacing?: number;
-  eligibleLayer?: (layer: number, totalLayers: number) => boolean;
+  eligibleStopIndex?: (stopIndex: number, totalStops: number) => boolean;
 }
 
 /**
@@ -40,20 +40,20 @@ export class AbsoluteTypeAllocation extends TypeAllocationStrategy {
   private readonly min: number;
   private readonly max: number;
   private readonly minLayerSpacing: number;
-  private readonly eligibleLayer?: (layer: number, totalLayers: number) => boolean;
+  private readonly eligibleStopIndex?: (stopIndex: number, totalStops: number) => boolean;
 
   constructor({
     type,
     min,
     max,
     minLayerSpacing = 0,
-    eligibleLayer,
+    eligibleStopIndex,
   }: AbsoluteTypeAllocationOptions) {
     super(type);
     this.min = min;
     this.max = max;
     this.minLayerSpacing = minLayerSpacing;
-    this.eligibleLayer = eligibleLayer;
+    this.eligibleStopIndex = eligibleStopIndex;
   }
 
   select(
@@ -63,8 +63,8 @@ export class AbsoluteTypeAllocation extends TypeAllocationStrategy {
     const candidates = fisherYatesShuffle(
       unassigned.filter(
         (n) =>
-          this.eligibleLayer === undefined ||
-          this.eligibleLayer(n.layer, totalLayers)
+          this.eligibleStopIndex === undefined ||
+          this.eligibleStopIndex(n.stopIndex, totalLayers)
       )
     );
 
@@ -74,7 +74,7 @@ export class AbsoluteTypeAllocation extends TypeAllocationStrategy {
       if (placed.length >= this.max) break;
 
       const tooClose = placed.some(
-        (p) => Math.abs(p.layer - node.layer) < this.minLayerSpacing
+        (p) => Math.abs(p.stopIndex - node.stopIndex) < this.minLayerSpacing
       );
 
       if (!tooClose) placed.push(node);
@@ -101,7 +101,7 @@ export interface ProbabilisticTypeAllocationOptions {
   type: NodeType;
   /** Probability in [0, 1] that each eligible node is claimed. */
   chance: number;
-  eligibleLayer?: (layer: number, totalLayers: number) => boolean;
+  eligibleStopIndex?: (stopIndex: number, totalStops: number) => boolean;
 }
 
 /**
@@ -113,16 +113,16 @@ export interface ProbabilisticTypeAllocationOptions {
  */
 export class ProbabilisticTypeAllocation extends TypeAllocationStrategy {
   private readonly chance: number;
-  private readonly eligibleLayer?: (layer: number, totalLayers: number) => boolean;
+  private readonly eligibleStopIndex?: (stopIndex: number, totalStops: number) => boolean;
 
   constructor({
     type,
     chance,
-    eligibleLayer,
+    eligibleStopIndex,
   }: ProbabilisticTypeAllocationOptions) {
     super(type);
     this.chance = chance;
-    this.eligibleLayer = eligibleLayer;
+    this.eligibleStopIndex = eligibleStopIndex;
   }
 
   select(
@@ -131,8 +131,8 @@ export class ProbabilisticTypeAllocation extends TypeAllocationStrategy {
   ): PositionedNodeStub[] {
     return unassigned.filter(
       (n) =>
-        (this.eligibleLayer === undefined ||
-          this.eligibleLayer(n.layer, totalLayers)) &&
+        (this.eligibleStopIndex === undefined ||
+          this.eligibleStopIndex(n.stopIndex, totalLayers)) &&
         Math.random() < this.chance
     );
   }

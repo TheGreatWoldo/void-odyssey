@@ -30,7 +30,7 @@ export class RouteConnectionActor extends Actor {
   /** True once the player has travelled along this connection. */
   travelled = false;
 
-  private readonly fromLayer: number;
+  private readonly fromStopIndex: number;
   private readonly graphContext: GraphContext;
   private readonly canvasNormal: Canvas;
   private readonly canvasHighlighted: Canvas;
@@ -78,7 +78,7 @@ export class RouteConnectionActor extends Actor {
       z: -1,
     });
     this.connection = connection;
-    this.fromLayer = fromNode.layer;
+    this.fromStopIndex = fromNode.stopIndex;
     this.graphContext = graphContext;
     this._lineWidth = w;
 
@@ -205,10 +205,10 @@ export class RouteConnectionActor extends Actor {
     } else if (this.travelled) {
       next = 'travelled';
     } else if (scannerRange >= 2) {
-      const currentLayer = currentActor?.routeNode.layer ?? -1;
+      const currentStopIndex = currentActor?.routeNode.stopIndex ?? -1;
 
-      if (this.fromLayer > currentLayer) {
-        const stepsAhead = this.fromLayer - currentLayer;
+      if (this.fromStopIndex > currentStopIndex) {
+        const stepsAhead = this.fromStopIndex - currentStopIndex;
 
         if (
           stepsAhead >= 1 &&

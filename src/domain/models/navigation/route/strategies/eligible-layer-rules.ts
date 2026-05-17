@@ -1,22 +1,22 @@
 /**
- * Layer eligibility predicates for use with AbsoluteTypeAllocation / ProbabilisticTypeAllocation.
+ * Stop index eligibility predicates for use with AbsoluteTypeAllocation / ProbabilisticTypeAllocation.
  * One named export per node type — implementations may coincide, but each type has its own rule.
  */
 
-export const shipyardEligibleLayer = (l: number, total: number) =>
-  l >= 2 && l < total - 1;
+export const shipyardEligibleStopIndex = (s: number, total: number) =>
+  s >= 2 && s < total - 1;
 
-export const storeEligibleLayer = (l: number, total: number) =>
-  l > 2 && l < total - 1;
+export const storeEligibleStopIndex = (s: number, total: number) =>
+  s > 2 && s < total - 1;
 
-export const eventEligibleLayer = (l: number, total: number) =>
-  l >= 1 && l < total - 1;
+export const eventEligibleStopIndex = (s: number, total: number) =>
+  s >= 1 && s < total - 1;
 
-export const combatEligibleLayer = (l: number, total: number) =>
-  l >= 1 && l < total - 1;
+export const combatEligibleStopIndex = (s: number, total: number) =>
+  s >= 1 && s < total - 1;
 
-export const relicEligibleLayer = (l: number, total: number) =>
-  l >= 2 && l < total - 1;
+export const relicEligibleStopIndex = (s: number, total: number) =>
+  s >= 2 && s < total - 1;
 
-export const hiddenCacheEligibleLayer = (l: number, total: number) =>
-  l >= 2 && l < total - 1;
+export const hiddenCacheEligibleStopIndex = (s: number, total: number) =>
+  s >= 2 && s < total - 1;
