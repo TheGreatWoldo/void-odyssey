@@ -1,9 +1,5 @@
 import { Color } from 'excalibur';
 
-/**
- * Spectral class identifiers — used for star colour selection in the parallax starfield.
- * Kept in shared/ so no infrastructure dependency is needed from the rendering layer.
- */
 export const StarSpectralClass = {
   O: 'O',
   B: 'B',
@@ -26,10 +22,6 @@ export const STAR_COLORS: Record<StarSpectralClass, Color> = {
   [StarSpectralClass.M]: Color.fromRGB(255, 98, 66),
 };
 
-/**
- * Apparent-size multiplier relative to a G-class baseline (1.0).
- * Hotter/brighter stars appear larger on screen.
- */
 export const STAR_SIZE_MULTIPLIERS: Record<StarSpectralClass, number> = {
   [StarSpectralClass.O]: 4.0,
   [StarSpectralClass.B]: 3.0,
@@ -53,10 +45,6 @@ const SPECTRAL_WEIGHTS: { cls: StarSpectralClass; weight: number }[] = [
 
 const TOTAL_WEIGHT = SPECTRAL_WEIGHTS.reduce((sum, e) => sum + e.weight, 0);
 
-/**
- * Returns a star colour and apparent-size multiplier sampled via the supplied
- * PRNG function. Enables deterministic, seed-based generation.
- */
 export function getStarWithRng(rng: () => number): {
   color: Color;
   sizeMultiplier: number;

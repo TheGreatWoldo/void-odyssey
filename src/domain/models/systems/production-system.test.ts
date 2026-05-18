@@ -69,6 +69,64 @@ describe('createProductionSystem', () => {
       expect(stored).toBe(false);
     });
 
+    it('rejects module when dependency is missing (ion engines require reactor)', () => {
+      const system = createProductionSystem({ modules: { capacity: 100 }, resources: createResourceContainer() });
+      const engines = makeModule('engine-1', 'Ion Engines', oxygenRecipe, {
+        type: ModuleId.IonEngines,
+        maxOutput: 10,
+      });
+
+      const stored = system.installModule(engines);
+
+      expect(stored).toBe(false);
+      expect(system.modules.has('engine-1')).toBe(false);
+    });
+
+    it('accepts module once dependency is installed first', () => {
+      const system = createProductionSystem({ modules: { capacity: 100 }, resources: createResourceContainer() });
+      const reactor = makeModule('reactor-1', 'Reactor', reactorRecipe, { type: ModuleId.ReactorCore, maxOutput: 10 });
+      const engines = makeModule('engine-1', 'Ion Engines', oxygenRecipe, {
+        type: ModuleId.IonEngines,
+        maxOutput: 10,
+      });
+
+      expect(system.installModule(reactor)).toBe(true);
+      expect(system.installModule(engines)).toBe(true);
+      expect(system.modules.has('engine-1')).toBe(true);
+    });
+
+    it('rejects unique module duplication (second shield generator)', () => {
+      const system = createProductionSystem({ modules: { capacity: 100 }, resources: createResourceContainer() });
+      const reactor = makeModule('reactor-1', 'Reactor', reactorRecipe, { type: ModuleId.ReactorCore, maxOutput: 10 });
+      const shieldA = makeModule('shield-a', 'Shield A', oxygenRecipe, {
+        type: ModuleId.ShieldGenerator,
+        maxOutput: 5,
+      });
+      const shieldB = makeModule('shield-b', 'Shield B', oxygenRecipe, {
+        type: ModuleId.ShieldGenerator,
+        maxOutput: 5,
+      });
+
+      expect(system.installModule(reactor)).toBe(true);
+      expect(system.installModule(shieldA)).toBe(true);
+      expect(system.installModule(shieldB)).toBe(false);
+    });
+
+    it('rejects conflicting module pair (armor plating vs fuel scoop)', () => {
+      const system = createProductionSystem({ modules: { capacity: 100 }, resources: createResourceContainer() });
+      const armor = makeModule('armor-1', 'Armor', oxygenRecipe, {
+        type: ModuleId.ArmorPlating,
+        maxOutput: 0,
+      });
+      const scoop = makeModule('scoop-1', 'Fuel Scoop', oxygenRecipe, {
+        type: ModuleId.FuelScoop,
+        maxOutput: 0,
+      });
+
+      expect(system.installModule(armor)).toBe(true);
+      expect(system.installModule(scoop)).toBe(false);
+    });
+
     it('removes a module via removeModule()', () => {
       const system = createProductionSystem({ modules: { capacity: 100 }, resources: createResourceContainer() });
       const reactor = makeModule('reactor-1', 'Reactor', reactorRecipe, { type: ModuleId.ReactorCore, maxOutput: 10 });
@@ -101,6 +159,48 @@ describe('createProductionSystem', () => {
 
       // Oxygen should not have increased after removal
       expect(resources.get(ResourceType.Oxygen)).toBeCloseTo(3);
+    });
+
+    it('installModules installs all modules atomically when batch is valid', () => {
+      const system = createProductionSystem({ modules: { capacity: 100 }, resources: createResourceContainer() });
+      const reactor = makeModule('reactor-1', 'Reactor', reactorRecipe, { type: ModuleId.ReactorCore, maxOutput: 10 });
+      const engines = makeModule('engine-1', 'Ion Engines', oxygenRecipe, {
+        type: ModuleId.IonEngines,
+        maxOutput: 10,
+      });
+
+      const result = system.installModules([reactor, engines]);
+
+      expect(result.ok).toBe(true);
+      expect(system.modules.has('reactor-1')).toBe(true);
+      expect(system.modules.has('engine-1')).toBe(true);
+    });
+
+    it('installModules rolls back all installs when one module fails', () => {
+      const system = createProductionSystem({ modules: { capacity: 100 }, resources: createResourceContainer() });
+
+      const reactor = makeModule('reactor-1', 'Reactor', reactorRecipe, {
+        type: ModuleId.ReactorCore,
+        maxOutput: 10,
+      });
+
+      const shieldA = makeModule('shield-a', 'Shield A', oxygenRecipe, {
+        type: ModuleId.ShieldGenerator,
+        maxOutput: 5,
+      });
+
+      const shieldB = makeModule('shield-b', 'Shield B', oxygenRecipe, {
+        type: ModuleId.ShieldGenerator,
+        maxOutput: 5,
+      });
+
+      const result = system.installModules([reactor, shieldA, shieldB]);
+
+      expect(result.ok).toBe(false);
+      expect(system.modules.has('reactor-1')).toBe(false);
+      expect(system.modules.has('shield-a')).toBe(false);
+      expect(system.modules.has('shield-b')).toBe(false);
+      expect(system.modules.list()).toHaveLength(0);
     });
   });
 
@@ -223,6 +323,46 @@ describe('createProductionSystem', () => {
       // Consumer consumed 1 Oxygen and produced 2 Water.
       expect(resources.get(ResourceType.Water)).toBeCloseTo(2);
       expect(resources.get(ResourceType.Oxygen)).toBeCloseTo(4); // 5 - 1
+    });
+  });
+
+  describe('tick — non-reactor priority ordering', () => {
+    it('runs life-support producer before medbay consumer regardless of install order', () => {
+      const oxygenSourceRecipe = createRecipe({
+        name: 'OxygenSource',
+        primaryOutput: ResourceType.Oxygen,
+        costsPerSecond: [],
+      });
+
+      const oxygenConsumerRecipe = createRecipe({
+        name: 'MedbayConsumer',
+        primaryOutput: ResourceType.Water,
+        costsPerSecond: [createResource(ResourceType.Oxygen, 1)],
+      });
+
+      const resources = createResourceContainer({ capacity: 1000 });
+      const system = createProductionSystem({
+        modules: { capacity: 100 },
+        resources,
+      });
+
+      const producer = makeModule('ls1', 'Life Support', oxygenSourceRecipe, {
+        type: ModuleId.LifeSupport,
+        maxOutput: 3,
+      });
+
+      const consumer = makeModule('med1', 'Medbay Consumer', oxygenConsumerRecipe, {
+        type: ModuleId.Medbay,
+        maxOutput: 2,
+      });
+
+      system.installModule(consumer);
+      system.installModule(producer);
+
+      system.tick(1);
+
+      expect(resources.get(ResourceType.Water)).toBeCloseTo(2);
+      expect(resources.get(ResourceType.Oxygen)).toBeCloseTo(2);
     });
   });
 

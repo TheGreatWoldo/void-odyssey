@@ -1,5 +1,5 @@
 import { useUiScale } from '@/application/hooks/useUiScale'
-import { GameContext } from '@/shared/game-context'
+import { GameContext } from '@/application/hooks/game-context'
 import type { IGameService } from '@/shared/game-service'
 import { type ReactNode, useEffect, useRef, useState } from 'react'
 
@@ -66,12 +66,13 @@ export function GameCanvasAndProvider({ createService, children }: GameCanvasAnd
         }}
       />
 
-      {/* Canvas sized exactly to the scaled design space — no CSS transform, so pointer events are never distorted */}
+      {/* Canvas sized exactly to the scaled design space — centred in the viewport */}
       <div
         style={{
           position: 'fixed',
-          top: 0,
-          left: 0,
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
           width: canvasWidth,
           height: canvasHeight,
           zIndex: 1,

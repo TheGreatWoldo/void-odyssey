@@ -1,12 +1,18 @@
 import { isForwardReachable } from '@/domain/models/navigation/route/route-graph-utils';
 import type { RouteNode } from '@/domain/models/navigation/route/route-node';
 import { GraphContext } from '@/infrastructure/navigation-2d/graph-context';
-import { Actor, CollisionType, Vector } from 'excalibur';
+import { Actor, CollisionType, vec, Vector } from 'excalibur';
 
 import type { NodeDrawingStrategy } from '@/infrastructure/navigation-2d/rendering/strategies/node-drawing-strategy';
 import { NodeVisualState } from '@/infrastructure/navigation-2d/rendering/strategies/node-drawing-strategy';
 
-const HIT_RADIUS = 20;
+function buildHexColliderPoints(): Vector[] {
+  const r = 28;
+  return Array.from({ length: 6 }, (_, i) => {
+    const angle = (Math.PI / 180) * (60 * i - 30);
+    return vec(r * Math.cos(angle), r * Math.sin(angle));
+  });
+}
 
 export class RouteNodeActor extends Actor {
   readonly routeNode: RouteNode;
@@ -19,6 +25,7 @@ export class RouteNodeActor extends Actor {
   private readonly graphContext: GraphContext;
   private currentVisualState: NodeVisualState = NodeVisualState.Unknown;
   private currentScanned = false;
+  private currentGraphicRevision = 0;
 
   constructor(
     node: RouteNode,
@@ -30,17 +37,21 @@ export class RouteNodeActor extends Actor {
       x: worldPos.x,
       y: worldPos.y,
       collisionType: CollisionType.Fixed,
-      radius: HIT_RADIUS,
     });
     this.routeNode = node;
     this.strategy = strategy;
     this.graphContext = graphContext;
+    this.currentGraphicRevision = this.strategy.getRevision?.() ?? 0;
+    this.pointer.useGraphicsBounds = false;
+    this.pointer.useColliderShape = true;
     this.graphics.use(
       strategy.getGraphic(node.type, NodeVisualState.Unknown, false)
     );
   }
 
   override onInitialize(): void {
+    this.collider.usePolygonCollider(buildHexColliderPoints());
+
     this.on('pointerenter', () => {
       const scannerRange = this.graphContext.statePort.getScannerRange();
       const currentActor = this.graphContext.currentNodeActor;
@@ -72,13 +83,19 @@ export class RouteNodeActor extends Actor {
     const currentActor = this.graphContext.currentNodeActor;
     const next = this._computeVisualState(currentActor, scannerRange);
     const nextScanned = this._computeScanned(scannerRange, currentActor);
+    const nextGraphicRevision = this.strategy.getRevision?.() ?? 0;
 
-    if (next === this.currentVisualState && nextScanned === this.currentScanned) {
+    if (
+      next === this.currentVisualState &&
+      nextScanned === this.currentScanned &&
+      nextGraphicRevision === this.currentGraphicRevision
+    ) {
       return;
     }
 
     this.currentVisualState = next;
     this.currentScanned = nextScanned;
+    this.currentGraphicRevision = nextGraphicRevision;
 
     if (nextScanned && !this.scanned) {
       this.scanned = true;

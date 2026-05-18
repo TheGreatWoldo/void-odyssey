@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { DamageType } from '@/domain/models/combat/damage';
 import { ModuleId } from '@/domain/models/module/production-module-id';
+import { UpgradeType } from '@/domain/models/module/production-module-upgrade';
 import { createResource, ResourceType } from '@/domain/models/resources/resource';
 import { createResourceContainer } from '@/domain/models/resources/resource-container';
 import { createEnergyWeaponModule, isEnergyWeaponModule } from '@/domain/models/weapon/energy-weapon-module';
@@ -218,6 +219,40 @@ describe('EnergyWeaponModule — fire()', () => {
     module.fire(map);
 
     expect(module.fire(map)).toBeUndefined();
+  });
+
+});
+
+describe('EnergyWeaponModule — upgrades', () => {
+
+  it('rejects duplicate upgrade ids via shared domain validation service', () => {
+    const module = makeCannon();
+
+    const first = module.addUpgrade({
+      id: 'u1',
+      name: 'Optics I',
+      type: UpgradeType.Efficiency,
+      targetResourceType: ResourceType.Power,
+      costFactor: 0.9,
+      enabled: true,
+      storableType: 'upgrade',
+      slotCost: 1,
+    });
+
+    const second = module.addUpgrade({
+      id: 'u1',
+      name: 'Optics II',
+      type: UpgradeType.Power,
+      targetResourceType: ResourceType.Power,
+      costFactor: 0.8,
+      enabled: true,
+      storableType: 'upgrade',
+      slotCost: 1,
+    });
+
+    expect(first.ok).toBe(true);
+    expect(second.ok).toBe(false);
+    expect(module.upgrades).toHaveLength(1);
   });
 
 });

@@ -4,11 +4,19 @@ import { createBatteryContainer, createPowerContainer } from '@/domain/models/re
 import { createResource, ResourceType } from '@/domain/models/resources/resource';
 import { createResourceContainer } from '@/domain/models/resources/resource-container';
 
+function expectOkNumber(result: { ok: boolean; value?: number; error?: unknown }): number {
+  expect(result.ok).toBe(true);
+  if (!result.ok) {
+    throw new Error(`Expected Ok result but got Err: ${JSON.stringify(result.error)}`);
+  }
+  return result.value;
+}
+
 function makeChargedPower(amount: number) {
   const pc = createPowerContainer();
   const battery = createBatteryContainer({ capacity: amount });
   pc.addContainer(battery);
-  pc.add(createResource(ResourceType.Power, amount));
+  expectOkNumber(pc.add(createResource(ResourceType.Power, amount)));
   return pc;
 }
 
@@ -27,9 +35,12 @@ describe('createPowerContainer — basics', () => {
     const battery = createBatteryContainer({ capacity: 10 });
     pc.addContainer(battery);
 
-    const refused = pc.add(createResource(ResourceType.Food, 5));
+    const addResult = pc.add(createResource(ResourceType.Food, 5));
 
-    expect(refused).toBe(5);
+    expect(addResult.ok).toBe(false);
+    if (!addResult.ok) {
+      expect(addResult.error.kind).toBe('type-not-accepted');
+    }
     expect(pc.get(ResourceType.Food)).toBe(0);
   });
 
@@ -80,7 +91,7 @@ describe('createPowerContainer — add / get / destroy', () => {
     pc.addContainer(createBatteryContainer({ capacity: 5 }));
     pc.addContainer(createBatteryContainer({ capacity: 5 }));
 
-    pc.add(createResource(ResourceType.Power, 7));
+    expectOkNumber(pc.add(createResource(ResourceType.Power, 7)));
 
     expect(pc.get(ResourceType.Power)).toBe(7);
   });
@@ -89,7 +100,7 @@ describe('createPowerContainer — add / get / destroy', () => {
     const pc = createPowerContainer();
     pc.addContainer(createBatteryContainer({ capacity: 4 }));
 
-    const refused = pc.add(createResource(ResourceType.Power, 10));
+    const refused = expectOkNumber(pc.add(createResource(ResourceType.Power, 10)));
 
     expect(refused).toBe(6);
     expect(pc.get(ResourceType.Power)).toBe(4);
@@ -114,7 +125,7 @@ describe('createPowerContainer — add / get / destroy', () => {
   it('freeSpace returns remaining capacity', () => {
     const pc = createPowerContainer();
     pc.addContainer(createBatteryContainer({ capacity: 10 }));
-    pc.add(createResource(ResourceType.Power, 3));
+    expectOkNumber(pc.add(createResource(ResourceType.Power, 3)));
 
     expect(pc.freeSpace()).toBe(7);
   });
@@ -186,7 +197,7 @@ describe('createBatteryContainer', () => {
   it('accepts Power', () => {
     const battery = createBatteryContainer({ capacity: 10 });
 
-    const refused = battery.add(createResource(ResourceType.Power, 5));
+    const refused = expectOkNumber(battery.add(createResource(ResourceType.Power, 5)));
 
     expect(refused).toBe(0);
     expect(battery.get(ResourceType.Power)).toBe(5);
@@ -195,9 +206,12 @@ describe('createBatteryContainer', () => {
   it('rejects non-Power resources', () => {
     const battery = createBatteryContainer({ capacity: 10 });
 
-    const refused = battery.add(createResource(ResourceType.Food, 5));
+    const addResult = battery.add(createResource(ResourceType.Food, 5));
 
-    expect(refused).toBe(5);
+    expect(addResult.ok).toBe(false);
+    if (!addResult.ok) {
+      expect(addResult.error.kind).toBe('type-not-accepted');
+    }
   });
 
 });

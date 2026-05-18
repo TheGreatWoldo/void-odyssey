@@ -16,6 +16,9 @@ export function RootLayout({ children }: RootLayoutProps) {
         zIndex: 2,
         pointerEvents: 'none',
         overflow: 'hidden',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
       }}
     >
       <div
@@ -23,8 +26,9 @@ export function RootLayout({ children }: RootLayoutProps) {
           width: 1600,
           height: 900,
           transform: `scale(${scale})`,
-          transformOrigin: 'top left',
+          transformOrigin: 'center',
           pointerEvents: 'none',
+          flexShrink: 0,
         }}
       >
         {children}

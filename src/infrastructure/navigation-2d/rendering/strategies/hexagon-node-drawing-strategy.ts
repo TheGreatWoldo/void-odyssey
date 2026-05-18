@@ -12,7 +12,7 @@ import { type NodeDrawingStrategy, NodeVisualState } from './node-drawing-strate
 const HEX_SIZE = 96;
 
 /** Outer radius (center to vertex) of the hexagon, in logical pixels. */
-const HEX_RADIUS = 28;
+export const HEX_RADIUS = 28;
 
 /**
  * Oversampling factor passed to Excalibur's `quality` option.
@@ -162,6 +162,7 @@ function hexPath(
 export class HexagonNodeDrawingStrategy implements NodeDrawingStrategy {
   private readonly cache = new Map<string, Canvas>();
   private readonly svgImages = new Map<NodeType, HTMLImageElement>();
+  private revision = 0;
 
   async preload(): Promise<void> {
     await Promise.all(
@@ -177,12 +178,28 @@ export class HexagonNodeDrawingStrategy implements NodeDrawingStrategy {
 
       img.onload = () => {
         this.svgImages.set(type, img);
+        this.clearCachedGraphics(type);
+        this.revision += 1;
         resolve();
       };
 
       img.onerror = () => reject(new Error(`Failed to load node icon: ${src}`));
       img.src = src;
     });
+  }
+
+  getRevision(): number {
+    return this.revision;
+  }
+
+  private clearCachedGraphics(type: NodeType): void {
+    const cacheKeyPrefix = `${type}-`;
+
+    for (const key of this.cache.keys()) {
+      if (key.startsWith(cacheKeyPrefix)) {
+        this.cache.delete(key);
+      }
+    }
   }
 
   getGraphic(type: NodeType, state: NodeVisualState, scanned: boolean): Canvas {

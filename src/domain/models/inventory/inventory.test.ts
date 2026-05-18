@@ -8,6 +8,10 @@ function makeItem(id: string, slotCost = 1) {
   return { id, slotCost, storableType: StorableType.Module };
 }
 
+function makePerishableItem(id: string, expiresAtMs: number, slotCost = 1) {
+  return { id, slotCost, storableType: StorableType.Module, expiresAtMs };
+}
+
 describe('createInventory', () => {
 
   it('has a stable id', () => {
@@ -186,6 +190,101 @@ describe('Inventory.transfer', () => {
 
     expect(result.resourcesRefused).toBe(0);
     expect(result.itemsRefused).toBe(0);
+  });
+
+});
+
+describe('Inventory.transferBatch', () => {
+
+  it('transfers selected items/resources atomically when all can be moved', () => {
+    const source = createInventory({ items: { capacity: 10 } });
+    const target = createInventory({ items: { capacity: 10 } });
+
+    source.storeItem(makeItem('item-a', 1));
+    source.storeItem(makeItem('item-b', 1));
+    source.addResource(createResource(ResourceType.Food, 4));
+
+    const result = source.transferBatch(target, ['item-a'], [ResourceType.Food]);
+
+    expect(result.ok).toBe(true);
+    expect(source.hasItem('item-a')).toBe(false);
+    expect(source.hasItem('item-b')).toBe(true);
+    expect(target.hasItem('item-a')).toBe(true);
+    expect(source.getResource(ResourceType.Food)).toBe(0);
+    expect(target.getResource(ResourceType.Food)).toBe(4);
+  });
+
+  it('rolls back item/resource changes when one selected item is missing', () => {
+    const source = createInventory({ items: { capacity: 10 } });
+    const target = createInventory({ items: { capacity: 10 } });
+
+    source.storeItem(makeItem('item-a', 1));
+    source.addResource(createResource(ResourceType.Water, 3));
+
+    const result = source.transferBatch(target, ['item-a', 'missing-item'], [ResourceType.Water]);
+
+    expect(result.ok).toBe(false);
+    expect(source.hasItem('item-a')).toBe(true);
+    expect(target.hasItem('item-a')).toBe(false);
+    expect(source.getResource(ResourceType.Water)).toBe(3);
+    expect(target.getResource(ResourceType.Water)).toBe(0);
+  });
+
+  it('rolls back all moves when target lacks item capacity', () => {
+    const source = createInventory({ items: { capacity: 10 } });
+    const target = createInventory({ items: { capacity: 0 } });
+
+    source.storeItem(makeItem('item-a', 1));
+    source.addResource(createResource(ResourceType.Fuel, 2));
+
+    const result = source.transferBatch(target, ['item-a'], [ResourceType.Fuel]);
+
+    expect(result.ok).toBe(false);
+    expect(source.hasItem('item-a')).toBe(true);
+    expect(target.hasItem('item-a')).toBe(false);
+    expect(source.getResource(ResourceType.Fuel)).toBe(2);
+    expect(target.getResource(ResourceType.Fuel)).toBe(0);
+  });
+
+});
+
+describe('Inventory lifecycle/spoilage', () => {
+
+  it('marks perishable items as spoiled after expiration time', () => {
+    const inv = createInventory({ items: { capacity: 10 } });
+    const now = Date.now();
+    const perishable = makePerishableItem('food-1', now - 1);
+
+    inv.storeItem(perishable);
+    inv.advanceLifecycle(now);
+
+    expect(inv.isItemSpoiled('food-1')).toBe(true);
+  });
+
+  it('does not mark non-expired perishable items as spoiled', () => {
+    const inv = createInventory({ items: { capacity: 10 } });
+    const now = Date.now();
+    const perishable = makePerishableItem('food-2', now + 10_000);
+
+    inv.storeItem(perishable);
+    inv.advanceLifecycle(now);
+
+    expect(inv.isItemSpoiled('food-2')).toBe(false);
+  });
+
+  it('purgeSpoiledItems removes spoiled items and returns purge count', () => {
+    const inv = createInventory({ items: { capacity: 10 } });
+    const now = Date.now();
+
+    inv.storeItem(makePerishableItem('food-1', now - 1));
+    inv.storeItem(makePerishableItem('food-2', now - 1));
+    inv.advanceLifecycle(now);
+
+    const purged = inv.purgeSpoiledItems();
+
+    expect(purged).toBe(2);
+    expect(inv.hasItem('food-1')).toBe(false);
+    expect(inv.hasItem('food-2')).toBe(false);
   });
 
 });

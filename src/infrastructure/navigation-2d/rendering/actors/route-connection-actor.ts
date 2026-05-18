@@ -55,7 +55,8 @@ export class RouteConnectionActor extends Actor {
     fromNode: RouteNode,
     fromWorld: Vector,
     toWorld: Vector,
-    graphContext: GraphContext
+    graphContext: GraphContext,
+    quality = 1
   ) {
     const mid = vec(
       (fromWorld.x + toWorld.x) / 2,
@@ -86,6 +87,7 @@ export class RouteConnectionActor extends Actor {
       width: w,
       height: h,
       cache: true,
+      quality,
       draw(ctx: CanvasRenderingContext2D) {
         ctx.clearRect(0, 0, w, h);
         ctx.strokeStyle = LINE_COLOR_NORMAL;
@@ -101,6 +103,7 @@ export class RouteConnectionActor extends Actor {
       width: w,
       height: h,
       cache: false,
+      quality,
       draw: (ctx: CanvasRenderingContext2D) => {
         ctx.clearRect(0, 0, w, h);
         const filled = Math.round(w * this._highlightProgress);
@@ -145,6 +148,7 @@ export class RouteConnectionActor extends Actor {
       width: w,
       height: h,
       cache: false,
+      quality,
       draw: (ctx: CanvasRenderingContext2D) => {
         ctx.clearRect(0, 0, w, h);
         const filled = Math.round(w * this._scannedProgress);
@@ -178,6 +182,7 @@ export class RouteConnectionActor extends Actor {
       width: w,
       height: h,
       cache: true,
+      quality,
       draw(ctx: CanvasRenderingContext2D) {
         ctx.clearRect(0, 0, w, h);
         ctx.strokeStyle = LINE_COLOR_TRAVELLED;
@@ -278,14 +283,16 @@ export class RouteConnectionActor extends Actor {
     fromNode: RouteNode,
     toNode: RouteNode,
     graphContext: GraphContext,
-    worldOffset: Vector = Vector.Zero
+    worldOffset: Vector = Vector.Zero,
+    quality = 1
   ): RouteConnectionActor {
     return new RouteConnectionActor(
       connection,
       fromNode,
       vec(fromNode.wx + worldOffset.x, fromNode.wy + worldOffset.y),
       vec(toNode.wx + worldOffset.x, toNode.wy + worldOffset.y),
-      graphContext
+      graphContext,
+      quality
     );
   }
 }

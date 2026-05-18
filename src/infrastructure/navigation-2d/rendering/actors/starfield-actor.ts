@@ -34,6 +34,7 @@ export class StarfieldActor extends Actor {
       width: w,
       height: h,
       cache: true,
+      quality: engine.pixelRatio,
       draw: (ctx) => this.drawStars(ctx, w, h),
     });
 

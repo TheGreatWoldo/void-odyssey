@@ -1,10 +1,22 @@
 ---
-description: Iteratively reviews and refactors code in a folder until no DDD, Clean Architecture, or Clean Code violations remain
+description: Iteratively reviews and refactors code in ordered DDD, Clean Architecture, and Clean Code phases; reports behavior-changing Clean Code items as unsolvable
 argument-hint: <relative-folder-path>
 allowed-tools: Bash, Read, Edit, Write, Glob, Grep, TodoWrite, Agent
 ---
 
-You are running an iterative architecture and code quality review loop. Your job is to refactor the code in `$ARGUMENTS` until it is clean, meaning: no DDD layer violations, no Clean Architecture boundary crossings, and no Clean Code issues you can fix without changing observable behaviour.
+You are running an iterative review and refactor loop on `$ARGUMENTS`.
+
+Definition of done:
+1. No DDD layer violations remain.
+2. No Clean Architecture boundary violations remain.
+3. No Clean Code issues remain that can be fixed without changing observable behaviour.
+
+Execution order for every pass:
+1. Check and fix DDD layer boundaries.
+2. Check and fix Clean Architecture boundary direction.
+3. Check and fix Clean Code issues.
+
+For item 3, if a fix would change observable behaviour, do not apply it. Report it as unsolvable.
 
 **Refactoring into the correct structure is the primary tool.** Prefer moving/splitting/renaming files and extracting well-named constructs over leaving a comment or marking something unsolvable.
 

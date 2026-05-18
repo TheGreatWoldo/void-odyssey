@@ -30,6 +30,14 @@ export type ProductionState = (typeof ProductionState)[keyof typeof ProductionSt
  * Power is the fractional dimension: if the power source is depleted the module
  * runs at a proportionally reduced rate. All non-power inputs and outputs are
  * scaled by the same fraction.
+ *
+ * Contract rationale:
+ * - recipe.nonPowerCosts are binary gates for eligibility at each tick: if any gate
+ *   cannot satisfy required input, fraction collapses accordingly.
+ * - Power is intentionally treated as the only continuous dimension to model brownout
+ *   behavior without introducing partial-consumption semantics for every resource.
+ * - The same computed fraction MUST drive both consumption and production in the same tick;
+ *   otherwise resource conservation and upgrade math diverge.
  */
 export interface Producer {
   readonly id: string;
@@ -114,6 +122,11 @@ export function createProducer(id: string, recipe: Recipe): Producer {
   ): void {
     const combinedCostMult = upgradeCostMult * effectiveThrottle;
 
+    // Invariant: the source container map is pre-resolved once at installation time.
+    // Producer never performs topology/resource routing lookups beyond map key access.
+    // Reason: this keeps per-tick work deterministic/O(1) and prevents runtime drift when
+    // unrelated containers are added elsewhere in the object graph.
+
     // Populate amounts buffer from live container values for the recipe check.
     for (const r of recipe.nonPowerCosts) {
       amountsBuffer.set(r.id, sources.get(r.id)?.get(r.id) ?? 0);
@@ -134,7 +147,8 @@ export function createProducer(id: string, recipe: Recipe): Producer {
 
     const nonPowerCosts = recipe.nonPowerCosts;
 
-    // Consume non-Power inputs scaled by fraction — partial power means proportionally less consumed.
+    // Contract: non-power costs are consumed only after fraction is established,
+    // and use that exact fraction. This prevents overconsumption when power is scarce.
     for (let i = 0; i < nonPowerCosts.length; i++) {
       const r = nonPowerCosts[i];
       costBuffers[i].amount = r.amount * upgradeCostMult * effectiveThrottle * fraction * deltaTime;

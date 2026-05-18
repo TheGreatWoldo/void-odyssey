@@ -19,6 +19,39 @@ function food(amount: number) {
   return createResource(ResourceType.Food, amount);
 }
 
+/**
+ * Test helper — adds resource to container.
+ * Asserts success to fail fast in tests if setup fails.
+ */
+function addResource(container: ReturnType<typeof makeContainer>, resource: ReturnType<typeof fuel>) {
+  const result = container.add(resource);
+  expect(result.ok).toBe(true);
+  if (!result.ok) throw new Error(`Failed to add resource: ${result.error.kind}`);
+}
+
+/**
+ * Test helper — adds child container.
+ * Asserts success to fail fast in tests if setup fails.
+ */
+function addChild(
+  parent: ReturnType<typeof makeContainer>,
+  child: ReturnType<typeof makeContainer> | ReturnType<typeof createItemContainer>
+) {
+  const result = parent.addContainer(child);
+  expect(result.ok).toBe(true);
+  if (!result.ok) throw new Error(`Failed to add container: ${result.error.kind}`);
+}
+
+/**
+ * Test helper — stores item in container.
+ * Asserts success to fail fast in tests if setup fails.
+ */
+function storeItem(container: ReturnType<typeof createItemContainer>, item: Storable & { readonly id: string }) {
+  const result = container.store(item);
+  expect(result.ok).toBe(true);
+  if (!result.ok) throw new Error(`Failed to store item: ${result.error.kind}`);
+}
+
 describe('ContainerQuery', () => {
   describe('totalOf', () => {
     it('returns 0 when no containers are provided', () => {
@@ -35,8 +68,8 @@ describe('ContainerQuery', () => {
     it('sums a resource across multiple root containers', () => {
       const a = makeContainer();
       const b = makeContainer();
-      a.add(fuel(3));
-      b.add(fuel(5));
+      addResource(a, fuel(3));
+      addResource(b, fuel(5));
 
       expect(totalOf(ResourceType.Fuel, [a, b])).toBe(8);
     });
@@ -44,8 +77,8 @@ describe('ContainerQuery', () => {
     it('includes resources in nested child containers', () => {
       const parent = makeContainer();
       const child = makeContainer(20);
-      child.add(fuel(4));
-      parent.addContainer(child);
+      addResource(child, fuel(4));
+      addChild(parent, child);
 
       expect(totalOf(ResourceType.Fuel, [parent])).toBe(4);
     });
@@ -53,9 +86,9 @@ describe('ContainerQuery', () => {
     it('sums resources across both parent and nested child', () => {
       const parent = makeContainer();
       const child = makeContainer(20);
-      parent.add(fuel(2));
-      child.add(fuel(4));
-      parent.addContainer(child);
+      addResource(parent, fuel(2));
+      addResource(child, fuel(4));
+      addChild(parent, child);
 
       expect(totalOf(ResourceType.Fuel, [parent])).toBe(6);
     });
@@ -64,18 +97,18 @@ describe('ContainerQuery', () => {
       const grandparent = makeContainer();
       const parent = makeContainer(50);
       const child = makeContainer(20);
-      child.add(fuel(1));
-      parent.add(fuel(2));
-      parent.addContainer(child);
-      grandparent.addContainer(parent);
+      addResource(child, fuel(1));
+      addResource(parent, fuel(2));
+      addChild(parent, child);
+      addChild(grandparent, parent);
 
       expect(totalOf(ResourceType.Fuel, [grandparent])).toBe(3);
     });
 
     it('only counts the queried resource type', () => {
       const a = makeContainer();
-      a.add(fuel(5));
-      a.add(food(10));
+      addResource(a, fuel(5));
+      addResource(a, food(10));
 
       expect(totalOf(ResourceType.Fuel, [a])).toBe(5);
       expect(totalOf(ResourceType.Food, [a])).toBe(10);
@@ -93,7 +126,7 @@ describe('ContainerQuery', () => {
     it('returns only containers that hold the resource', () => {
       const a = makeContainer();
       const b = makeContainer();
-      a.add(fuel(3));
+      addResource(a, fuel(3));
 
       const result = containersHolding(ResourceType.Fuel, [a, b]);
 
@@ -104,8 +137,8 @@ describe('ContainerQuery', () => {
     it('includes nested containers that hold the resource', () => {
       const parent = makeContainer();
       const child = makeContainer(20);
-      child.add(fuel(5));
-      parent.addContainer(child);
+      addResource(child, fuel(5));
+      addChild(parent, child);
 
       const result = containersHolding(ResourceType.Fuel, [parent]);
 
@@ -116,9 +149,9 @@ describe('ContainerQuery', () => {
     it('returns both parent and child when both hold the resource', () => {
       const parent = makeContainer();
       const child = makeContainer(20);
-      parent.add(fuel(2));
-      child.add(fuel(5));
-      parent.addContainer(child);
+      addResource(parent, fuel(2));
+      addResource(child, fuel(5));
+      addChild(parent, child);
 
       const result = containersHolding(ResourceType.Fuel, [parent]);
 
@@ -137,21 +170,21 @@ describe('ContainerQuery', () => {
 
     it('returns true when total exactly meets the required amount', () => {
       const a = makeContainer();
-      a.add(fuel(3));
+      addResource(a, fuel(3));
 
       expect(hasTotalOf(ResourceType.Fuel, 3, [a])).toBe(true);
     });
 
     it('returns true when total exceeds the required amount', () => {
       const a = makeContainer();
-      a.add(fuel(10));
+      addResource(a, fuel(10));
 
       expect(hasTotalOf(ResourceType.Fuel, 5, [a])).toBe(true);
     });
 
     it('returns false when total is below the required amount', () => {
       const a = makeContainer();
-      a.add(fuel(2));
+      addResource(a, fuel(2));
 
       expect(hasTotalOf(ResourceType.Fuel, 5, [a])).toBe(false);
     });
@@ -159,8 +192,8 @@ describe('ContainerQuery', () => {
     it('spans multiple containers to meet the required amount', () => {
       const a = makeContainer();
       const b = makeContainer();
-      a.add(fuel(3));
-      b.add(fuel(3));
+      addResource(a, fuel(3));
+      addResource(b, fuel(3));
 
       expect(hasTotalOf(ResourceType.Fuel, 6, [a, b])).toBe(true);
       expect(hasTotalOf(ResourceType.Fuel, 7, [a, b])).toBe(false);
@@ -169,8 +202,8 @@ describe('ContainerQuery', () => {
     it('counts resources in nested containers toward the total', () => {
       const parent = makeContainer();
       const child = makeContainer(20);
-      child.add(fuel(4));
-      parent.addContainer(child);
+      addResource(child, fuel(4));
+      addChild(parent, child);
 
       expect(hasTotalOf(ResourceType.Fuel, 4, [parent])).toBe(true);
     });
@@ -196,7 +229,7 @@ describe('ContainerQuery — items', () => {
     it('returns items from a standalone ItemContainer', () => {
       const ic = makeItemContainer();
       const item = makeItem('m1', StorableType.Module);
-      ic.store(item);
+      storeItem(ic, item);
 
       expect(allItems([ic])).toContain(item);
     });
@@ -205,8 +238,8 @@ describe('ContainerQuery — items', () => {
       const rc = makeContainer();
       const ic = makeItemContainer(20);
       const item = makeItem('m1', StorableType.Module);
-      ic.store(item);
-      rc.addContainer(ic);
+      storeItem(ic, item);
+      addChild(rc, ic);
 
       expect(allItems([rc])).toContain(item);
     });
@@ -216,8 +249,8 @@ describe('ContainerQuery — items', () => {
       const ic2 = makeItemContainer();
       const a = makeItem('a', StorableType.Module);
       const b = makeItem('b', StorableType.Upgrade);
-      ic1.store(a);
-      ic2.store(b);
+      storeItem(ic1, a);
+      storeItem(ic2, b);
 
       const result = allItems([ic1, ic2]);
 
@@ -231,8 +264,8 @@ describe('ContainerQuery — items', () => {
       const ic = makeItemContainer();
       const mod = makeItem('m1', StorableType.Module);
       const upg = makeItem('u1', StorableType.Upgrade);
-      ic.store(mod);
-      ic.store(upg);
+      storeItem(ic, mod);
+      storeItem(ic, upg);
 
       expect(itemsOfType(StorableType.Module, [ic])).toContain(mod);
       expect(itemsOfType(StorableType.Module, [ic])).not.toContain(upg);
@@ -240,7 +273,7 @@ describe('ContainerQuery — items', () => {
 
     it('returns empty array when no items of that type exist', () => {
       const ic = makeItemContainer();
-      ic.store(makeItem('m1', StorableType.Module));
+      storeItem(ic, makeItem('m1', StorableType.Module));
 
       expect(itemsOfType(StorableType.Upgrade, [ic])).toHaveLength(0);
     });

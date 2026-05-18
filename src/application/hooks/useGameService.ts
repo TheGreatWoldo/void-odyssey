@@ -1,4 +1,4 @@
-import { GameContext } from '@/shared/game-context'
+import { GameContext } from '@/application/hooks/game-context'
 import type { IGameService } from '@/shared/game-service'
 import { useContext } from 'react'
 

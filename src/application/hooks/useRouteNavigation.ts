@@ -27,13 +27,43 @@ export function useRouteDrawDebug(): boolean {
   return useRouteNavigationStore(state => state.drawDebug);
 }
 
+/** Currently selected route slot index in the route picker. */
+export function useSelectedRouteIndex(): number {
+  return useRouteNavigationStore(state => state.selectedRouteIndex);
+}
+
+/** True when route picker scrolling is locked to the selected route. */
+export function useRouteSelectionLocked(): boolean {
+  return useRouteNavigationStore(state => state.routeSelectionLocked);
+}
+
+/** Incrementing token used to request route graph rerolls. */
+export function useRouteRerollNonce(): number {
+  return useRouteNavigationStore(state => state.rerollNonce);
+}
+
+/** Remaining rerolls for a given route slot index. */
+export function useRouteRerollsRemaining(routeIndex: number): number {
+  return useRouteNavigationStore(state => {
+    const used = state.rerollsByRouteIndex[routeIndex] ?? 0;
+
+    return Math.max(0, state.maxRerollsPerRoute - used);
+  });
+}
+
+/** True when the route slot can still be rerolled. */
+export function useCanRerollRoute(routeIndex: number): boolean {
+  return useRouteRerollsRemaining(routeIndex) > 0;
+}
+
 /** Current route generation parameters. */
 export function useRouteGraphParams() {
   const routeSteps = useRouteNavigationStore(state => state.routeSteps);
   const minBranches = useRouteNavigationStore(state => state.minBranches);
   const maxBranches = useRouteNavigationStore(state => state.maxBranches);
+  const routeSeed = useRouteNavigationStore(state => state.routeSeed);
 
-  return { routeSteps, minBranches, maxBranches };
+  return { routeSteps, minBranches, maxBranches, routeSeed };
 }
 
 /**

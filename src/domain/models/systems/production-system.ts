@@ -1,13 +1,15 @@
 import type { ProductionSystemEvent } from '@/domain/events/production-system-events';
+import { getModulePriority, validateModuleInterconnection } from '@/domain/models/module/module-interconnection';
 import type { ProductionModule } from '@/domain/models/module/production-module';
-import { ModuleId } from '@/domain/models/module/production-module-id';
-import { createPowerContainer } from '@/domain/models/resources/power-container';
 import { createResource, ResourceType, TransientResourceTypes } from '@/domain/models/resources/resource';
 import type { ContainerMap, ResourceContainer } from '@/domain/models/resources/resource-container';
 import type { ItemContainerOptions } from '@/domain/models/storage/item-container';
 import { createItemContainer } from '@/domain/models/storage/item-container';
+import type { PowerSystem } from '@/domain/models/systems/power-system';
+import { createPowerSystem } from '@/domain/models/systems/power-system';
 import { createDomainEventCollector } from '@/shared/domain-event';
-import { generateId } from '@/shared/utils';
+import { err, ok, type Result } from '@/shared/result';
+import { generateId } from '@/shared/id-utils';
 
 export interface ProductionSystemOptions {
   id?: string;
@@ -46,9 +48,21 @@ export interface InstalledModules {
  * All modules share a single ContainerMap pointing every ResourceType at
  * `inventory.resources`. This means all produced resources flow into the
  * same resource pool, and all consumed resources are drawn from it.
+ *
+ * Invariants (contract):
+ * - ContainerMap routing is resolved once when the aggregate is created and is never
+ *   re-resolved during tick(). This keeps simulation deterministic and avoids hidden
+ *   runtime topology coupling.
+ * - Disabled or non-operational modules are explicitly skipped and reset every tick.
+ *   This guarantees no stale output accumulation while preserving deterministic drain order.
+ * - Tick order is computed at install/remove boundaries only, not inside tick(), so
+ *   runtime performance and behavior remain stable under load.
  */
 export interface ProductionSystem {
   readonly id: string;
+
+  /** Owned power aggregate — source of truth for power storage, reserve, and demand queries. */
+  readonly power: PowerSystem;
 
   /** Read-only inspection view of installed modules. Mutate via `installModule` / `removeModule`. */
   readonly modules: InstalledModules;
@@ -59,6 +73,12 @@ export interface ProductionSystem {
    * Reactors are always sorted before other modules in the tick order.
    */
   installModule(module: ProductionModule): boolean;
+
+  /**
+   * Atomically installs a batch of modules in the provided order.
+   * If any module fails validation/storage, all prior installs in this batch are rolled back.
+   */
+  installModules(batch: readonly ProductionModule[]): Result<void, string>;
 
   /**
    * Removes an installed module by id.
@@ -106,64 +126,108 @@ export function createProductionSystem(
   const modules = createItemContainer({ ...moduleOptions, allowedTypes: ['module'] });
   const eventCollector = createDomainEventCollector<ProductionSystemEvent>();
 
-  // Composite power store — batteries are added/removed at runtime via addBattery/removeBattery.
-  // Power is routed through this container; all other resource types point at the shared container.
-  const powerContainer = createPowerContainer();
+  const powerSystem = createPowerSystem({ id: `${id}-power` });
 
-  // Build ContainerMap: Power routes to the composite power container; everything else to resources.
+  // Build ContainerMap once at aggregate construction time.
+  // Contract: this routing table is immutable during simulation ticks.
+  // Reason: per-tick re-resolution would couple simulation correctness to external mutation
+  // and introduce non-deterministic behavior/perf cliffs.
   const containerMap: ContainerMap = new Map(
     (Object.values(ResourceType) as ResourceType[]).map(type => [
       type,
-      type === ResourceType.Power ? powerContainer : resources,
+      type === ResourceType.Power ? powerSystem.powerContainer : resources,
     ])
   );
 
   // Sorted tick list — maintained at install/remove time so tick never needs to sort.
-  // Reactors occupy the front; all others are appended in install order.
+  // Lower priority value runs earlier; same-priority modules preserve install order.
   const tickOrder: ProductionModule[] = [];
 
-  function installModule(module: ProductionModule): boolean {
-    if (!modules.store(module)) return false;
+  function installOne(module: ProductionModule, emitEvent: boolean): boolean {
+    const installedTypes = modules.list().map(m => (m as ProductionModule).type);
+    const validation = validateModuleInterconnection(module.type, installedTypes);
+    if (!validation.ok) return false;
 
-    if (module.type === ModuleId.ReactorCore) {
-      // Insert before the first non-reactor.
-      const insertAt = tickOrder.findIndex(m => m.type !== ModuleId.ReactorCore);
-      if (insertAt === -1) {
-        tickOrder.push(module);
-      } else {
-        tickOrder.splice(insertAt, 0, module);
-      }
-    } else {
+    const storeResult = modules.store(module);
+    if (!storeResult.ok) return false;
+
+    const modulePriority = getModulePriority(module.type);
+    const insertAt = tickOrder.findIndex(m => getModulePriority(m.type) > modulePriority);
+
+    if (insertAt === -1) {
       tickOrder.push(module);
+    } else {
+      tickOrder.splice(insertAt, 0, module);
     }
 
-    eventCollector.push({
-      type: 'ModuleInstalled',
-      occurredOn: Date.now(),
-      systemId: id,
-      moduleId: module.id,
-      moduleType: module.type,
-    });
+    if (emitEvent) {
+      eventCollector.push({
+        type: 'ModuleInstalled',
+        occurredOn: Date.now(),
+        systemId: id,
+        moduleId: module.id,
+        moduleType: module.type,
+      });
+    }
 
     return true;
   }
 
-  function removeModule(moduleId: string): ProductionModule | undefined {
+  function removeOne(moduleId: string, emitEvent: boolean): ProductionModule | undefined {
     const removed = modules.take(moduleId) as ProductionModule | undefined;
     if (!removed) return undefined;
 
     const idx = tickOrder.findIndex(m => m.id === moduleId);
     if (idx !== -1) tickOrder.splice(idx, 1);
 
-    eventCollector.push({
-      type: 'ModuleRemoved',
-      occurredOn: Date.now(),
-      systemId: id,
-      moduleId: removed.id,
-      moduleType: removed.type,
-    });
+    if (emitEvent) {
+      eventCollector.push({
+        type: 'ModuleRemoved',
+        occurredOn: Date.now(),
+        systemId: id,
+        moduleId: removed.id,
+        moduleType: removed.type,
+      });
+    }
 
     return removed;
+  }
+
+  function installModule(module: ProductionModule): boolean {
+    return installOne(module, true);
+  }
+
+  function installModules(batch: readonly ProductionModule[]): Result<void, string> {
+    const installedIds: string[] = [];
+
+    for (const module of batch) {
+      const installed = installOne(module, false);
+      if (!installed) {
+        for (let i = installedIds.length - 1; i >= 0; i--) {
+          removeOne(installedIds[i], false);
+        }
+        return err(`Batch install failed at module '${module.id}'`);
+      }
+      installedIds.push(module.id);
+    }
+
+    for (const moduleId of installedIds) {
+      const module = modules.list().find(m => (m as ProductionModule).id === moduleId) as ProductionModule | undefined;
+      if (!module) continue;
+      eventCollector.push({
+        type: 'ModuleInstalled',
+        occurredOn: Date.now(),
+        systemId: id,
+        moduleId: module.id,
+        moduleType: module.type,
+      });
+    }
+
+    return ok(undefined);
+  }
+
+  function removeModule(moduleId: string): ProductionModule | undefined {
+    return removeOne(moduleId, true);
   }
 
   function resetTransientResources(): void {
@@ -182,6 +246,10 @@ export function createProductionSystem(
     for (const module of tickOrder) {
       module.stepRamp(deltaTime);
 
+      // Contract: modules that are disabled or effectively failed (condition <= 0)
+      // are skipped and reset every tick.
+      // Reason: this prevents hidden buffered output from appearing when a module toggles
+      // back on, and keeps lifecycle transitions explicit in aggregate state.
       if (!module.isOperational()) {
         module.reset();
         continue;
@@ -210,11 +278,17 @@ export function createProductionSystem(
 
   return {
     id,
+    power: powerSystem,
     modules: installedModules,
     installModule,
+    installModules,
     removeModule,
-    addBattery: (battery) => { powerContainer.addContainer(battery); },
-    removeBattery: (battery) => { powerContainer.removeContainer(battery); },
+    addBattery: (battery) => {
+      powerSystem.addBattery(battery);
+    },
+    removeBattery: (battery) => {
+      powerSystem.removeBattery(battery);
+    },
     tick,
     drainEvents: () => eventCollector.drain(),
   };

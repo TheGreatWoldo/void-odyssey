@@ -5,7 +5,7 @@ import { ClosestNeighboursConnectionStrategy } from '@/domain/models/navigation/
 import type { NodeConnectionStrategy } from '@/domain/models/navigation/route/strategies/node-connection-strategy';
 import type { NodeTypeStrategy, PositionedNodeStub } from '@/domain/models/navigation/route/strategies/node-type-strategy';
 import { WeightedRandomNodeTypeStrategy } from '@/domain/models/navigation/route/strategies/weighted-random-node-type-strategy';
-import type { RandomNumberGenerator } from '@/shared/random';
+import { createSeededRandom, hashStringToSeed, type RandomNumberGenerator } from '@/shared/random';
 
 /**
  * Generates a neural-network-style directed graph:
@@ -29,6 +29,30 @@ export const LAYER_GRID_WIDTH = 200;
 /** World-pixel span for the graph along Y. */
 export const LAYER_GRID_HEIGHT = 200;
 
+export interface RouteGraphGenerationOptions {
+  /** Optional deterministic seed. Same seed + same params => same graph. */
+  seed?: number | string;
+  /** Optional RNG override. If both seed and rng are provided, seed wins. */
+  rng?: RandomNumberGenerator;
+}
+
+function resolveRng(options?: RouteGraphGenerationOptions): RandomNumberGenerator {
+  if (!options) return Math.random;
+
+  if (options.seed !== undefined) {
+    const numericSeed =
+      typeof options.seed === 'number' ? options.seed : hashStringToSeed(options.seed);
+    return createSeededRandom(numericSeed);
+  }
+
+  return options.rng ?? Math.random;
+}
+
+function normalizeConnectionStrength(distance: number): number {
+  // 0 distance => 1, and asymptotically approaches 0 for long edges.
+  return 1 / (1 + distance / LAYER_GRID_WIDTH);
+}
+
 export function generateRouteGraph(
   routeSteps: number,
   minBranches: number,
@@ -37,12 +61,14 @@ export function generateRouteGraph(
   connectionStrategy: NodeConnectionStrategy = new ClosestNeighboursConnectionStrategy(),
   typeStrategy: NodeTypeStrategy = new WeightedRandomNodeTypeStrategy(),
   rng: RandomNumberGenerator = Math.random,
+  options?: RouteGraphGenerationOptions,
 ): RouteGraph {
+  const resolvedRng = resolveRng({ rng, ...options });
   const steps = Math.max(0, Math.floor(routeSteps));
   const lo = Math.max(1, Math.floor(minBranches));
   const hi = Math.max(lo, Math.floor(maxBranches));
 
-  const randBranches = () => lo + Math.floor(rng() * (hi - lo + 1));
+  const randBranches = () => lo + Math.floor(resolvedRng() * (hi - lo + 1));
 
   // Stop sizes: [1, <random>, <random>, …, 1]
   const totalStops = steps + 2; // start + intermediate stops + end
@@ -69,7 +95,7 @@ export function generateRouteGraph(
     maxLayerSize: maxStopSize,
     graphWidth,
     graphHeight,
-    rng,
+    rng: resolvedRng,
   });
   const startNode: RouteNode = {
     id: 'node-l0-i0',
@@ -97,7 +123,7 @@ export function generateRouteGraph(
         maxLayerSize: maxStopSize,
         graphWidth,
         graphHeight,
-        rng,
+        rng: resolvedRng,
       });
 
       const stub: PositionedNodeStub = {
@@ -118,7 +144,7 @@ export function generateRouteGraph(
   // Assign types — bulk when supported, per-node otherwise
   let nodeIndex = 0;
   if (typeStrategy.assignAll) {
-    const typeMap = typeStrategy.assignAll(intermediateStubs, totalStops, rng);
+    const typeMap = typeStrategy.assignAll(intermediateStubs, totalStops, resolvedRng);
 
     for (let stopIdx = 1; stopIdx < totalStops - 1; stopIdx++) {
       const stopNodes = stops[stopIdx].nodes;
@@ -145,7 +171,7 @@ export function generateRouteGraph(
           node: stub,
           assignedNodes: allNodes,
           totalLayers: totalStops,
-          rng,
+          rng: resolvedRng,
         });
         const node: RouteNode = { ...stub, stopIndex: stopIdx, type };
 
@@ -166,7 +192,7 @@ export function generateRouteGraph(
     maxLayerSize: maxStopSize,
     graphWidth,
     graphHeight,
-    rng,
+    rng: resolvedRng,
   });
   const endNode: RouteNode = {
     id: `node-l${endStopIdx}-i0`,
@@ -177,7 +203,24 @@ export function generateRouteGraph(
   allNodes.push(endNode);
   stops.push({ index: endStopIdx, nodes: [endNode] });
 
-  const connections: RouteConnection[] = connectionStrategy.buildConnections(stops, rng);
+  const rawConnections: RouteConnection[] = connectionStrategy.buildConnections(stops, resolvedRng);
+
+  const nodeById = new Map(allNodes.map(node => [node.id, node]));
+  const connections: RouteConnection[] = rawConnections.map((conn) => {
+    const from = nodeById.get(conn.fromId);
+    const to = nodeById.get(conn.toId);
+
+    if (!from || !to) return { ...conn, strength: conn.strength ?? 1 };
+
+    const dx = to.wx - from.wx;
+    const dy = to.wy - from.wy;
+    const distance = Math.hypot(dx, dy);
+
+    return {
+      ...conn,
+      strength: conn.strength ?? normalizeConnectionStrength(distance),
+    };
+  });
 
   const minWx = Math.min(...allNodes.map((n) => n.wx));
   const maxWx = Math.max(...allNodes.map((n) => n.wx));

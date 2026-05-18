@@ -1,6 +1,7 @@
 import type { ModuleId } from '@/domain/models/module/production-module-id';
 import { ModuleSlotCosts } from '@/domain/models/module/production-module-id';
 import type { ModuleUpgrade } from '@/domain/models/module/production-module-upgrade';
+import { validateModuleUpgradeInstall } from '@/domain/services/module-upgrade-validation';
 import { err, ok, type Result } from '@/shared/result';
 
 export interface WeaponModuleBaseOptions {
@@ -74,6 +75,23 @@ export function createWeaponModuleBase(
   let enabled = true;
 
   function addUpgrade(upgrade: ModuleUpgrade): Result<void, string> {
+    const validation = validateModuleUpgradeInstall(
+      {
+        moduleId: id,
+        moduleType: type,
+        producedResourceTypes: [],
+        existingUpgrades: Array.from(upgradeMap.values()).map(existing => ({
+          id: existing.id,
+          type: existing.type,
+          targetResourceType: existing.targetResourceType,
+        })),
+        validateTargetResourceType: false,
+      },
+      upgrade
+    );
+
+    if (!validation.ok) return validation;
+
     upgradeMap.set(upgrade.id, { ...upgrade });
     cachedCostMultiplier = null;
     cachedUpgrades = null;

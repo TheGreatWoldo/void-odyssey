@@ -14,9 +14,10 @@ describe('createResourceContainer', () => {
     it('accepts resources and reduces free space', () => {
       const c = createResourceContainer({ capacity: 10 });
 
-      const refused = c.add(createResource(ResourceType.Food, 6));
+      const result = c.add(createResource(ResourceType.Food, 6));
 
-      expect(refused).toBe(0);
+      expect(result.ok).toBe(true);
+      expect(result.ok && result.value).toBe(0);
       expect(c.get(ResourceType.Food)).toBe(6);
       expect(c.freeSpace()).toBe(4);
     });
@@ -33,18 +34,19 @@ describe('createResourceContainer', () => {
     it('returns refused remainder when capacity is exceeded', () => {
       const c = createResourceContainer({ capacity: 4 }); // 2 Fuel units fit
 
-      const refused = c.add(createResource(ResourceType.Fuel, 5));
+      const result = c.add(createResource(ResourceType.Fuel, 5));
 
       expect(c.get(ResourceType.Fuel)).toBe(2);
-      expect(refused).toBe(3);
+      expect(result.ok).toBe(true);
+      expect(result.ok && result.value).toBe(3);
     });
 
     it('rejects resources not in perTypeCapacity whitelist', () => {
       const c = createResourceContainer({ capacity: 20, perTypeCapacity: { [ResourceType.Fuel]: null } });
 
-      const refused = c.add(createResource(ResourceType.Food, 5));
+      const result = c.add(createResource(ResourceType.Food, 5));
 
-      expect(refused).toBe(5);
+      expect(result.ok).toBe(false);
       expect(c.get(ResourceType.Food)).toBe(0);
     });
 
@@ -61,9 +63,10 @@ describe('createResourceContainer', () => {
     it('unbounded container (no capacity) accepts any amount', () => {
       const c = createResourceContainer();
 
-      const refused = c.add(createResource(ResourceType.Food, 100_000));
+      const result = c.add(createResource(ResourceType.Food, 100_000));
 
-      expect(refused).toBe(0);
+      expect(result.ok).toBe(true);
+      expect(result.ok && result.value).toBe(0);
       expect(c.get(ResourceType.Food)).toBe(100_000);
     });
   });
@@ -142,9 +145,10 @@ describe('createResourceContainer', () => {
       const dst = createResourceContainer({ capacity: 20 });
       src.add(createResource(ResourceType.Food, 10));
 
-      const refused = src.moveTo(createResource(ResourceType.Food, 6), dst);
+      const result = src.moveTo(createResource(ResourceType.Food, 6), dst);
 
-      expect(refused).toBe(0);
+      expect(result.ok).toBe(true);
+      expect(result.ok && result.value).toBe(0);
       expect(src.get(ResourceType.Food)).toBe(4);
       expect(dst.get(ResourceType.Food)).toBe(6);
     });
@@ -154,9 +158,10 @@ describe('createResourceContainer', () => {
       const dst = createResourceContainer({ capacity: 4 }); // 2 Fuel units fit
       src.add(createResource(ResourceType.Fuel, 5));
 
-      const refused = src.moveTo(createResource(ResourceType.Fuel, 5), dst);
+      const result = src.moveTo(createResource(ResourceType.Fuel, 5), dst);
 
-      expect(refused).toBe(3);
+      expect(result.ok).toBe(true);
+      expect(result.ok && result.value).toBe(3);
       expect(dst.get(ResourceType.Fuel)).toBe(2);
       expect(src.get(ResourceType.Fuel)).toBe(3); // 3 returned to source
     });
@@ -165,9 +170,10 @@ describe('createResourceContainer', () => {
       const src = createResourceContainer({ capacity: 20 });
       const dst = createResourceContainer({ capacity: 20 });
 
-      const refused = src.moveTo(createResource(ResourceType.Food, 5), dst);
+      const result = src.moveTo(createResource(ResourceType.Food, 5), dst);
 
-      expect(refused).toBe(0);
+      expect(result.ok).toBe(true);
+      expect(result.ok && result.value).toBe(0);
       expect(dst.get(ResourceType.Food)).toBe(0);
     });
   });
@@ -195,7 +201,7 @@ describe('createResourceContainer', () => {
 
       const added = parent.addContainer(child);
 
-      expect(added).toBe(true);
+      expect(added.ok).toBe(true);
       expect(parent.freeSpace()).toBe(20);
       expect(parent.getContainers()).toContain(child);
     });
@@ -206,7 +212,7 @@ describe('createResourceContainer', () => {
 
       const added = parent.addContainer(child);
 
-      expect(added).toBe(false);
+      expect(added.ok).toBe(false);
       expect(parent.freeSpace()).toBe(5);
     });
 

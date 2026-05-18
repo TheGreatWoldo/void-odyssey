@@ -22,7 +22,7 @@ describe('createItemContainer', () => {
 
       const stored = c.store(item);
 
-      expect(stored).toBe(true);
+      expect(stored.ok).toBe(true);
       expect(c.has('a')).toBe(true);
       expect(c.freeSpace()).toBe(6);
     });
@@ -33,7 +33,7 @@ describe('createItemContainer', () => {
 
       const stored = c.store(item);
 
-      expect(stored).toBe(false);
+      expect(stored.ok).toBe(false);
       expect(c.has('a')).toBe(false);
       expect(c.freeSpace()).toBe(3);
     });
@@ -41,8 +41,8 @@ describe('createItemContainer', () => {
     it('stores multiple items that together fill capacity exactly', () => {
       const c = createItemContainer({ capacity: 8 });
 
-      expect(c.store(makeItem('a', 5))).toBe(true);
-      expect(c.store(makeItem('b', 3))).toBe(true);
+      expect(c.store(makeItem('a', 5)).ok).toBe(true);
+      expect(c.store(makeItem('b', 3)).ok).toBe(true);
       expect(c.freeSpace()).toBe(0);
     });
 
@@ -50,7 +50,7 @@ describe('createItemContainer', () => {
       const c = createItemContainer({ capacity: 4 });
       c.store(makeItem('a', 4));
 
-      expect(c.store(makeItem('b', 1))).toBe(false);
+      expect(c.store(makeItem('b', 1)).ok).toBe(false);
     });
 
     it('list returns all stored items', () => {
@@ -68,7 +68,7 @@ describe('createItemContainer', () => {
       const c = createItemContainer();
 
       for (let i = 0; i < 100; i++) {
-        expect(c.store(makeItem(`item-${i}`, 999))).toBe(true);
+        expect(c.store(makeItem(`item-${i}`, 999)).ok).toBe(true);
       }
     });
   });
@@ -120,7 +120,7 @@ describe('createItemContainer', () => {
       c.store(makeItem('a', 4));
       c.take('a');
 
-      expect(c.store(makeItem('b', 4))).toBe(true);
+      expect(c.store(makeItem('b', 4)).ok).toBe(true);
     });
   });
 

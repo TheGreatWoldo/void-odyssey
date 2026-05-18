@@ -28,6 +28,8 @@ export interface NodeDrawingStrategy {
   /** Returns the Excalibur Canvas graphic for a node of the given type and visual state.
    *  `scanned` – when true the node's type colour and icon are revealed. */
   getGraphic(type: NodeType, state: NodeVisualState, scanned: boolean): Canvas;
+  /** Monotonic asset revision used by actors to refresh cached graphics after async loads. */
+  getRevision?(): number;
   /** Optional one-time asset loading called before the strategy is first used. */
   preload?(): Promise<void>;
 }

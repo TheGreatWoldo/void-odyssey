@@ -116,4 +116,37 @@ describe('generateRouteGraph', () => {
       expect(count).toBeGreaterThanOrEqual(1);
     }
   });
+
+  it('is reproducible when a seed is provided', () => {
+    const graphA = generateRouteGraph(3, 2, 4, positionStrategy, undefined, undefined, undefined, {
+      seed: 'alpha-seed',
+    });
+    const graphB = generateRouteGraph(3, 2, 4, positionStrategy, undefined, undefined, undefined, {
+      seed: 'alpha-seed',
+    });
+
+    expect(graphA.stops).toEqual(graphB.stops);
+    expect(graphA.connections).toEqual(graphB.connections);
+  });
+
+  it('produces different topology for different seeds', () => {
+    const graphA = generateRouteGraph(3, 2, 4, positionStrategy, undefined, undefined, undefined, {
+      seed: 'seed-A',
+    });
+    const graphB = generateRouteGraph(3, 2, 4, positionStrategy, undefined, undefined, undefined, {
+      seed: 'seed-B',
+    });
+
+    expect(graphA.stops).not.toEqual(graphB.stops);
+  });
+
+  it('assigns normalized connection strength to all generated edges', () => {
+    const graph = generateRouteGraph(3, 2, 3, positionStrategy);
+
+    for (const connection of graph.connections) {
+      expect(connection.strength).toBeDefined();
+      expect(connection.strength!).toBeGreaterThan(0);
+      expect(connection.strength!).toBeLessThanOrEqual(1);
+    }
+  });
 });

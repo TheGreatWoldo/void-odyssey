@@ -4,6 +4,7 @@ import type {
     RouteConnection,
     RouteNode,
 } from '@/domain/models/navigation/route/route-node';
+import { ROUTE_MAX_REROLLS_PER_ROUTE } from '@/shared/route-navigation';
 import { create } from 'zustand';
 import { subscribeWithSelector } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
@@ -15,6 +16,8 @@ export interface RouteNavigationState {
   minBranches: number;
   /** Maximum nodes in an intermediate layer. */
   maxBranches: number;
+  /** Optional generation seed for reproducible route graphs. */
+  routeSeed: string;
   /** Read-only topology — set by RouteSlotActor.rebuild(); do not mutate directly. */
   nodes: RouteNode[];
   connections: RouteConnection[];
@@ -41,12 +44,25 @@ export interface RouteNavigationState {
   visitedNodeIds: string[];
   /** Set when the ship arrives at a node — consumed by the React layer. */
   pendingSystemEntry: { nodeId: string; nodeType: NodeType } | null;
+  /** Route slot index currently selected in the route picker. */
+  selectedRouteIndex: number;
+  /** Locks route picker scrolling and keeps camera on selected route. */
+  routeSelectionLocked: boolean;
+  /** Increments whenever the UI requests new route graphs. */
+  rerollNonce: number;
+  /** Route slot index requested for reroll, or null when not targeting a slot. */
+  rerollRouteIndex: number | null;
+  /** Number of rerolls already used per route slot index. */
+  rerollsByRouteIndex: Record<number, number>;
+  /** Configurable max rerolls allowed per route slot. */
+  maxRerollsPerRoute: number;
 }
 
 export interface RouteNavigationStateActions {
   setRouteSteps: (n: number) => void;
   setMinBranches: (n: number) => void;
   setMaxBranches: (n: number) => void;
+  setRouteSeed: (seed: string) => void;
   setHovered: (node: RouteNode | null, revealed?: boolean) => void;
   setDrawDebug: (value: boolean) => void;
   setRevealAllNodes: (value: boolean) => void;
@@ -58,6 +74,11 @@ export interface RouteNavigationStateActions {
   setPendingSystemEntry: (
     entry: { nodeId: string; nodeType: NodeType } | null
   ) => void;
+  setSelectedRouteIndex: (index: number) => void;
+  setRouteSelectionLocked: (value: boolean) => void;
+  setMaxRerollsPerRoute: (count: number) => void;
+  resetRouteRerolls: () => void;
+  requestRouteReroll: (routeIndex: number) => void;
 }
 
 export const useRouteNavigationStore = create<RouteNavigationState & { actions: RouteNavigationStateActions }>()(
@@ -67,6 +88,7 @@ export const useRouteNavigationStore = create<RouteNavigationState & { actions: 
         routeSteps: 10,
         minBranches: 2,
         maxBranches: 3,
+        routeSeed: '',
         nodes: [],
         connections: [],
         totalLayers: 0,
@@ -88,6 +110,12 @@ export const useRouteNavigationStore = create<RouteNavigationState & { actions: 
         scannedNodeIds: [],
         visitedNodeIds: [],
         pendingSystemEntry: null,
+        selectedRouteIndex: 0,
+        routeSelectionLocked: false,
+        rerollNonce: 0,
+        rerollRouteIndex: null,
+        rerollsByRouteIndex: {},
+        maxRerollsPerRoute: ROUTE_MAX_REROLLS_PER_ROUTE,
 
         actions: {
           setRouteSteps: (n: number) =>
@@ -103,6 +131,11 @@ export const useRouteNavigationStore = create<RouteNavigationState & { actions: 
           setMaxBranches: (n: number) =>
             set((state) => {
               state.maxBranches = n;
+            }),
+
+          setRouteSeed: (seed: string) =>
+            set((state) => {
+              state.routeSeed = seed;
             }),
 
           setHovered: (node: RouteNode | null, revealed = false) =>
@@ -151,6 +184,40 @@ export const useRouteNavigationStore = create<RouteNavigationState & { actions: 
           setPendingSystemEntry: (entry: { nodeId: string; nodeType: NodeType } | null) =>
             set((state) => {
               state.pendingSystemEntry = entry;
+            }),
+
+          setSelectedRouteIndex: (index: number) =>
+            set((state) => {
+              state.selectedRouteIndex = index;
+            }),
+
+          setRouteSelectionLocked: (value: boolean) =>
+            set((state) => {
+              state.routeSelectionLocked = value;
+            }),
+
+          setMaxRerollsPerRoute: (count: number) =>
+            set((state) => {
+              state.maxRerollsPerRoute = Math.max(0, count);
+            }),
+
+          resetRouteRerolls: () =>
+            set((state) => {
+              state.rerollsByRouteIndex = {};
+              state.rerollRouteIndex = null;
+            }),
+
+          requestRouteReroll: (routeIndex: number) =>
+            set((state) => {
+              const rerollsUsed = state.rerollsByRouteIndex[routeIndex] ?? 0;
+
+              if (rerollsUsed >= state.maxRerollsPerRoute) {
+                return;
+              }
+
+              state.rerollsByRouteIndex[routeIndex] = rerollsUsed + 1;
+              state.rerollRouteIndex = routeIndex;
+              state.rerollNonce += 1;
             }),
         },
       };

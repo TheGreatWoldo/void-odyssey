@@ -44,3 +44,13 @@ export interface MenuConfig {
   readonly title: string
   readonly items: MenuItem[]
 }
+
+export const MenuConfigSection = {
+  SceneKey: 'sceneKey',
+  Title: 'title',
+  Items: 'items',
+} as const
+
+export type MenuConfigSection = typeof MenuConfigSection[keyof typeof MenuConfigSection]
+
+export type MenuConfigSectionValue<S extends MenuConfigSection> = MenuConfig[S]

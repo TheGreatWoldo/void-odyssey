@@ -1,4 +1,4 @@
-import { useRouteNavigationStore } from '@/application/store/routeNavigationStore';
+import type { IRouteActorState } from '@/domain/models/navigation/route/route-actor-state';
 import type { RouteConnection, RouteStop } from '@/domain/models/navigation/route/route-node';
 import { ROUTE_ALLOCATION_CATALOG } from '@/domain/models/navigation/route/strategies/route-allocation-catalog';
 import {
@@ -14,9 +14,11 @@ import { RouteNodeActor } from '@/infrastructure/navigation-2d/rendering/actors/
 import { StarfieldActor } from '@/infrastructure/navigation-2d/rendering/actors/starfield-actor';
 import { drawBezierCurve } from '@/infrastructure/navigation-2d/rendering/bezier-curve-renderer';
 import { HexagonNodeDrawingStrategy } from '@/infrastructure/navigation-2d/rendering/strategies/hexagon-node-drawing-strategy';
-import { ZustandRouteActorStateAdapter } from '@/infrastructure/navigation-2d/state/zustand-route-actor-state-adapter';
+import { createSeededRandom, hashStringToSeed } from '@/shared/random';
+import { ROUTE_SCROLL_TWEEN_DURATION_MS } from '@/shared/route-navigation';
 import {
     Color,
+    EasingFunctions,
     Engine,
     type ExcaliburGraphicsContext,
     Keys,
@@ -30,17 +32,13 @@ const BACKGROUND_COLOR = Color.fromRGB(6, 8, 20);
 const DEBUG_CURVE_COLOR = new Color(255, 190, 50, 0.5);
 const ROUTE_COUNT = 3;
 const ROUTE_GAP_WORLD = 400;
-const SCROLL_TWEEN_DURATION_MS = 300;
 
 export class RouteNavigationScene extends Scene {
   private readonly drawingStrategy = new HexagonNodeDrawingStrategy();
   private readonly starfieldActor = new StarfieldActor();
-  private readonly stateAdapter = new ZustandRouteActorStateAdapter();
+  private readonly stateAdapter: IRouteActorState;
 
-  private readonly graphContexts: GraphContext[] = Array.from(
-    { length: ROUTE_COUNT },
-    () => new GraphContext(this.stateAdapter)
-  );
+  private readonly graphContexts: GraphContext[];
 
   private readonly bezierProviders: RandomBezierCurveProvider[] = Array.from(
     { length: ROUTE_COUNT },
@@ -57,6 +55,15 @@ export class RouteNavigationScene extends Scene {
     () => []
   );
 
+  constructor(stateAdapter: IRouteActorState) {
+    super();
+    this.stateAdapter = stateAdapter;
+    this.graphContexts = Array.from(
+      { length: ROUTE_COUNT },
+      () => new GraphContext(stateAdapter)
+    );
+  }
+
   private graphWidth = 0;
   private routeSlotHeight = 0;
   private activeRoute = 0;
@@ -67,11 +74,7 @@ export class RouteNavigationScene extends Scene {
   private _tweenFrom = 0;
   private _tweenTo = 0;
   private _tweenElapsed = 0;
-
-  // --- debug logging ---
-  private _logFrame = 0;
-  private _lastLoggedZoom = -1;
-  private _lastLoggedDrawWidth = -1;
+  private _lastRerollNonce = 0;
 
   override onInitialize(): void {
     this.backgroundColor = BACKGROUND_COLOR;
@@ -85,75 +88,85 @@ export class RouteNavigationScene extends Scene {
   }
 
   override onActivate(_ctx: SceneActivationContext<unknown>): void {
-    if (this.wheelHandler) {
-      this.engine.canvas.removeEventListener('wheel', this.wheelHandler);
+    if (this.wheelHandler && this.engine.canvas) {
+      this.engine.canvas.removeEventListener('wheel', this.wheelHandler)
+    }
+
+    this.wheelHandler = null
+
+    this.rebuildAllRoutes()
+    this.applySelectedRouteFromState()
+    this._lastRerollNonce = this.stateAdapter.getRouteRerollNonce()
+
+    if (this.stateAdapter.isRouteSelectionLocked()) {
+      return
     }
 
     this.wheelHandler = (e: WheelEvent) => {
-      e.preventDefault();
+      e.preventDefault()
 
       // Debounce: prevent scrolling while tween is animating
-      if (this._tweenElapsed < SCROLL_TWEEN_DURATION_MS) return;
+      if (this._tweenElapsed < ROUTE_SCROLL_TWEEN_DURATION_MS) return
 
       if (e.deltaY > 0) {
-        this.activeRoute = Math.min(ROUTE_COUNT - 1, this.activeRoute + 1);
+        this.activeRoute = Math.min(ROUTE_COUNT - 1, this.activeRoute + 1)
       } else {
-        this.activeRoute = Math.max(0, this.activeRoute - 1);
+        this.activeRoute = Math.max(0, this.activeRoute - 1)
       }
 
+      this.stateAdapter.setSelectedRouteIndex(this.activeRoute)
+
       // Start new tween
-      this._tweenFrom = this.cameraY;
-      this._tweenTo = this.activeRoute * this.routeSlotHeight;
-      this._tweenElapsed = 0;
-    };
+      this._tweenFrom = this.cameraY
+      this._tweenTo = this.activeRoute * this.routeSlotHeight
+      this._tweenElapsed = 0
+    }
 
-    this.engine.canvas.addEventListener('wheel', this.wheelHandler, {
-      passive: false,
-    });
-
-    this.rebuildAllRoutes();
+    if (this.engine.canvas) {
+      this.engine.canvas.addEventListener('wheel', this.wheelHandler, {
+        passive: false,
+      })
+    }
   }
 
   override onDeactivate(_ctx: SceneActivationContext): void {
-    if (this.wheelHandler) {
-      this.engine.canvas.removeEventListener('wheel', this.wheelHandler);
-      this.wheelHandler = null;
+    if (this.wheelHandler && this.engine.canvas) {
+      this.engine.canvas.removeEventListener('wheel', this.wheelHandler)
     }
+    this.wheelHandler = null
 
-    useRouteNavigationStore.getState().actions.setHovered(null);
+    this.stateAdapter.setHovered(null)
   }
 
   override onPreUpdate(engine: Engine, delta: number): void {
+    const rerollNonce = this.stateAdapter.getRouteRerollNonce()
+
+    if (rerollNonce !== this._lastRerollNonce) {
+      this._lastRerollNonce = rerollNonce
+
+      const rerollRouteIndex = this.stateAdapter.getRerollRouteIndex()
+
+      if (rerollRouteIndex === null) {
+        this.rebuildAllRoutes()
+      } else {
+        this.rebuildRouteSlot(this.clampRouteIndex(rerollRouteIndex), rerollNonce)
+      }
+
+      this.applySelectedRouteFromState()
+    }
+
     if (engine.input.keyboard.wasPressed(Keys.KeyR)) {
       this.rebuildAllRoutes();
     }
 
     this.updateCameraGlide(delta);
     this.updateCameraTransform(engine);
-
-    this._logFrame++;
-    const zoom = this.camera.zoom;
-    const dw = engine.drawWidth;
-    const dh = engine.drawHeight;
-    const zoomChanged = zoom !== this._lastLoggedZoom;
-    const dwChanged = dw !== this._lastLoggedDrawWidth;
-
-    if (zoomChanged || dwChanged || this._logFrame % 120 === 1) {
-      console.log(
-        `[RouteNav] frame=${this._logFrame} drawWidth=${dw} drawHeight=${dh}` +
-        ` zoom=${zoom.toFixed(4)} graphWidth=${this.graphWidth}` +
-        `${zoomChanged ? ' *** ZOOM CHANGED ***' : ''}` +
-        `${dwChanged ? ' *** DRAWWIDTH CHANGED ***' : ''}`
-      );
-      this._lastLoggedZoom = zoom;
-      this._lastLoggedDrawWidth = dw;
-    }
   }
 
   override onPreDraw(ctx: ExcaliburGraphicsContext, _elapsedMs: number): void {
-    if (!useRouteNavigationStore.getState().drawDebug) return;
+    if (!this.stateAdapter.isDrawDebugEnabled()) return;
 
-    const { routeSteps } = useRouteNavigationStore.getState();
+    const { routeSteps } = this.stateAdapter.getRouteParams();
     const totalLayers = routeSteps + 2;
     const worldToScreen = this.buildToScreenTransform();
 
@@ -174,39 +187,65 @@ export class RouteNavigationScene extends Scene {
   // ---- Private helpers --------------------------------------------------
 
   private rebuildAllRoutes(): void {
-    console.log(`[RouteNav] rebuildAllRoutes called — frame=${this._logFrame}`);
     this.clearAllActors();
 
-    const { routeSteps, minBranches, maxBranches } =
-      useRouteNavigationStore.getState();
-
-    console.log('[RouteNav] rebuildAllRoutes — routeSteps:', routeSteps, 'branches:', minBranches, '-', maxBranches);
+    const { routeSteps, minBranches, maxBranches, routeSeed } =
+      this.stateAdapter.getRouteParams();
+    const baseSeed = routeSeed || `${routeSteps}|${minBranches}|${maxBranches}`;
 
     const totalStops = routeSteps + 2;
 
     this.graphWidth = totalStops * LAYER_GRID_WIDTH;
     this.routeSlotHeight = totalStops * LAYER_GRID_HEIGHT + ROUTE_GAP_WORLD;
 
-    console.log('[RouteNav] graphWidth:', this.graphWidth, 'routeSlotHeight:', this.routeSlotHeight, 'totalStops:', totalStops);
-
     for (let i = 0; i < ROUTE_COUNT; i++) {
-      this.bezierProviders[i].generate();
-
-      const result = generateRouteGraph(
-        routeSteps,
-        minBranches,
-        maxBranches,
-        new BezierNodePositionStrategy(this.bezierProviders[i]),
-        undefined,
-        ROUTE_ALLOCATION_CATALOG.standard.strategy
-      );
-
-      this.buildSlot(i, result.stops, result.connections, i * this.routeSlotHeight);
+      this.buildRouteSlot(i, `${baseSeed}|slot:${i}`);
     }
+  }
 
-    this.activeRoute = 0;
-    this.cameraY = 0;
-    this._tweenElapsed = SCROLL_TWEEN_DURATION_MS; // Reset tween so next scroll is allowed
+  private rebuildRouteSlot(slotIndex: number, rerollNonce: number): void {
+    const { routeSeed, routeSteps, minBranches, maxBranches } =
+      this.stateAdapter.getRouteParams();
+    const baseSeed = routeSeed || `${routeSteps}|${minBranches}|${maxBranches}`;
+
+    this.clearSlotActors(slotIndex);
+    this.buildRouteSlot(slotIndex, `${baseSeed}|slot:${slotIndex}|reroll:${rerollNonce}`);
+  }
+
+  private buildRouteSlot(slotIndex: number, seed: string): void {
+    const { routeSteps, minBranches, maxBranches } = this.stateAdapter.getRouteParams();
+    const rng = createSeededRandom(hashStringToSeed(seed));
+
+    this.bezierProviders[slotIndex].generate(rng);
+
+    const result = generateRouteGraph(
+      routeSteps,
+      minBranches,
+      maxBranches,
+      new BezierNodePositionStrategy(this.bezierProviders[slotIndex]),
+      undefined,
+      ROUTE_ALLOCATION_CATALOG.standard.strategy,
+      rng,
+      { seed }
+    );
+
+    this.buildSlot(slotIndex, result.stops, result.connections, slotIndex * this.routeSlotHeight);
+  }
+
+  private applySelectedRouteFromState(): void {
+    const selectedRoute = this.clampRouteIndex(this.stateAdapter.getSelectedRouteIndex())
+
+    this.activeRoute = selectedRoute
+    this.cameraY = selectedRoute * this.routeSlotHeight
+    this._tweenFrom = this.cameraY
+    this._tweenTo = this.cameraY
+    this._tweenElapsed = ROUTE_SCROLL_TWEEN_DURATION_MS
+
+    this.stateAdapter.setSelectedRouteIndex(selectedRoute)
+  }
+
+  private clampRouteIndex(index: number): number {
+    return Math.min(ROUTE_COUNT - 1, Math.max(0, index))
   }
 
   private buildSlot(
@@ -216,7 +255,6 @@ export class RouteNavigationScene extends Scene {
     yOffset: number
   ): void {
     const allNodes = stops.flatMap((s) => s.nodes);
-    console.log('[RouteNav] buildSlot', slotIndex, '\u2014 nodes:', allNodes.length, 'connections:', connections.length, 'yOffset:', yOffset);
 
     const graphContext = this.graphContexts[slotIndex];
 
@@ -236,7 +274,8 @@ export class RouteNavigationScene extends Scene {
         from,
         to,
         graphContext,
-        offset
+        offset,
+        this.engine.pixelRatio
       );
 
       this.connectionActorSets[slotIndex].push(actor);
@@ -260,38 +299,45 @@ export class RouteNavigationScene extends Scene {
 
   private clearAllActors(): void {
     for (let i = 0; i < ROUTE_COUNT; i++) {
-      for (const actor of this.connectionActorSets[i]) actor.kill();
-      this.connectionActorSets[i] = [];
-
-      for (const actor of this.nodeActorSets[i]) actor.kill();
-      this.nodeActorSets[i] = [];
-
-      this.graphContexts[i].clear();
+      this.clearSlotActors(i)
     }
+  }
+
+  private clearSlotActors(slotIndex: number): void {
+    for (const actor of this.connectionActorSets[slotIndex]) actor.kill();
+    this.connectionActorSets[slotIndex] = [];
+
+    for (const actor of this.nodeActorSets[slotIndex]) actor.kill();
+    this.nodeActorSets[slotIndex] = [];
+
+    this.graphContexts[slotIndex].clear();
   }
 
   private updateCameraGlide(delta: number): void {
     this._tweenElapsed += delta;
 
-    if (this._tweenElapsed >= SCROLL_TWEEN_DURATION_MS) {
+    if (this._tweenElapsed >= ROUTE_SCROLL_TWEEN_DURATION_MS) {
       // Tween finished
       this.cameraY = this._tweenTo;
-      this._tweenElapsed = SCROLL_TWEEN_DURATION_MS;
+      this._tweenElapsed = ROUTE_SCROLL_TWEEN_DURATION_MS;
     } else {
-      // Interpolate using easing
-      const progress = this._tweenElapsed / SCROLL_TWEEN_DURATION_MS;
-      const decay = 1 - Math.exp(-progress * 5); // Ease-out curve
-      this.cameraY = this._tweenFrom + (this._tweenTo - this._tweenFrom) * decay;
+      this.cameraY = EasingFunctions.EaseInOutCubic(
+        this._tweenElapsed,
+        this._tweenFrom,
+        this._tweenTo,
+        ROUTE_SCROLL_TWEEN_DURATION_MS
+      );
     }
   }
 
   private updateCameraTransform(engine: Engine): void {
     if (this.graphWidth === 0) return;
 
-    // Use canvas.clientWidth (CSS pixels) — NOT engine.drawWidth.
-    // engine.drawWidth = clientWidth / zoom, so computing zoom from it
-    // creates a feedback loop that oscillates every frame.
-    const newZoom = engine.canvas.clientWidth / this.graphWidth;
+    // Fit against the engine's logical canvas width.
+    // canvas.width is the physical pixel buffer (= logicalWidth * pixelRatio),
+    // so divide by pixelRatio to get the stable 1600 logical width, ensuring
+    // identical zoom on every browser regardless of devicePixelRatio.
+    const newZoom = (engine.canvas.width / engine.pixelRatio) / this.graphWidth;
 
     this.camera.zoom = newZoom;
     this.camera.pos = vec(0, this.cameraY);

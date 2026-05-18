@@ -19,6 +19,29 @@ export const ModuleId = {
 export type ModuleId = (typeof ModuleId)[keyof typeof ModuleId];
 
 /**
+ * Maps module IDs to their weapon kind. Only populated for weapon modules.
+ * Used to determine if a module is an energy or kinetic weapon without duck-typing.
+ */
+export const ModuleWeaponKind: Partial<Record<ModuleId, 'energy' | 'kinetic'>> = {
+  [ModuleId.PlasmaCannon]: 'energy',
+  // Kinetic weapons (future): will be added as they're defined
+};
+
+/**
+ * Determines if a module ID corresponds to a weapon module.
+ */
+export function isWeaponModuleId(id: ModuleId): boolean {
+  return id in ModuleWeaponKind;
+}
+
+/**
+ * Gets the weapon kind for a module ID, or undefined if not a weapon.
+ */
+export function getWeaponKind(id: ModuleId): 'energy' | 'kinetic' | undefined {
+  return ModuleWeaponKind[id];
+}
+
+/**
  * Physical slot cost for each module type when stored in an ItemContainer.
  * Larger or more complex modules occupy more cargo space.
  */

@@ -1,4 +1,4 @@
-import { STAR_COLORS, getStarWithRng } from '@/shared/star-colors';
+import { STAR_COLORS, getStarWithRng } from './star-colors';
 import { Color } from 'excalibur';
 
 export interface StarfieldLayer {

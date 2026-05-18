@@ -6,6 +6,7 @@ export const ResourceType = {
   Water: 'Water',
   Oxygen: 'Oxygen',
   Power: 'Power',
+  HullPlating: 'HullPlating',
 
   // Intangible ship-capability resources (no physical cargo size)
   Hull:         'Hull',
@@ -60,11 +61,12 @@ export function createResource(id: ResourceType, amount: number): Resource {
  * in the container. Their effective limits come from per-type capacity caps.
  */
 export const ResourceSizes: Partial<Record<ResourceType, number>> = {
-  [ResourceType.Fuel]:  2,
-  [ResourceType.Food]:  1,
-  [ResourceType.Water]: 1,
-  [ResourceType.Oxygen]: 1,
-  [ResourceType.Power]: 1,
+  [ResourceType.Fuel]:         2,
+  [ResourceType.Food]:         1,
+  [ResourceType.Water]:        1,
+  [ResourceType.Oxygen]:       1,
+  [ResourceType.Power]:        1,
+  [ResourceType.HullPlating]:  2,
 
   // Ammo — 1 slot per round
   [ResourceType.AmmoStandard]: 1,

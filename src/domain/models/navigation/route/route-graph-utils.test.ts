@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
-import { isForwardReachable } from '@/domain/models/navigation/route/route-graph-utils';
+import {
+    canNavigateTo,
+    findShortestPath,
+    getConnectionStrength,
+    getReachableNodeIds,
+    isForwardReachable,
+} from '@/domain/models/navigation/route/route-graph-utils';
 import type { RouteConnection } from '@/domain/models/navigation/route/route-node';
 
 function conn(fromId: string, toId: string): RouteConnection {
@@ -61,4 +67,89 @@ describe('isForwardReachable', () => {
     expect(isForwardReachable('root', 'right', connections, 1)).toBe(true);
   });
 
+});
+
+describe('findShortestPath', () => {
+  it('returns shortest directed path when reachable', () => {
+    const connections = [
+      conn('a', 'b'),
+      conn('b', 'd'),
+      conn('a', 'c'),
+      conn('c', 'e'),
+      conn('e', 'd'),
+    ];
+
+    expect(findShortestPath('a', 'd', connections)).toEqual(['a', 'b', 'd']);
+  });
+
+  it('returns empty path when target is not scanned and scan constraint is provided', () => {
+    const connections = [conn('a', 'b')];
+
+    expect(
+      findShortestPath('a', 'b', connections, { scannedNodeIds: ['a'] })
+    ).toEqual([]);
+  });
+
+  it('respects maxHops constraint', () => {
+    const connections = [conn('a', 'b'), conn('b', 'c')];
+
+    expect(findShortestPath('a', 'c', connections, { maxHops: 1 })).toEqual([]);
+  });
+
+  it('respects no-revisit constraint', () => {
+    const connections = [conn('a', 'b'), conn('a', 'c')];
+
+    expect(
+      findShortestPath('a', 'b', connections, {
+        allowRevisit: false,
+        visitedNodeIds: ['b'],
+      })
+    ).toEqual([]);
+  });
+});
+
+describe('canNavigateTo', () => {
+  it('returns true when path exists', () => {
+    expect(canNavigateTo('a', 'c', [conn('a', 'b'), conn('b', 'c')])).toBe(true);
+  });
+
+  it('returns false when no path exists', () => {
+    expect(canNavigateTo('a', 'z', [conn('a', 'b'), conn('b', 'c')])).toBe(false);
+  });
+});
+
+describe('getReachableNodeIds', () => {
+  it('returns all reachable nodes excluding start', () => {
+    const connections = [conn('a', 'b'), conn('b', 'c'), conn('a', 'd')];
+
+    const reachable = getReachableNodeIds('a', connections);
+
+    expect(new Set(reachable)).toEqual(new Set(['b', 'c', 'd']));
+  });
+
+  it('respects max hops', () => {
+    const connections = [conn('a', 'b'), conn('b', 'c')];
+
+    expect(new Set(getReachableNodeIds('a', connections, { maxHops: 1 }))).toEqual(new Set(['b']));
+  });
+});
+
+describe('getConnectionStrength', () => {
+  it('returns explicit strength when present', () => {
+    const connections: RouteConnection[] = [{ fromId: 'a', toId: 'b', strength: 0.75 }];
+
+    expect(getConnectionStrength('a', 'b', connections)).toBeCloseTo(0.75);
+  });
+
+  it('defaults to 1 when strength is omitted', () => {
+    const connections: RouteConnection[] = [{ fromId: 'a', toId: 'b' }];
+
+    expect(getConnectionStrength('a', 'b', connections)).toBe(1);
+  });
+
+  it('returns undefined for missing edge', () => {
+    const connections: RouteConnection[] = [{ fromId: 'a', toId: 'b' }];
+
+    expect(getConnectionStrength('b', 'a', connections)).toBeUndefined();
+  });
 });

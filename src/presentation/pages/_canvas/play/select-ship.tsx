@@ -1,10 +1,11 @@
+import { SHIP_ENTRIES, SHIP_MAP_CANVAS } from '@/application/hooks/ship-catalog'
 import { useGameService } from '@/application/hooks/useGameService'
-import { SHIP_ENTRIES, SHIP_MAP_CANVAS } from '@/application/hooks/useShipCatalog'
+import { useRouteGraphParams } from '@/application/hooks/useRouteNavigation'
 import { type CarouselApi, Carousel, CarouselContent, CarouselItem } from '@/presentation/components/ui/carousel'
 import { MENU_ANIMATIONS_ENABLED, MENU_EXIT_BUFFER_MS, MENU_ITEM_DURATION_MS } from '@/shared/menu-animation'
 import { SceneKey } from '@/shared/scene-key'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Copy } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
 const EXIT_DURATION_MS = MENU_ITEM_DURATION_MS
@@ -21,6 +22,7 @@ const MAP_SCALE = Math.min(MAP_AREA_W / SHIP_MAP_CANVAS.width, MAP_AREA_H / SHIP
 function SelectShipPage() {
     const service = useGameService()
     const navigate = useNavigate()
+    const { routeSeed } = useRouteGraphParams()
     const [exiting, setExiting] = useState(false)
     const [api, setApi] = useState<CarouselApi>()
     const [index, setIndex] = useState(0)
@@ -56,10 +58,29 @@ function SelectShipPage() {
         <div className="pointer-events-none absolute inset-0 text-white flex flex-col">
 
             {/* Header */}
-            <div className="flex items-center border-b border-white/20 bg-black/30 px-6 py-1 backdrop-blur-[2px]">
-                <h1 className="flex-1 text-center text-[2.5rem] font-bold tracking-widest uppercase text-white/80">
-                    Select Ship
-                </h1>
+            <div className="flex items-center border-b border-white/20 bg-black/30 px-6 py-3 backdrop-blur-[2px]">
+                <div className="flex-1 flex flex-col items-center">
+                    <h1 className="text-center text-[2.5rem] font-bold tracking-widest uppercase text-white/80 leading-none">
+                        Select Ship
+                    </h1>
+
+                    <div className="mt-1 flex items-center gap-2 text-xs tracking-widest uppercase text-white/50">
+                        <span>Seed: {routeSeed || 'auto'}</span>
+                        <button
+                            type="button"
+                            onClick={() => {
+                                const seedToCopy = routeSeed || 'auto'
+
+                                navigator.clipboard.writeText(seedToCopy).catch(() => {})
+                            }}
+                            className="pointer-events-auto text-white/50 hover:text-white transition-colors"
+                            aria-label="Copy seed"
+                            title="Copy seed"
+                        >
+                            <Copy size={14} />
+                        </button>
+                    </div>
+                </div>
             </div>
 
             {/* Content */}
@@ -153,7 +174,7 @@ function SelectShipPage() {
             </div>
 
             {/* Footer */}
-            <div className="flex items-center justify-center gap-8 border-t border-white/20 bg-black/30 px-6 py-1 backdrop-blur-[2px]">
+            <div className="flex items-center justify-center gap-8 border-t border-white/20 bg-black/30 px-6 py-3 backdrop-blur-[2px]">
                 <a
                     href="/"
                     onClick={handleBack}

@@ -1,5 +1,8 @@
-import { generateId } from '@/shared/utils';
+import type { Result } from '@/shared/result';
+import { err, ok } from '@/shared/result';
+import { generateId } from '@/shared/id-utils';
 
+import type { ItemContainerError } from '@/domain/models/resources/container-errors';
 import type { Storable, StorableType } from './storable';
 import type { IStorageNode } from './storage-node';
 
@@ -16,7 +19,7 @@ export interface ItemContainerOptions {
  * Bounded storage for instance items — objects that implement Storable and
  * carry their own identity and state (e.g. ProductionModule, ModuleUpgrade).
  *
- * store()  — adds the item if it fits; returns false if there is not enough space.
+ * store()  — adds the item if it fits; returns Ok(void) on success or Err(error) if rejected.
  * take()   — removes and returns the item with the given id, or undefined if absent.
  * has()    — returns true if an item with the given id is present.
  * list()   — returns all stored items.
@@ -24,7 +27,12 @@ export interface ItemContainerOptions {
 export interface ItemContainer extends IStorageNode {
   readonly labelKey: string;
   readonly kind: 'item';
-  store(item: Storable & { readonly id: string }): boolean;
+  /**
+   * Stores the item if it fits.
+   * Returns Ok(void) on success.
+   * Returns Err(error) if the container is full or rejects this item type.
+   */
+  store(item: Storable & { readonly id: string }): Result<void, ItemContainerError>;
   take(id: string): (Storable & { readonly id: string }) | undefined;
   has(id: string): boolean;
   list(): readonly (Storable & { readonly id: string })[];
@@ -48,14 +56,26 @@ export function createItemContainer(
     return capacity - usedSpace;
   }
 
-  function store(item: Storable & { readonly id: string }): boolean {
-    if (whitelist !== null && !whitelist.has(item.storableType)) return false;
-    if (item.slotCost > freeSpace()) return false;
+  function store(item: Storable & { readonly id: string }): Result<void, ItemContainerError> {
+    if (whitelist !== null && !whitelist.has(item.storableType)) {
+      return err({
+        kind: 'type-not-accepted',
+        itemType: item.storableType,
+      });
+    }
+
+    if (item.slotCost > freeSpace()) {
+      return err({
+        kind: 'full',
+        requestedSlots: item.slotCost,
+        available: freeSpace(),
+      });
+    }
 
     items.set(item.id, item);
     usedSpace += item.slotCost;
 
-    return true;
+    return ok(undefined);
   }
 
   function take(itemId: string): (Storable & { readonly id: string }) | undefined {

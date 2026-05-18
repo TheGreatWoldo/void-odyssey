@@ -15,6 +15,12 @@
           "event": "play:new-game"
         },
         {
+          "id": "start-from-seed",
+          "label": "Start from seed",
+          "leadingIcons": [{ "icon": "Copy" }],
+          "event": "play:start-from-seed"
+        },
+        {
           "id": "continue",
           "label": "Continue",
           "leadingIcons": [{ "icon": "SkipForward" }],

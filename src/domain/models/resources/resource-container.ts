@@ -1,6 +1,9 @@
 import type { ItemContainer } from '@/domain/models/storage/item-container';
 import type { IStorageNode } from '@/domain/models/storage/storage-node';
-import { generateId } from '@/shared/utils';
+import type { Result } from '@/shared/result';
+import { err, ok } from '@/shared/result';
+import { generateId } from '@/shared/id-utils';
+import type { ResourceContainerError } from './container-errors';
 import type { Resource } from './resource';
 import { ResourceSizes, ResourceType } from './resource';
 
@@ -28,7 +31,7 @@ export interface ResourceContainerOptions {
 
 /**
  * Bounded, typed storage for resources.
- * add()            — accepts what fits, returns any refused remainder.
+ * add()            — accepts what fits, returns refused amount or error.
  * destroy()        — removes up to the requested amount and discards it.
  * moveTo()         — transfers what is available; excess refused by target is returned to source.
  * addContainer()   — nests a child container, consuming its full capacity from this container's space.
@@ -48,18 +51,31 @@ export interface ResourceContainer extends IStorageNode {
    * taking both shared capacity and any per-type cap into account.
    */
   freeSpaceFor(id: ResourceType): number;
-  /** Adds as much of the resource as fits. Returns the refused remainder amount. */
-  add(resource: Resource): number;
+  /**
+   * Adds as much of the resource as fits.
+   * Returns Ok(refused amount) on success (0 if fully accepted).
+   * Returns Err(error) if the container configuration rejects this resource type or cap is exceeded.
+   */
+  add(resource: Resource): Result<number, ResourceContainerError>;
   destroy(resource: Resource): void;
   has(resource: Resource): boolean;
-  /** Moves as much of the resource as available into target. Returns the refused remainder amount. */
-  moveTo(resource: Resource, target: ResourceContainer): number;
+  /**
+   * Moves as much of the resource as available into target.
+   * Returns Ok(refused remainder) on success.
+   * Returns Err(error) if the target container rejects the resource type or exceeds cap.
+   */
+  moveTo(resource: Resource, target: ResourceContainer): Result<number, ResourceContainerError>;
   /** Moves all resources into target. Returns the total amount refused by the target (resource conservation). */
   moveAll(target: ResourceContainer): number;
   /** Returns true if all supplied resources are individually satisfiable by this container. */
   hasAll(resources: readonly Resource[]): boolean;
   freeSpace(): number;
-  addContainer(container: ResourceContainer | ItemContainer): boolean;
+  /**
+   * Nests a child container, consuming its full capacity from this container's space.
+   * Returns Ok(void) on success.
+   * Returns Err if the child container does not fit.
+   */
+  addContainer(container: ResourceContainer | ItemContainer): Result<void, ResourceContainerError>;
   removeContainer(container: ResourceContainer): void;
   getContainers(): readonly ResourceContainer[];
   /** IStorageNode — returns nested ResourceContainers as IStorageNode[]. */
@@ -92,6 +108,7 @@ export function createResourceContainer(
   // corrects it before it can cause allocation bugs. The 1024 interval (bitmask check) is
   // chosen to keep the revalidation cost negligible vs. the savings from O(1) freeSpace().
   let opCount = 0;
+  const REVALIDATION_OP_MASK = 0x3ff; // trigger every 1024 ops
 
   // --- Helpers ---
 
@@ -144,7 +161,7 @@ export function createResourceContainer(
     if (amount <= 0) return;
     store.set(id, get(id) + amount);
     usedSpace += amount * slotCost(id);
-    if ((++opCount & 0x3ff) === 0) revalidateUsedSpace();
+    if ((++opCount & REVALIDATION_OP_MASK) === 0) revalidateUsedSpace();
   }
 
   /** Removes units directly from the store. */
@@ -154,7 +171,7 @@ export function createResourceContainer(
     const actual = Math.min(amount, current);
     store.set(id, current - actual);
     usedSpace -= actual * slotCost(id);
-    if ((++opCount & 0x3ff) === 0) revalidateUsedSpace();
+    if ((++opCount & REVALIDATION_OP_MASK) === 0) revalidateUsedSpace();
   }
 
   // --- Public API ---
@@ -167,15 +184,55 @@ export function createResourceContainer(
     return get(resource.id) >= resource.amount;
   }
 
-  function add(resource: Resource): number {
+  function add(resource: Resource): Result<number, ResourceContainerError> {
     const { id, amount } = resource;
 
-    if (!isAllowed(id)) return amount;
+    if (!isAllowed(id)) {
+      return err({
+        kind: 'type-not-accepted',
+        resourceType: id,
+      });
+    }
 
-    const accepted = Math.max(0, Math.min(amount, freeSpaceFor(id)));
-    if (accepted > 0) deposit(id, accepted);
+    const freeFor = freeSpaceFor(id);
 
-    return amount - accepted;
+    // Check per-type cap if configured
+    if (perTypeCaps !== null && perTypeCaps[id] !== undefined && perTypeCaps[id] !== null) {
+      const cap = perTypeCaps[id] as number;
+      const current = get(id);
+      if (current >= cap) {
+        return err({
+          kind: 'type-cap-exceeded',
+          resourceType: id,
+          cap,
+          current,
+          available: 0,
+        });
+      }
+      if (freeFor < amount) {
+        return err({
+          kind: 'type-cap-exceeded',
+          resourceType: id,
+          cap,
+          current,
+          available: cap - current,
+        });
+      }
+    }
+
+    const accepted = Math.max(0, Math.min(amount, freeFor));
+    const refused = amount - accepted;
+
+    if (accepted > 0) {
+      deposit(id, accepted);
+    } else if (refused > 0) {
+      return err({
+        kind: 'full',
+        refused,
+      });
+    }
+
+    return ok(refused);
   }
 
   function removeAmount(id: ResourceType, amount: number): number {
@@ -192,15 +249,26 @@ export function createResourceContainer(
   // Safe because moveTo is synchronous and target.add() does not call back into this container.
   const moveBuffer: { id: ResourceType; amount: number } = { id: ResourceType.Fuel, amount: 0 };
 
-  function moveTo(resource: Resource, target: ResourceContainer): number {
+  function moveTo(resource: Resource, target: ResourceContainer): Result<number, ResourceContainerError> {
     const id = resource.id;
     const actualRemoved = removeAmount(id, resource.amount);
-    if (actualRemoved <= 0) return 0;
+    if (actualRemoved <= 0) return ok(0);
     moveBuffer.id = id;
     moveBuffer.amount = actualRemoved;
-    const refused = target.add(moveBuffer);
-    if (refused > 0) deposit(id, refused);
-    return refused;
+    const addResult = target.add(moveBuffer);
+
+    if (!addResult.ok) {
+      // Add failed — restore the resource to this container
+      deposit(id, actualRemoved);
+      return addResult;
+    }
+
+    const refused = addResult.value;
+    if (refused > 0) {
+      deposit(id, refused);
+    }
+
+    return ok(refused);
   }
 
   function moveAll(target: ResourceContainer): number {
@@ -209,14 +277,23 @@ export function createResourceContainer(
       if (amount > 0) {
         moveBuffer.id = type;
         moveBuffer.amount = amount;
-        totalRefused += moveTo(moveBuffer, target);
+        const result = moveTo(moveBuffer, target);
+        if (result.ok) {
+          totalRefused += result.value;
+        }
       }
     }
     return totalRefused;
   }
 
-  function addContainer(container: ResourceContainer | ItemContainer): boolean {
-    if (container.capacity > freeSpace()) return false;
+  function addContainer(container: ResourceContainer | ItemContainer): Result<void, ResourceContainerError> {
+    if (container.capacity > freeSpace()) {
+      return err({
+        kind: 'full',
+        refused: container.capacity,
+      });
+    }
+
     if (container.kind === 'item') {
       itemChildren.push(container);
     } else {
@@ -224,7 +301,7 @@ export function createResourceContainer(
     }
     childCapacityUsed += container.capacity;
 
-    return true;
+    return ok(undefined);
   }
 
   function removeContainer(container: ResourceContainer): void {

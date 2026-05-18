@@ -1,6 +1,6 @@
 import { ModuleId, ModuleSlotCosts } from '@/domain/models/module/production-module-id'
 import { describe, expect, it } from 'vitest'
-import { getModuleMeta, isValidModuleId, MODULE_ENTRIES } from './useModuleCatalog'
+import { getModuleMeta, isValidModuleId, MODULE_ENTRIES } from './module-catalog'
 
 const ALL_MODULE_IDS = Object.values(ModuleId) as ModuleId[]
 

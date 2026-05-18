@@ -11,7 +11,7 @@ export default defineConfig({
       target: 'react',
       autoCodeSplitting: true,
       routesDirectory: './src/presentation/pages',
-      generatedRouteTree: './src/infrastructure/router/routeTree.gen.ts',
+      generatedRouteTree: './src/presentation/router/routeTree.gen.ts',
     }),
     react(),
     tailwindcss(),

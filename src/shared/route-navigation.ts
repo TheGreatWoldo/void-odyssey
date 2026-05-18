@@ -1,0 +1,2 @@
+export const ROUTE_SCROLL_TWEEN_DURATION_MS = 1000;
+export const ROUTE_MAX_REROLLS_PER_ROUTE = 1;

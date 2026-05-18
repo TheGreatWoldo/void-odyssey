@@ -1,6 +1,8 @@
-import { generateId } from '@/shared/utils';
+import { err, ok, type Result } from '@/shared/result';
+import { generateId } from '@/shared/id-utils';
 
 import type { IStorageNode } from '@/domain/models/storage/storage-node';
+import type { ResourceContainerError } from './container-errors';
 import type { Resource } from './resource';
 import { ResourceType } from './resource';
 import type { ResourceContainer, ResourceContainerOptions } from './resource-container';
@@ -68,18 +70,25 @@ export function createPowerContainer(options: { id?: string; labelKey?: string }
     return freeSpace();
   }
 
-  function add(resource: Resource): number {
-    if (resource.id !== ResourceType.Power) return resource.amount;
+  function add(resource: Resource): Result<number, ResourceContainerError> {
+    if (resource.id !== ResourceType.Power) {
+      return err({
+        kind: 'type-not-accepted',
+        resourceType: resource.id,
+      });
+    }
 
     let remaining = resource.amount;
 
     for (const b of batteries) {
       if (remaining <= 0) break;
       transferBuffer.amount = remaining;
-      remaining = b.add(transferBuffer);
+      const addResult = b.add(transferBuffer);
+      if (!addResult.ok) return addResult;
+      remaining = addResult.value;
     }
 
-    return remaining;
+    return ok(remaining);
   }
 
   function destroy(resource: Resource): void {
@@ -108,34 +117,47 @@ export function createPowerContainer(options: { id?: string; labelKey?: string }
     return resources.every(r => has(r));
   }
 
-  function moveTo(resource: Resource, target: ResourceContainer): number {
-    if (resource.id !== ResourceType.Power) return resource.amount;
+  function moveTo(resource: Resource, target: ResourceContainer): Result<number, ResourceContainerError> {
+    if (resource.id !== ResourceType.Power) {
+      return err({
+        kind: 'type-not-accepted',
+        resourceType: resource.id,
+      });
+    }
 
     const actual = Math.min(resource.amount, get(ResourceType.Power));
-    if (actual <= 0) return 0;
+    if (actual <= 0) return ok(0);
 
     destroy({ id: ResourceType.Power, amount: actual });
 
     transferBuffer.amount = actual;
-    const refused = target.add(transferBuffer);
+    const addResult = target.add(transferBuffer);
+    if (!addResult.ok) {
+      transferBuffer.amount = actual;
+      add(transferBuffer);
+      return addResult;
+    }
+
+    const refused = addResult.value;
 
     if (refused > 0) {
       transferBuffer.amount = refused;
       add(transferBuffer);
     }
 
-    return refused;
+    return ok(refused);
   }
 
   function moveAll(target: ResourceContainer): number {
     const total = get(ResourceType.Power);
     if (total <= 0) return 0;
-    return moveTo({ id: ResourceType.Power, amount: total }, target);
+    const result = moveTo({ id: ResourceType.Power, amount: total }, target);
+    return result.ok ? result.value : total;
   }
 
-  function addContainer(container: ResourceContainer): boolean {
+  function addContainer(container: ResourceContainer) {
     batteries.push(container);
-    return true;
+    return ok(undefined);
   }
 
   function removeContainer(container: ResourceContainer): void {

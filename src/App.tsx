@@ -1,7 +1,8 @@
+import { ZustandRouteActorStateAdapter } from '@/application/adapters/zustand-route-actor-state-adapter'
 import { GameService } from '@/application/services/GameService'
 import { GamePhase, useGameStore } from '@/application/store/gameStore'
 import { ExcaliburEngineFacade } from '@/infrastructure/engine/engine'
-import { createAppRouter } from '@/infrastructure/router/router'
+import { createAppRouter } from '@/presentation/router/router'
 import { GameCanvasAndProvider } from '@/presentation/components/GameCanvasAndProvider'
 import { SceneKey } from '@/shared/scene-key'
 import { RouterProvider } from '@tanstack/react-router'
@@ -14,7 +15,7 @@ function App() {
 
   const createService = useCallback(
     async (canvas: HTMLCanvasElement): Promise<GameService> => {
-      const facade = new ExcaliburEngineFacade(canvas)
+      const facade = new ExcaliburEngineFacade(canvas, new ZustandRouteActorStateAdapter())
       const service = new GameService(facade)
 
       await service.start()

@@ -23,6 +23,11 @@ export interface RouteStop {
 export interface RouteConnection {
   fromId: string;
   toId: string;
+  /**
+   * Directed edge strength in [0, 1]. Higher means easier/faster traversal.
+   * Defaults to 1 when omitted.
+   */
+  strength?: number;
 }
 
 export interface GraphBoundingBox {

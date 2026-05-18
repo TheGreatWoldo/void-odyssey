@@ -8,6 +8,7 @@ import { ParallaxStarfield } from '@/infrastructure/navigation-2d/rendering/para
 import { RouteNavigationScene } from '@/infrastructure/navigation-2d/scenes/route-navigation-scene'
 import { ShipBlueprintEditorScene } from '@/infrastructure/ship-blueprint-editor/scenes/ShipBlueprintEditorScene'
 import { ShipViewScene } from '@/infrastructure/ship-view/scenes/ShipViewScene'
+import type { IRouteActorState } from '@/domain/models/navigation/route/route-actor-state'
 import type { IGameEngineFacade } from '@/shared/game-engine-facade'
 import { SceneKey } from '@/shared/scene-key'
 import type { RoomsLayoutData } from '@/shared/ship-blueprint-editor'
@@ -42,12 +43,12 @@ export class ExcaliburEngineFacade implements IGameEngineFacade {
   private _targetSceneKey: SceneKey | null = null
   private _transitioningTo: SceneKey | null = null
 
-  constructor(canvas: HTMLCanvasElement) {
+  constructor(canvas: HTMLCanvasElement, routeActorState: IRouteActorState) {
     this._canvas = canvas
     ParallaxStarfield.warmCache()
     this.shipBlueprintEditorScene = new ShipBlueprintEditorScene()
     this.shipViewScene = new ShipViewScene()
-    this.routeNavigationScene = new RouteNavigationScene()
+    this.routeNavigationScene = new RouteNavigationScene(routeActorState)
     this.engine = this.buildEngine()
   }
 
