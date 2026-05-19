@@ -73,7 +73,7 @@ export class BezierNodePositionStrategy implements NodePositionStrategy {
       const bx = clampX(cwx);
       const by = clampY(cwy);
 
-      return { ...this._withJitter(bx, by, rng), baseWx: bx, baseWy: by };
+      return { ...this.withJitter(bx, by, rng), baseWx: bx, baseWy: by };
     }
 
     const a = this.provider.sampleAt(Math.max(0, t - EPS));
@@ -92,10 +92,10 @@ export class BezierNodePositionStrategy implements NodePositionStrategy {
     const baseWx = clampX(cwx + offset * perpX);
     const baseWy = clampY(cwy + offset * perpY);
 
-    return { ...this._withJitter(baseWx, baseWy, rng), baseWx, baseWy };
+    return { ...this.withJitter(baseWx, baseWy, rng), baseWx, baseWy };
   }
 
-  private _withJitter(
+  private withJitter(
     wx: number,
     wy: number,
     rng: NodePositionContext['rng']

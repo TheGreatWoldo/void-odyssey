@@ -1,5 +1,5 @@
 ---
-description: Iteratively reviews and refactors code in ordered DDD, Clean Architecture, and Clean Code phases; reports behavior-changing Clean Code items as unsolvable
+description: Iteratively reviews and refactors in strict order: DDD, then Clean Architecture, then Clean Code. Clean Code findings that would change externally observable outputs or side effects are unsolvable, even if higher-priority findings remain unresolved.
 argument-hint: <relative-folder-path>
 allowed-tools: Bash, Read, Edit, Write, Glob, Grep, TodoWrite, Agent
 ---
@@ -16,7 +16,7 @@ Execution order for every pass:
 2. Check and fix Clean Architecture boundary direction.
 3. Check and fix Clean Code issues.
 
-For item 3, if a fix would change observable behaviour, do not apply it. Report it as unsolvable.
+For item 3, if a fix would change externally observable outputs or side effects, do not apply it. Report it as unsolvable. This rule never overrides items 1 or 2.
 
 **Refactoring into the correct structure is the primary tool.** Prefer moving/splitting/renaming files and extracting well-named constructs over leaving a comment or marking something unsolvable.
 
@@ -79,6 +79,9 @@ For each pass, evaluate every file in the target folder against **all** of the f
 - [ ] **Anemic models** — models that are just data bags with no behaviour; move logic into the model
 - [ ] **Path aliases** — all imports from `src/` must use `@/`; relative imports only within the same directory
 - [ ] **Dead code** — unused exports, unreachable branches, commented-out code
+- [ ] **Inconsistent style** — follow the project's existing conventions for formatting, naming, and organization
+- [ ] **Lack of tests** — if a file contains non-trivial logic and has no tests, mark it as unsolvable and recommend adding tests before refactoring
+- [ ] **Inline ternaries / other confusing constructs** — any code that is confusing, hard to understand, or violates general clean code principles; explain why and propose a fix
 
 ---
 

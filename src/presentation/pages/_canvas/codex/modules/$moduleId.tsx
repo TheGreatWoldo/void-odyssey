@@ -3,17 +3,11 @@ import { useGameService } from '@/application/hooks/useGameService'
 import { MENU_ANIMATIONS_ENABLED, MENU_EXIT_BUFFER_MS, MENU_ITEM_DURATION_MS, MENU_ITEM_STAGGER_MS } from '@/shared/menu-animation'
 import { SceneKey } from '@/shared/scene-key'
 import { createFileRoute, notFound, useNavigate } from '@tanstack/react-router'
-import type { LucideIcon } from 'lucide-react'
-import * as LucideIcons from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { MODULE_ICON_BY_ID, resolveModuleIcon } from './module-icons'
 
 const EXIT_STAGGER_MS = MENU_ITEM_STAGGER_MS
 const EXIT_DURATION_MS = MENU_ITEM_DURATION_MS
-
-function resolveIcon(name: string): LucideIcon | null {
-  const icon = (LucideIcons as Record<string, unknown>)[name]
-  return icon && (typeof icon === 'function' || typeof icon === 'object') ? (icon as LucideIcon) : null
-}
 
 function CodexModuleDetailPage() {
   const service = useGameService()
@@ -22,7 +16,7 @@ function CodexModuleDetailPage() {
   const [exiting, setExiting] = useState(false)
 
   const meta = getModuleMeta(moduleId)!
-  const Icon = resolveIcon(meta.icon)
+  const Icon = resolveModuleIcon(MODULE_ICON_BY_ID[moduleId])
 
   useEffect(() => {
     service.goToScene(SceneKey.GreenOnBlack).catch((err: unknown) => {

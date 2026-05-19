@@ -41,8 +41,8 @@ export class RandomBezierCurveProvider implements BezierCurveProvider {
   private readonly maxAmplitude: number;
 
   private _controlPoints: number[];
-  private _arcTable: { param: number; s: number }[] = [];
-  private _totalLength = 0;
+  private arcTable: { param: number; s: number }[] = [];
+  private totalLength = 0;
 
   constructor(segments = 3, maxAmplitude = DEFAULT_MAX_AMPLITUDE) {
     this.segmentCount = Math.max(1, Math.floor(segments));
@@ -85,32 +85,32 @@ export class RandomBezierCurveProvider implements BezierCurveProvider {
     }
 
     this._controlPoints = controlPoints;
-    this._buildArcTable();
+    this.buildArcTable();
   }
 
   sampleAt(t: number): { nx: number; ny: number } {
-    if (this._arcTable.length === 0) return { nx: t, ny: 0.5 };
+    if (this.arcTable.length === 0) return { nx: t, ny: 0.5 };
 
-    const target = Math.max(0, Math.min(1, t)) * this._totalLength;
+    const target = Math.max(0, Math.min(1, t)) * this.totalLength;
 
     let lo = 0,
-      hi = this._arcTable.length - 1;
+      hi = this.arcTable.length - 1;
 
     while (lo < hi - 1) {
       const mid = (lo + hi) >> 1;
 
-      if (this._arcTable[mid].s < target) lo = mid;
+      if (this.arcTable[mid].s < target) lo = mid;
       else hi = mid;
     }
 
-    const a = this._arcTable[lo];
-    const b = this._arcTable[hi];
+    const a = this.arcTable[lo];
+    const b = this.arcTable[hi];
     const alpha = b.s > a.s ? (target - a.s) / (b.s - a.s) : 0;
 
-    return this._evalAtParam(a.param + alpha * (b.param - a.param));
+    return this.evalAtParam(a.param + alpha * (b.param - a.param));
   }
 
-  private _evalAtParam(param: number): { nx: number; ny: number } {
+  private evalAtParam(param: number): { nx: number; ny: number } {
     const N = this.segmentCount;
     const controlPoints = this._controlPoints;
 
@@ -152,26 +152,26 @@ export class RandomBezierCurveProvider implements BezierCurveProvider {
     };
   }
 
-  private _buildArcTable(): void {
+  private buildArcTable(): void {
     const N = this.segmentCount;
 
-    this._arcTable = [];
+    this.arcTable = [];
     let totalS = 0;
-    let prev = this._evalAtParam(0);
+    let prev = this.evalAtParam(0);
 
-    this._arcTable.push({ param: 0, s: 0 });
+    this.arcTable.push({ param: 0, s: 0 });
 
     for (let i = 1; i <= ARC_SAMPLES; i++) {
       const param = (i / ARC_SAMPLES) * N;
-      const curr = this._evalAtParam(param);
+      const curr = this.evalAtParam(param);
       const dx = curr.nx - prev.nx;
       const dy = curr.ny - prev.ny;
 
       totalS += Math.sqrt(dx * dx + dy * dy);
-      this._arcTable.push({ param, s: totalS });
+      this.arcTable.push({ param, s: totalS });
       prev = curr;
     }
 
-    this._totalLength = totalS;
+    this.totalLength = totalS;
   }
 }

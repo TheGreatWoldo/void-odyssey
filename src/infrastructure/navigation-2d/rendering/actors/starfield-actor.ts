@@ -16,9 +16,9 @@ export class StarfieldActor extends Actor {
   private camera: Camera | null = null;
   private canvas: Canvas | null = null;
 
-  private _lastCamX = NaN;
-  private _lastCamY = NaN;
-  private _lastCamZoom = NaN;
+  private lastCamX = NaN;
+  private lastCamY = NaN;
+  private lastCamZoom = NaN;
 
   constructor() {
     super({ coordPlane: CoordPlane.Screen, z: -1 });
@@ -48,17 +48,17 @@ export class StarfieldActor extends Actor {
     const { x, y } = this.camera.pos;
     const { zoom } = this.camera;
 
-    if (x !== this._lastCamX || y !== this._lastCamY || zoom !== this._lastCamZoom) {
-      this._lastCamX = x;
-      this._lastCamY = y;
-      this._lastCamZoom = zoom;
+    if (x !== this.lastCamX || y !== this.lastCamY || zoom !== this.lastCamZoom) {
+      this.lastCamX = x;
+      this.lastCamY = y;
+      this.lastCamZoom = zoom;
       this.canvas.flagDirty();
     }
   }
 
   generate(seed = 42): void {
     this.starfield.generate(seed);
-    this._lastCamX = NaN;
+    this.lastCamX = NaN;
     this.canvas?.flagDirty();
   }
 

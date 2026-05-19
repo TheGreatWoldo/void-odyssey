@@ -1,28 +1,9 @@
 import { ModuleCatalog } from '@/domain/models/module/module-catalog'
 import { ModuleId, ModuleSlotCosts } from '@/domain/models/module/production-module-id'
 
-const ModuleIconById: Record<ModuleId, string> = {
-  [ModuleId.ReactorCore]: 'Zap',
-  [ModuleId.IonEngines]: 'Gauge',
-  [ModuleId.ShieldGenerator]: 'Shield',
-  [ModuleId.SensorArray]: 'Radar',
-  [ModuleId.LifeSupport]: 'Wind',
-  [ModuleId.WaterReclaimer]: 'Droplets',
-  [ModuleId.RepairDrones]: 'Wrench',
-  [ModuleId.PlasmaCannon]: 'Crosshair',
-  [ModuleId.JumpDrive]: 'Navigation',
-  [ModuleId.ArmorPlating]: 'ShieldHalf',
-  [ModuleId.NavComputer]: 'Radio',
-  [ModuleId.CrewQuarters]: 'Users',
-  [ModuleId.Medbay]: 'HeartPulse',
-  [ModuleId.FuelScoop]: 'Flame',
-  [ModuleId.CommsArray]: 'Radio',
-}
-
 export interface ModuleEntry {
   id: ModuleId
   displayName: string
-  icon: string
   category: string
   slotCost: number
   primaryOutput: string
@@ -30,7 +11,6 @@ export interface ModuleEntry {
 
 export interface ModuleMetaView {
   displayName: string
-  icon: string
   description: string
   category: string
   slotCost: number
@@ -42,7 +22,6 @@ export const MODULE_ENTRIES: readonly ModuleEntry[] = (Object.values(ModuleId) a
   .map((id) => ({
     id,
     displayName: ModuleCatalog[id].displayName,
-    icon: ModuleIconById[id],
     category: ModuleCatalog[id].category,
     slotCost: ModuleSlotCosts[id],
     primaryOutput: ModuleCatalog[id].primaryOutput,
@@ -56,7 +35,6 @@ export function getModuleMeta(id: string): ModuleMetaView | null {
   const meta = ModuleCatalog[typedId]
   return {
     displayName: meta.displayName,
-    icon: ModuleIconById[typedId],
     description: meta.description,
     category: meta.category,
     slotCost: ModuleSlotCosts[typedId],

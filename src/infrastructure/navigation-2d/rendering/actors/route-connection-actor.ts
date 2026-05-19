@@ -16,7 +16,13 @@ const HIGHLIGHT_ANIMATE_PX_PER_MS = 0.5;
 /** Pointer hit area half-height in world pixels. */
 const HIT_HALF_HEIGHT = 8;
 
-type ConnectionVisualState = 'normal' | 'highlighted' | 'scanned' | 'travelled';
+const ConnectionVisualState = {
+  Normal: 'normal',
+  Highlighted: 'highlighted',
+  Scanned: 'scanned',
+  Travelled: 'travelled',
+} as const;
+type ConnectionVisualState = typeof ConnectionVisualState[keyof typeof ConnectionVisualState];
 
 /**
  * Actor for a connection edge. Handles both rendering and pointer hit-testing.
@@ -36,16 +42,16 @@ export class RouteConnectionActor extends Actor {
   private readonly canvasHighlighted: Canvas;
   private readonly canvasScanned: Canvas;
   private readonly canvasTravelled: Canvas;
-  private _visualState: ConnectionVisualState = 'normal';
-  private _highlightProgress = 0;
-  private _scannedProgress = 0;
-  private _wasScanned = false;
-  private readonly _lineWidth: number;
+  private visualState: ConnectionVisualState = ConnectionVisualState.Normal;
+  private highlightProgress = 0;
+  private scannedProgress = 0;
+  private wasScanned = false;
+  private readonly lineWidth: number;
 
   get sweepComplete(): boolean {
-    if (this._visualState === 'highlighted') return this._highlightProgress >= 1;
+    if (this.visualState === ConnectionVisualState.Highlighted) return this.highlightProgress >= 1;
 
-    if (this._visualState === 'scanned') return this._scannedProgress >= 1;
+    if (this.visualState === ConnectionVisualState.Scanned) return this.scannedProgress >= 1;
 
     return true;
   }
@@ -81,9 +87,18 @@ export class RouteConnectionActor extends Actor {
     this.connection = connection;
     this.fromStopIndex = fromNode.stopIndex;
     this.graphContext = graphContext;
-    this._lineWidth = w;
+    this.lineWidth = w;
 
-    this.canvasNormal = new Canvas({
+    this.canvasNormal = this.buildNormalCanvas(w, h, quality);
+    this.canvasHighlighted = this.buildHighlightedCanvas(w, h, quality);
+    this.canvasScanned = this.buildScannedCanvas(w, h, quality);
+    this.canvasTravelled = this.buildTravelledCanvas(w, h, quality);
+
+    this.graphics.use(this.canvasNormal);
+  }
+
+  private buildNormalCanvas(w: number, h: number, quality: number): Canvas {
+    return new Canvas({
       width: w,
       height: h,
       cache: true,
@@ -98,17 +113,19 @@ export class RouteConnectionActor extends Actor {
         ctx.stroke();
       },
     });
+  }
 
-    this.canvasHighlighted = new Canvas({
+  private buildHighlightedCanvas(w: number, h: number, quality: number): Canvas {
+    return new Canvas({
       width: w,
       height: h,
       cache: false,
       quality,
       draw: (ctx: CanvasRenderingContext2D) => {
         ctx.clearRect(0, 0, w, h);
-        const filled = Math.round(w * this._highlightProgress);
+        const filled = Math.round(w * this.highlightProgress);
 
-        if (this._wasScanned) {
+        if (this.wasScanned) {
           ctx.strokeStyle = 'rgba(80, 255, 180, 0.08)';
           ctx.lineWidth = LINE_THICKNESS_HIGHLIGHTED * 3;
           ctx.beginPath();
@@ -143,15 +160,17 @@ export class RouteConnectionActor extends Actor {
         }
       },
     });
+  }
 
-    this.canvasScanned = new Canvas({
+  private buildScannedCanvas(w: number, h: number, quality: number): Canvas {
+    return new Canvas({
       width: w,
       height: h,
       cache: false,
       quality,
       draw: (ctx: CanvasRenderingContext2D) => {
         ctx.clearRect(0, 0, w, h);
-        const filled = Math.round(w * this._scannedProgress);
+        const filled = Math.round(w * this.scannedProgress);
 
         ctx.strokeStyle = LINE_COLOR_NORMAL;
         ctx.lineWidth = LINE_THICKNESS;
@@ -177,8 +196,10 @@ export class RouteConnectionActor extends Actor {
         }
       },
     });
+  }
 
-    this.canvasTravelled = new Canvas({
+  private buildTravelledCanvas(w: number, h: number, quality: number): Canvas {
+    return new Canvas({
       width: w,
       height: h,
       cache: true,
@@ -193,8 +214,15 @@ export class RouteConnectionActor extends Actor {
         ctx.stroke();
       },
     });
+  }
 
-    this.graphics.use(this.canvasNormal);
+  private canvasForState(state: ConnectionVisualState): Canvas {
+    switch (state) {
+      case ConnectionVisualState.Highlighted: return this.canvasHighlighted;
+      case ConnectionVisualState.Travelled:   return this.canvasTravelled;
+      case ConnectionVisualState.Scanned:     return this.canvasScanned;
+      default:                                return this.canvasNormal;
+    }
   }
 
   override onPreUpdate(_engine: unknown, delta: number): void {
@@ -203,12 +231,12 @@ export class RouteConnectionActor extends Actor {
     const scannerRange = this.graphContext.statePort.getScannerRange();
     const connections = this.graphContext.allConnections();
 
-    let next: ConnectionVisualState = 'normal';
+    let next: ConnectionVisualState = ConnectionVisualState.Normal;
 
     if (this.connection.fromId === currentNodeId) {
-      next = 'highlighted';
+      next = ConnectionVisualState.Highlighted;
     } else if (this.travelled) {
-      next = 'travelled';
+      next = ConnectionVisualState.Travelled;
     } else if (scannerRange >= 2) {
       const currentStopIndex = currentActor?.routeNode.stopIndex ?? -1;
 
@@ -226,52 +254,44 @@ export class RouteConnectionActor extends Actor {
             stepsAhead
           )
         ) {
-          next = 'scanned';
+          next = ConnectionVisualState.Scanned;
         }
       }
     }
 
-    if (next !== this._visualState) {
-      if (next === 'highlighted') {
-        this._wasScanned = this._visualState === 'scanned';
-        this._highlightProgress = 0;
+    if (next !== this.visualState) {
+      if (next === ConnectionVisualState.Highlighted) {
+        this.wasScanned = this.visualState === ConnectionVisualState.Scanned;
+        this.highlightProgress = 0;
       }
 
-      if (next === 'scanned') {
-        this._scannedProgress = 0;
+      if (next === ConnectionVisualState.Scanned) {
+        this.scannedProgress = 0;
       }
 
-      this._visualState = next;
-      this.graphics.use(
-        next === 'highlighted'
-          ? this.canvasHighlighted
-          : next === 'travelled'
-            ? this.canvasTravelled
-            : next === 'scanned'
-              ? this.canvasScanned
-              : this.canvasNormal
-      );
+      this.visualState = next;
+      this.graphics.use(this.canvasForState(next));
     }
 
-    if (this._visualState === 'highlighted' && this._highlightProgress < 1) {
-      this._highlightProgress = Math.min(
+    if (this.visualState === ConnectionVisualState.Highlighted && this.highlightProgress < 1) {
+      this.highlightProgress = Math.min(
         1,
-        this._highlightProgress +
-          (HIGHLIGHT_ANIMATE_PX_PER_MS * delta) / this._lineWidth
+        this.highlightProgress +
+          (HIGHLIGHT_ANIMATE_PX_PER_MS * delta) / this.lineWidth
       );
       this.canvasHighlighted.flagDirty();
     }
 
-    if (this._visualState === 'scanned' && this._scannedProgress < 1) {
+    if (this.visualState === ConnectionVisualState.Scanned && this.scannedProgress < 1) {
       const predecessorsDone = this.graphContext
         .connectionActorsTo(this.connection.fromId)
         .every((a) => a.sweepComplete);
 
       if (predecessorsDone) {
-        this._scannedProgress = Math.min(
+        this.scannedProgress = Math.min(
           1,
-          this._scannedProgress +
-            (HIGHLIGHT_ANIMATE_PX_PER_MS * delta) / this._lineWidth
+          this.scannedProgress +
+            (HIGHLIGHT_ANIMATE_PX_PER_MS * delta) / this.lineWidth
         );
         this.canvasScanned.flagDirty();
       }

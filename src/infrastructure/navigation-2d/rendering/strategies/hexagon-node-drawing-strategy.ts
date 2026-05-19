@@ -230,7 +230,6 @@ export class HexagonNodeDrawingStrategy implements NodeDrawingStrategy {
         const cx = canvasSize / 2;
         const cy = canvasSize / 2;
 
-        // Soft radial glow behind the hexagon
         const glow = ctx.createRadialGradient(
           cx,
           cy,
@@ -245,18 +244,15 @@ export class HexagonNodeDrawingStrategy implements NodeDrawingStrategy {
         ctx.fillStyle = glow;
         ctx.fillRect(0, 0, canvasSize, canvasSize);
 
-        // Filled hexagon face
         hexPath(ctx, cx, cy, HEX_RADIUS);
         ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${fillAlpha})`;
         ctx.fill();
 
-        // Hexagon border
         hexPath(ctx, cx, cy, HEX_RADIUS);
         ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, ${strokeAlpha})`;
         ctx.lineWidth = strokeWidth;
         ctx.stroke();
 
-        // Icon
         const icon = this.svgImages.get(type);
 
         if (icon && iconAlpha > 0) {

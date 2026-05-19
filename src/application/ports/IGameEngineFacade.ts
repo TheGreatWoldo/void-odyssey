@@ -1,5 +1,5 @@
+import type { RoomsLayout } from '@/domain/models/ship/rooms-layout'
 import type { SceneKey } from '@/shared/scene-key'
-import type { RoomsLayoutData } from '@/shared/ship-blueprint-editor'
 
 /**
  * Port: engine-level scene navigation and lifecycle, consumed by the application
@@ -10,7 +10,7 @@ export interface IGameEngineFacade {
   setCanvasInteractive(interactive: boolean): void
   startEngine(): Promise<void>
   goToScene(key: SceneKey): Promise<void>
-  loadRoomsLayout(layout: RoomsLayoutData): void
-  loadShipView(layout: RoomsLayoutData): void
+  loadRoomsLayout(layout: RoomsLayout): void
+  loadShipView(layout: RoomsLayout): void
   dispose(): void
 }

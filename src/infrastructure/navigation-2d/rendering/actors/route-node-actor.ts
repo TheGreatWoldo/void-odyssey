@@ -55,8 +55,8 @@ export class RouteNodeActor extends Actor {
     this.on('pointerenter', () => {
       const scannerRange = this.graphContext.statePort.getScannerRange();
       const currentActor = this.graphContext.currentNodeActor;
-      const visualState = this._computeVisualState(currentActor, scannerRange);
-      const scanned = this._computeScanned(scannerRange, currentActor);
+      const visualState = this.computeVisualState(currentActor, scannerRange);
+      const scanned = this.computeScanned(scannerRange, currentActor);
 
       if (
         visualState === NodeVisualState.Reachable ||
@@ -72,7 +72,7 @@ export class RouteNodeActor extends Actor {
     });
 
     this.on('pointerup', () => {
-      if (this._isReachable()) {
+      if (this.isReachable()) {
         this.graphContext.onNodeClicked?.(this);
       }
     });
@@ -81,8 +81,8 @@ export class RouteNodeActor extends Actor {
   override onPreUpdate(): void {
     const scannerRange = this.graphContext.statePort.getScannerRange();
     const currentActor = this.graphContext.currentNodeActor;
-    const next = this._computeVisualState(currentActor, scannerRange);
-    const nextScanned = this._computeScanned(scannerRange, currentActor);
+    const next = this.computeVisualState(currentActor, scannerRange);
+    const nextScanned = this.computeScanned(scannerRange, currentActor);
     const nextGraphicRevision = this.strategy.getRevision?.() ?? 0;
 
     if (
@@ -107,7 +107,7 @@ export class RouteNodeActor extends Actor {
     );
   }
 
-  private _isReachable(): boolean {
+  private isReachable(): boolean {
     const currentActor = this.graphContext.currentNodeActor;
 
     if (!currentActor) return false;
@@ -118,7 +118,7 @@ export class RouteNodeActor extends Actor {
     );
   }
 
-  private _computeVisualState(
+  private computeVisualState(
     currentActor: RouteNodeActor | null,
     scannerRange: number
   ): NodeVisualState {
@@ -130,7 +130,7 @@ export class RouteNodeActor extends Actor {
       return this.scanned ? NodeVisualState.Past : NodeVisualState.Unknown;
     }
 
-    if (this._isReachable()) {
+    if (this.isReachable()) {
       return scannerRange >= 1
         ? NodeVisualState.Reachable
         : NodeVisualState.Known;
@@ -139,7 +139,7 @@ export class RouteNodeActor extends Actor {
     return NodeVisualState.Unknown;
   }
 
-  private _computeScanned(
+  private computeScanned(
     scannerRange: number,
     currentActor: RouteNodeActor | null
   ): boolean {
@@ -149,7 +149,7 @@ export class RouteNodeActor extends Actor {
 
     if (!currentActor) return false;
 
-    if (this._isReachable() && scannerRange >= 1) return true;
+    if (this.isReachable() && scannerRange >= 1) return true;
 
     const stepsAhead = this.routeNode.stopIndex - currentActor.routeNode.stopIndex;
 

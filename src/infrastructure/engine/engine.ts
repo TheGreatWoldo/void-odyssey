@@ -9,9 +9,9 @@ import { RouteNavigationScene } from '@/infrastructure/navigation-2d/scenes/rout
 import { ShipBlueprintEditorScene } from '@/infrastructure/ship-blueprint-editor/scenes/ShipBlueprintEditorScene'
 import { ShipViewScene } from '@/infrastructure/ship-view/scenes/ShipViewScene'
 import type { IRouteActorState } from '@/domain/models/navigation/route/route-actor-state'
-import type { IGameEngineFacade } from '@/shared/game-engine-facade'
+import type { RoomsLayout } from '@/domain/models/ship/rooms-layout'
+import type { IGameEngineFacade } from '@/application/ports/IGameEngineFacade'
 import { SceneKey } from '@/shared/scene-key'
-import type { RoomsLayoutData } from '@/shared/ship-blueprint-editor'
 import { Color, DisplayMode, Engine } from 'excalibur'
 
 const VIRTUAL_WIDTH = 1600
@@ -107,11 +107,11 @@ export class ExcaliburEngineFacade implements IGameEngineFacade {
     })
   }
 
-  loadRoomsLayout(layout: RoomsLayoutData): void {
+  loadRoomsLayout(layout: RoomsLayout): void {
     this.shipBlueprintEditorScene.loadLayout(layout)
   }
 
-  loadShipView(layout: RoomsLayoutData): void {
+  loadShipView(layout: RoomsLayout): void {
     this.shipViewScene.loadLayout(layout)
   }
 

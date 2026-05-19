@@ -15,64 +15,64 @@ export class GraphContext {
   /** Called by the scene when the player moves to a node. */
   onNodeClicked: ((actor: RouteNodeActor) => void) | null = null;
 
-  private _nodeActors = new Map<string, RouteNodeActor>();
-  private _connectionActorsFrom = new Map<string, RouteConnectionActor[]>();
-  private _connectionActorsTo = new Map<string, RouteConnectionActor[]>();
-  private _connections: RouteConnection[] = [];
+  private nodeActors = new Map<string, RouteNodeActor>();
+  private connectionActorsByFromId = new Map<string, RouteConnectionActor[]>();
+  private connectionActorsByToId = new Map<string, RouteConnectionActor[]>();
+  private connections: RouteConnection[] = [];
 
   constructor(statePort: IRouteActorState) {
     this.statePort = statePort;
   }
 
   registerNode(actor: RouteNodeActor): void {
-    this._nodeActors.set(actor.routeNode.id, actor);
+    this.nodeActors.set(actor.routeNode.id, actor);
   }
 
   registerConnection(actor: RouteConnectionActor): void {
     const { fromId, toId } = actor.connection;
 
-    const fromList = this._connectionActorsFrom.get(fromId) ?? [];
+    const fromList = this.connectionActorsByFromId.get(fromId) ?? [];
 
     fromList.push(actor);
-    this._connectionActorsFrom.set(fromId, fromList);
+    this.connectionActorsByFromId.set(fromId, fromList);
 
-    const toList = this._connectionActorsTo.get(toId) ?? [];
+    const toList = this.connectionActorsByToId.get(toId) ?? [];
 
     toList.push(actor);
-    this._connectionActorsTo.set(toId, toList);
+    this.connectionActorsByToId.set(toId, toList);
   }
 
   setTopology(connections: RouteConnection[]): void {
-    this._connections = connections;
+    this.connections = connections;
   }
 
   getNodeActor(id: string): RouteNodeActor | null {
-    return this._nodeActors.get(id) ?? null;
+    return this.nodeActors.get(id) ?? null;
   }
 
   allConnections(): RouteConnection[] {
-    return this._connections;
+    return this.connections;
   }
 
   connectionActorsFrom(nodeId: string): RouteConnectionActor[] {
-    return this._connectionActorsFrom.get(nodeId) ?? [];
+    return this.connectionActorsByFromId.get(nodeId) ?? [];
   }
 
   connectionActorsTo(nodeId: string): RouteConnectionActor[] {
-    return this._connectionActorsTo.get(nodeId) ?? [];
+    return this.connectionActorsByToId.get(nodeId) ?? [];
   }
 
   isDirectlyReachable(fromId: string, toId: string): boolean {
-    return this._connections.some(
+    return this.connections.some(
       (c) => c.fromId === fromId && c.toId === toId
     );
   }
 
   clear(): void {
-    this._nodeActors.clear();
-    this._connectionActorsFrom.clear();
-    this._connectionActorsTo.clear();
-    this._connections = [];
+    this.nodeActors.clear();
+    this.connectionActorsByFromId.clear();
+    this.connectionActorsByToId.clear();
+    this.connections = [];
     this.currentNodeActor = null;
   }
 }

@@ -1,4 +1,4 @@
-import { SectionSide, type RoomSection, type RoomsLayoutData } from '@/shared/ship-blueprint-editor'
+import { SectionSide, type Section, type RoomsLayout } from '@/domain/models/ship/rooms-layout'
 import { CELL, DOOR_SIDES, DOOR_THICKNESS, DOOR_WALL_STUB, NEIGHBOR_DELTA } from '@/shared/ship-blueprint-editor-geometry'
 import { Actor, Canvas, Color, vec } from 'excalibur'
 
@@ -7,8 +7,8 @@ const WALL_COLOR = Color.fromHex('#000000')
 const DOOR_COLOR = Color.fromHex('#9ca3af')
 
 interface Args {
-  section: RoomSection
-  layout: RoomsLayoutData
+  section: Section
+  layout: RoomsLayout
 }
 
 export class RoomSectionActor extends Actor {
@@ -35,8 +35,8 @@ export class RoomSectionActor extends Actor {
 
   private drawCell(
     ctx: CanvasRenderingContext2D,
-    section: RoomSection,
-    layout: RoomsLayoutData,
+    section: Section,
+    layout: RoomsLayout,
   ): void {
     ctx.strokeStyle = WALL_COLOR.toHex()
     ctx.lineWidth = WALL_WIDTH
@@ -59,7 +59,6 @@ export class RoomSectionActor extends Actor {
       const hasDoor = section.doors.some((d) => d.side === side)
 
       if (hasDoor) {
-        // Two stub lines framing the door gap
         const stub = DOOR_WALL_STUB
         ctx.beginPath()
         if (side === SectionSide.Left) {
@@ -77,7 +76,6 @@ export class RoomSectionActor extends Actor {
         }
         ctx.stroke()
 
-        // Door panel lines (two halves meeting at center)
         const panelStart = stub + DOOR_THICKNESS
         const half = CELL / 2
         ctx.strokeStyle = DOOR_COLOR.toHex()
@@ -102,12 +100,10 @@ export class RoomSectionActor extends Actor {
         }
         ctx.stroke()
 
-        // Reset for next wall
         ctx.strokeStyle = WALL_COLOR.toHex()
         ctx.lineWidth = WALL_WIDTH
         ctx.lineCap = 'square'
       } else {
-        // Full wall line
         ctx.beginPath()
         if (side === SectionSide.Left) {
           ctx.moveTo(0, 0); ctx.lineTo(0, CELL)

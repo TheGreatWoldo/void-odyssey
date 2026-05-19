@@ -4,17 +4,11 @@ import { ModuleSlotGrid } from '@/presentation/components/ui/ModuleSlotGrid'
 import { MENU_ANIMATIONS_ENABLED, MENU_EXIT_BUFFER_MS, MENU_ITEM_DURATION_MS, MENU_ITEM_STAGGER_MS } from '@/shared/menu-animation'
 import { SceneKey } from '@/shared/scene-key'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
-import type { LucideIcon } from 'lucide-react'
-import * as LucideIcons from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { MODULE_ICON_BY_ID, resolveModuleIcon } from './module-icons'
 
 const EXIT_STAGGER_MS = MENU_ITEM_STAGGER_MS
 const EXIT_DURATION_MS = MENU_ITEM_DURATION_MS
-
-function resolveIcon(name: string): LucideIcon | null {
-  const icon = (LucideIcons as Record<string, unknown>)[name]
-  return icon && (typeof icon === 'function' || typeof icon === 'object') ? (icon as LucideIcon) : null
-}
 
 function CodexModulesPage() {
   const service = useGameService()
@@ -57,7 +51,7 @@ function CodexModulesPage() {
         <div className="w-full max-w-6xl grid grid-cols-3 gap-3">
           {MODULE_ENTRIES.map((entry, i) => {
             const reverseIndex = MODULE_ENTRIES.length - 1 - i
-            const Icon = resolveIcon(entry.icon)
+            const Icon = resolveModuleIcon(MODULE_ICON_BY_ID[entry.id])
             return (
             <Link
               key={entry.id}

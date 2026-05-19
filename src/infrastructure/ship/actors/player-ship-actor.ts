@@ -14,7 +14,11 @@ function smoothStep(t: number): number {
   return t * t * (3 - 2 * t);
 }
 
-type ShipMode = 'orbiting' | 'traveling';
+const ShipMode = {
+  Orbiting: 'orbiting',
+  Traveling: 'traveling',
+} as const;
+type ShipMode = typeof ShipMode[keyof typeof ShipMode];
 
 const SHIP_FILL = 'rgba(255, 230, 100, 1)';
 const GLOW_COLOR = 'rgba(255, 200, 60, 0.5)';
@@ -61,7 +65,7 @@ export class PlayerShipActor extends Actor {
   private orbitCenter: Vector;
   private orbitAngle = 0;
 
-  private mode: ShipMode = 'orbiting';
+  private mode: ShipMode = ShipMode.Orbiting;
   private travelFrom: Vector = Vector.Zero;
   private travelArrival: Vector = Vector.Zero;
   private travelOrbitCenter: Vector = Vector.Zero;
@@ -89,14 +93,14 @@ export class PlayerShipActor extends Actor {
   }
 
   override onPreUpdate(_engine: Engine, delta: number): void {
-    if (this.mode === 'traveling') {
-      this._updateTravel(delta);
+    if (this.mode === ShipMode.Traveling) {
+      this.updateTravel(delta);
     } else {
-      this._updateOrbit(delta);
+      this.updateOrbit(delta);
     }
   }
 
-  private _updateOrbit(delta: number): void {
+  private updateOrbit(delta: number): void {
     this.orbitAngle += ORBIT_SPEED * (delta / 1000);
     this.pos = new Vector(
       this.orbitCenter.x + ORBIT_RADIUS * Math.cos(this.orbitAngle),
@@ -105,11 +109,11 @@ export class PlayerShipActor extends Actor {
     this.rotation = this.orbitAngle + Math.PI / 2;
   }
 
-  private _updateTravel(delta: number): void {
+  private updateTravel(delta: number): void {
     const dist = this.travelFrom.distance(this.travelArrival);
 
     if (dist < 0.1) {
-      this._enterOrbit();
+      this.enterOrbit();
 
       return;
     }
@@ -127,18 +131,18 @@ export class PlayerShipActor extends Actor {
     this.rotation = Math.atan2(dir.y, dir.x);
 
     if (this.travelProgress >= 1) {
-      this._enterOrbit();
+      this.enterOrbit();
     }
   }
 
-  private _enterOrbit(): void {
+  private enterOrbit(): void {
     this.orbitCenter = this.travelOrbitCenter;
     this.pos = this.travelArrival;
     this.orbitAngle = Math.atan2(
       this.travelArrival.y - this.travelOrbitCenter.y,
       this.travelArrival.x - this.travelOrbitCenter.x
     );
-    this.mode = 'orbiting';
+    this.mode = ShipMode.Orbiting;
     const cb = this.onArrived;
 
     this.onArrived = null;
@@ -156,6 +160,6 @@ export class PlayerShipActor extends Actor {
     this.travelArrival = arrivalPoint;
     this.travelOrbitCenter = worldPos;
     this.travelProgress = 0;
-    this.mode = 'traveling';
+    this.mode = ShipMode.Traveling;
   }
 }

@@ -71,10 +71,10 @@ export class RouteNavigationScene extends Scene {
   private wheelHandler: ((e: WheelEvent) => void) | null = null;
 
   // Tween state for debounced wheel scrolling
-  private _tweenFrom = 0;
-  private _tweenTo = 0;
-  private _tweenElapsed = 0;
-  private _lastRerollNonce = 0;
+  private tweenFrom = 0;
+  private tweenTo = 0;
+  private tweenElapsed = 0;
+  private lastRerollNonce = 0;
 
   override onInitialize(): void {
     this.backgroundColor = BACKGROUND_COLOR;
@@ -96,7 +96,7 @@ export class RouteNavigationScene extends Scene {
 
     this.rebuildAllRoutes()
     this.applySelectedRouteFromState()
-    this._lastRerollNonce = this.stateAdapter.getRouteRerollNonce()
+    this.lastRerollNonce = this.stateAdapter.getRouteRerollNonce()
 
     if (this.stateAdapter.isRouteSelectionLocked()) {
       return
@@ -106,7 +106,7 @@ export class RouteNavigationScene extends Scene {
       e.preventDefault()
 
       // Debounce: prevent scrolling while tween is animating
-      if (this._tweenElapsed < ROUTE_SCROLL_TWEEN_DURATION_MS) return
+      if (this.tweenElapsed < ROUTE_SCROLL_TWEEN_DURATION_MS) return
 
       if (e.deltaY > 0) {
         this.activeRoute = Math.min(ROUTE_COUNT - 1, this.activeRoute + 1)
@@ -117,9 +117,9 @@ export class RouteNavigationScene extends Scene {
       this.stateAdapter.setSelectedRouteIndex(this.activeRoute)
 
       // Start new tween
-      this._tweenFrom = this.cameraY
-      this._tweenTo = this.activeRoute * this.routeSlotHeight
-      this._tweenElapsed = 0
+      this.tweenFrom = this.cameraY
+      this.tweenTo = this.activeRoute * this.routeSlotHeight
+      this.tweenElapsed = 0
     }
 
     if (this.engine.canvas) {
@@ -141,8 +141,8 @@ export class RouteNavigationScene extends Scene {
   override onPreUpdate(engine: Engine, delta: number): void {
     const rerollNonce = this.stateAdapter.getRouteRerollNonce()
 
-    if (rerollNonce !== this._lastRerollNonce) {
-      this._lastRerollNonce = rerollNonce
+    if (rerollNonce !== this.lastRerollNonce) {
+      this.lastRerollNonce = rerollNonce
 
       const rerollRouteIndex = this.stateAdapter.getRerollRouteIndex()
 
@@ -183,8 +183,6 @@ export class RouteNavigationScene extends Scene {
       drawBezierCurve(ctx, provider, bezierToScreen, DEBUG_CURVE_COLOR, 1.5);
     }
   }
-
-  // ---- Private helpers --------------------------------------------------
 
   private rebuildAllRoutes(): void {
     this.clearAllActors();
@@ -237,9 +235,9 @@ export class RouteNavigationScene extends Scene {
 
     this.activeRoute = selectedRoute
     this.cameraY = selectedRoute * this.routeSlotHeight
-    this._tweenFrom = this.cameraY
-    this._tweenTo = this.cameraY
-    this._tweenElapsed = ROUTE_SCROLL_TWEEN_DURATION_MS
+    this.tweenFrom = this.cameraY;
+    this.tweenTo = this.cameraY;
+    this.tweenElapsed = ROUTE_SCROLL_TWEEN_DURATION_MS
 
     this.stateAdapter.setSelectedRouteIndex(selectedRoute)
   }
@@ -314,17 +312,17 @@ export class RouteNavigationScene extends Scene {
   }
 
   private updateCameraGlide(delta: number): void {
-    this._tweenElapsed += delta;
+    this.tweenElapsed += delta;
 
-    if (this._tweenElapsed >= ROUTE_SCROLL_TWEEN_DURATION_MS) {
+    if (this.tweenElapsed >= ROUTE_SCROLL_TWEEN_DURATION_MS) {
       // Tween finished
-      this.cameraY = this._tweenTo;
-      this._tweenElapsed = ROUTE_SCROLL_TWEEN_DURATION_MS;
+      this.cameraY = this.tweenTo;
+      this.tweenElapsed = ROUTE_SCROLL_TWEEN_DURATION_MS;
     } else {
       this.cameraY = EasingFunctions.EaseInOutCubic(
-        this._tweenElapsed,
-        this._tweenFrom,
-        this._tweenTo,
+        this.tweenElapsed,
+        this.tweenFrom,
+        this.tweenTo,
         ROUTE_SCROLL_TWEEN_DURATION_MS
       );
     }
