@@ -121,7 +121,7 @@ function ConfirmRoutePage() {
 
         <button
           type="button"
-          onClick={() => navigate({ to: '/', search: { menu: 'play' } }).catch(() => {})}
+          onClick={() => navigate({ to: '/play/ship' }).catch(() => {})}
           className="pointer-events-auto flex items-center gap-2 text-white/60 hover:text-white transition-colors uppercase tracking-widest text-xl -m-3 p-3"
         >
           Start

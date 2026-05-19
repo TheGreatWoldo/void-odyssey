@@ -18,6 +18,9 @@ interface GameState {
 
   menuConfig: MenuConfig | null
   setMenuConfig: (config: MenuConfig) => void
+
+  selectedShipId: string | null
+  setSelectedShipId: (id: string) => void
 }
 
 export const useGameStore = create<GameState>()(
@@ -33,5 +36,9 @@ export const useGameStore = create<GameState>()(
       set((state) => {
         state.menuConfig = config
       }),
-  }))
+    selectedShipId: null,
+    setSelectedShipId: (id) =>
+      set((state) => {
+        state.selectedShipId = id
+      }),  }))
 )

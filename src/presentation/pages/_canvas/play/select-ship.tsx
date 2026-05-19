@@ -1,6 +1,7 @@
 import { SHIP_ENTRIES, SHIP_MAP_CANVAS } from '@/application/hooks/ship-catalog'
 import { useGameService } from '@/application/hooks/useGameService'
 import { useRouteGraphParams } from '@/application/hooks/useRouteNavigation'
+import { useShipSelection } from '@/application/hooks/useShipSelection'
 import { type CarouselApi, Carousel, CarouselContent, CarouselItem } from '@/presentation/components/ui/carousel'
 import { MENU_ANIMATIONS_ENABLED, MENU_EXIT_BUFFER_MS, MENU_ITEM_DURATION_MS } from '@/shared/menu-animation'
 import { SceneKey } from '@/shared/scene-key'
@@ -23,6 +24,7 @@ function SelectShipPage() {
     const service = useGameService()
     const navigate = useNavigate()
     const { routeSeed } = useRouteGraphParams()
+    const { setSelectedShipId } = useShipSelection()
     const [exiting, setExiting] = useState(false)
     const [api, setApi] = useState<CarouselApi>()
     const [index, setIndex] = useState(0)
@@ -186,6 +188,7 @@ function SelectShipPage() {
                 <button
                     type="button"
                     onClick={() => navigateWithExit(() => {
+                        setSelectedShipId(SHIP_ENTRIES[index].id)
                         navigate({ to: '/play/select-route' }).catch(() => {})
                     })}
                     className="pointer-events-auto flex items-center gap-2 text-white/60 hover:text-white transition-colors uppercase tracking-widest text-xl -m-3 p-3"

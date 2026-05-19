@@ -48,4 +48,8 @@ export class GameService implements IGameService {
   loadRoomsLayout(layout: RoomsLayoutData): void {
     this.engine.loadRoomsLayout(layout)
   }
+
+  loadShipView(layout: RoomsLayoutData): void {
+    this.engine.loadShipView(layout)
+  }
 }
