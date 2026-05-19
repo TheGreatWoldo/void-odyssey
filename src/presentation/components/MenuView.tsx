@@ -107,7 +107,10 @@ export function MenuView({ config, service, onEvent, initialMenuId, onMenuChange
             ← Back
           </button>
         ) : (
-          <span className="text-xl">&nbsp;</span>
+          <span className="inline-flex items-center gap-2 text-white uppercase tracking-widest text-xl">
+            <span className="inline-flex items-center text-3xl leading-none">©</span>
+            <span>{new Date().getFullYear()} VriesWol Games</span>
+          </span>
         )}
       </div>
     </div>

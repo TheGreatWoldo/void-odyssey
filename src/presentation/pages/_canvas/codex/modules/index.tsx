@@ -1,13 +1,20 @@
-import { useGameService } from '@/application/hooks/useGameService'
 import { MODULE_ENTRIES } from '@/application/hooks/module-catalog'
+import { useGameService } from '@/application/hooks/useGameService'
 import { ModuleSlotGrid } from '@/presentation/components/ui/ModuleSlotGrid'
 import { MENU_ANIMATIONS_ENABLED, MENU_EXIT_BUFFER_MS, MENU_ITEM_DURATION_MS, MENU_ITEM_STAGGER_MS } from '@/shared/menu-animation'
 import { SceneKey } from '@/shared/scene-key'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
+import type { LucideIcon } from 'lucide-react'
+import * as LucideIcons from 'lucide-react'
 import { useEffect, useState } from 'react'
 
 const EXIT_STAGGER_MS = MENU_ITEM_STAGGER_MS
 const EXIT_DURATION_MS = MENU_ITEM_DURATION_MS
+
+function resolveIcon(name: string): LucideIcon | null {
+  const icon = (LucideIcons as Record<string, unknown>)[name]
+  return icon && (typeof icon === 'function' || typeof icon === 'object') ? (icon as LucideIcon) : null
+}
 
 function CodexModulesPage() {
   const service = useGameService()
@@ -46,16 +53,17 @@ function CodexModulesPage() {
       </div>
 
       {/* Content */}
-      <div className="pointer-events-auto flex-1 flex items-center justify-center overflow-y-auto px-8 py-8">
-        <div className="w-full max-w-5xl grid grid-cols-3 gap-4">
+      <div className="pointer-events-auto flex-1 flex items-center justify-center overflow-y-auto px-4 py-8">
+        <div className="w-full max-w-6xl grid grid-cols-3 gap-3">
           {MODULE_ENTRIES.map((entry, i) => {
             const reverseIndex = MODULE_ENTRIES.length - 1 - i
+            const Icon = resolveIcon(entry.icon)
             return (
             <Link
               key={entry.id}
               to="/codex/modules/$moduleId"
               params={{ moduleId: entry.id }}
-              className="pointer-events-auto flex flex-col border border-white/20 bg-black/90 px-5 py-4 uppercase tracking-wider transition-colors hover:border-white/40 hover:text-white cursor-pointer"
+              className="pointer-events-auto flex flex-col border border-white/20 bg-black/90 px-4 py-4 uppercase tracking-wider transition-colors hover:border-white/40 hover:text-white cursor-pointer"
               style={{
                 animation: !MENU_ANIMATIONS_ENABLED ? undefined : exiting
                   ? `fade-out-down ${EXIT_DURATION_MS}ms ease ${reverseIndex * EXIT_STAGGER_MS}ms both`
@@ -68,8 +76,11 @@ function CodexModulesPage() {
                 })
               }}
             >
-              <div className="flex items-start justify-between gap-2">
-                <span className="text-white/90 text-xl whitespace-nowrap">{entry.displayName}</span>
+              <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2">
+                <div className="flex items-center gap-3 min-w-0">
+                  {Icon ? <Icon className="size-6 shrink-0 text-white/80" /> : null}
+                  <span className="block min-w-0 overflow-hidden whitespace-nowrap text-white/90 text-lg leading-tight">{entry.displayName}</span>
+                </div>
                 <ModuleSlotGrid filled={entry.slotCost} />
               </div>
               <span className="text-white/30 text-xs mt-1">{entry.category} / {entry.primaryOutput}</span>

@@ -28,6 +28,7 @@ describe('MODULE_ENTRIES', () => {
   it('each entry has a non-empty displayName and category', () => {
     for (const entry of MODULE_ENTRIES) {
       expect(entry.displayName.trim().length).toBeGreaterThan(0)
+      expect(entry.icon.trim().length).toBeGreaterThan(0)
       expect(entry.category.trim().length).toBeGreaterThan(0)
     }
   })
@@ -43,6 +44,7 @@ describe('getModuleMeta', () => {
     const meta = getModuleMeta(ModuleId.ReactorCore)
     expect(meta).not.toBeNull()
     expect(meta!.displayName).toBe('Reactor Core')
+    expect(meta!.icon).toBe('Zap')
     expect(meta!.category).toBe('Power')
     expect(meta!.primaryOutput).toBe('Power')
     expect(meta!.slotCost).toBe(ModuleSlotCosts[ModuleId.ReactorCore])
