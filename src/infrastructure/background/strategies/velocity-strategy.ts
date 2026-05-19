@@ -12,7 +12,7 @@ export function getVelocityForArgs(
 ): Vector {
   const sizeRange = sceneArgs.maxSize - sceneArgs.minSize;
   const sizeNormalized = actorArgs.size - sceneArgs.minSize;
-  const sizeFactor = sizeNormalized / sizeRange;
+  const sizeFactor = sizeRange === 0 ? 0 : sizeNormalized / sizeRange;
   const speedRange = sceneArgs.maxSpeed - sceneArgs.minSpeed;
   const speed = sceneArgs.minSpeed + sizeFactor * speedRange;
   const angleVariation = (rng() - 0.5) * sceneArgs.angleTolerance;

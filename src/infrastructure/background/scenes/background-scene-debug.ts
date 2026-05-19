@@ -1,6 +1,6 @@
-import { Color, type ExcaliburGraphicsContext, vec } from 'excalibur';
 import { defaultBackgroundActorArgs } from '@/infrastructure/background/actors/background-actor-args';
 import { getPositionDebugInfoForArgs } from '@/infrastructure/background/strategies/position-strategy';
+import { Color, type ExcaliburGraphicsContext, vec } from 'excalibur';
 import { BackgroundScene } from './background-scene';
 
 export class BackgroundSceneDebug extends BackgroundScene {
@@ -32,9 +32,7 @@ export class BackgroundSceneDebug extends BackgroundScene {
         vec(0.3 * this.engine.drawWidth, 0.3 * this.engine.drawHeight)
       );
     actorArgs.size = this.strategies.sizeStrategy(debugArgs, actorArgs);
-    actorArgs.color = [
-      this.strategies.actorColorStrategy(debugArgs.actorColor, debugArgs, actorArgs),
-    ];
+    actorArgs.color = this.strategies.actorColorStrategy(debugArgs.actorColor, debugArgs, actorArgs);
     actorArgs.velocity = this.strategies.velocityStrategy(debugArgs, actorArgs);
 
     const positionResult = getPositionDebugInfoForArgs(debugArgs, actorArgs);

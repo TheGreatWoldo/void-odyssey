@@ -18,7 +18,7 @@ export class BackgroundActor extends Actor {
     this.options = options;
     this.vel = options.velocity;
     this.z = options.size;
-    const color = options.color[0];
+    const color = options.color;
 
     this.circle = new Circle({ radius: options.size, color });
     this.graphics.use(this.circle);
@@ -30,8 +30,7 @@ export class BackgroundActor extends Actor {
   }
 
   public override onPreUpdate(): void {
-    const engine = this.scene!.engine;
-    const viewport = engine.getWorldBounds();
+    const viewport = this.options.getViewport?.() ?? this.options.viewport;
     const r = this.width / 2;
     const inView =
       this.pos.x + r >= viewport.left &&
