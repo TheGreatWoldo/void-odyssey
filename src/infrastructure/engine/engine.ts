@@ -1,3 +1,6 @@
+import type { IRouteActorState } from '@/domain/models/navigation/route/route-actor-state'
+import type { RoomsLayout } from '@/domain/models/ship/rooms-layout'
+import type { IGameEngineFacade } from '@/domain/ports/IGameEngineFacade'
 import { backgroundSceneArgsCatalog } from '@/infrastructure/background/catalogs/background-scene-args-catalog'
 import { BackgroundScene } from '@/infrastructure/background/scenes/background-scene'
 import { HueForSizeStrategy } from '@/infrastructure/background/strategies/color-strategy'
@@ -6,11 +9,7 @@ import { getSizeForArgs } from '@/infrastructure/background/strategies/size-stra
 import { getVelocityForArgs } from '@/infrastructure/background/strategies/velocity-strategy'
 import { ParallaxStarfield } from '@/infrastructure/navigation-2d/rendering/parallax-starfield'
 import { RouteNavigationScene } from '@/infrastructure/navigation-2d/scenes/route-navigation-scene'
-import { ShipBlueprintEditorScene } from '@/infrastructure/ship-blueprint-editor/scenes/ShipBlueprintEditorScene'
 import { ShipViewScene } from '@/infrastructure/ship-view/scenes/ShipViewScene'
-import type { IRouteActorState } from '@/domain/models/navigation/route/route-actor-state'
-import type { RoomsLayout } from '@/domain/models/ship/rooms-layout'
-import type { IGameEngineFacade } from '@/application/ports/IGameEngineFacade'
 import { SceneKey } from '@/shared/scene-key'
 import { Color, DisplayMode, Engine } from 'excalibur'
 
@@ -37,7 +36,6 @@ const backgroundStrategies = {
 export class ExcaliburEngineFacade implements IGameEngineFacade {
   private engine: Engine
   private readonly _canvas: HTMLCanvasElement
-  private readonly shipBlueprintEditorScene: ShipBlueprintEditorScene
   private readonly shipViewScene: ShipViewScene
   private readonly routeNavigationScene: RouteNavigationScene
   private _targetSceneKey: SceneKey | null = null
@@ -46,7 +44,6 @@ export class ExcaliburEngineFacade implements IGameEngineFacade {
   constructor(canvas: HTMLCanvasElement, routeActorState: IRouteActorState) {
     this._canvas = canvas
     ParallaxStarfield.warmCache()
-    this.shipBlueprintEditorScene = new ShipBlueprintEditorScene()
     this.shipViewScene = new ShipViewScene()
     this.routeNavigationScene = new RouteNavigationScene(routeActorState)
     this.engine = this.buildEngine()
@@ -68,7 +65,6 @@ export class ExcaliburEngineFacade implements IGameEngineFacade {
       engine.addScene(key, new BackgroundScene(args, backgroundStrategies))
     }
 
-    engine.addScene(SceneKey.ShipBlueprintEditor, this.shipBlueprintEditorScene)
     engine.addScene(SceneKey.ShipView, this.shipViewScene)
     engine.addScene(SceneKey.RouteNavigation, this.routeNavigationScene)
 
@@ -105,10 +101,6 @@ export class ExcaliburEngineFacade implements IGameEngineFacade {
         void this.goToScene(this._targetSceneKey)
       }
     })
-  }
-
-  loadRoomsLayout(layout: RoomsLayout): void {
-    this.shipBlueprintEditorScene.loadLayout(layout)
   }
 
   loadShipView(layout: RoomsLayout): void {

@@ -3,11 +3,11 @@ import { createInventory } from '@/domain/models/inventory/inventory'
 import { createProductionModule } from '@/domain/models/module/production-module'
 import { ModuleId } from '@/domain/models/module/production-module-id'
 import { createRecipe } from '@/domain/models/production/recipe'
-import { createResourceContainer } from '@/domain/models/resources/resource-container'
 import { createResource, ResourceType } from '@/domain/models/resources/resource'
+import { createResourceContainer } from '@/domain/models/resources/resource-container'
 import { createShip, type Ship } from '@/domain/models/ship/ship'
 import { createProductionSystem } from '@/domain/models/systems/production-system'
-import type { RoomsLayout } from '@/domain/models/ship/rooms-layout'
+import { err, type Result } from '@/shared/result'
 
 /**
  * Creates a fully-equipped Ship from a ShipEntry for the start of a run.
@@ -15,7 +15,7 @@ import type { RoomsLayout } from '@/domain/models/ship/rooms-layout'
  * Installs all 14 compatible modules (FuelScoop excluded — conflicts with ArmorPlating),
  * pre-loads starting resources, and connects the battery to the power system.
  */
-export function initialiseShip(entry: ShipEntry): Ship {
+export function initialiseShip(entry: ShipEntry): Result<Ship, string> {
     const inventory = createInventory({
         items: { capacity: 100 },
         resources: { capacity: 2000 },
@@ -60,7 +60,8 @@ export function initialiseShip(entry: ShipEntry): Ship {
         { id: 'cannon-1',        name: 'Plasma Cannon',    type: ModuleId.PlasmaCannon,     primaryOutput: ResourceType.Firepower,    costs: [{ id: ResourceType.Power,   amount: 8   }], maxOutput: 30  },
     ]
 
-    const modules = moduleDefs.map(def => {
+    const modules = []
+    for (const def of moduleDefs) {
         const recipe = createRecipe({
             name: def.name,
             primaryOutput: def.primaryOutput,
@@ -73,16 +74,16 @@ export function initialiseShip(entry: ShipEntry): Ship {
         })
 
         if (!result.ok) {
-            throw new Error(`Failed to create module ${def.name}: ${result.error}`)
+            return err(`Failed to create module ${def.name}: ${result.error}`)
         }
 
-        return result.value
-    })
+        modules.push(result.value)
+    }
 
     const installResult = productionSystem.installModules(modules)
 
     if (!installResult.ok) {
-        throw new Error(`Failed to install modules: ${installResult.error}`)
+        return err(`Failed to install modules: ${installResult.error}`)
     }
 
     return createShip({
@@ -90,6 +91,6 @@ export function initialiseShip(entry: ShipEntry): Ship {
         class: entry.shipClass,
         productionSystem,
         inventory,
-        layout: entry.layout as unknown as RoomsLayout,
+        layout: entry.layout,
     })
 }

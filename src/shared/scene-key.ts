@@ -6,7 +6,6 @@ export const SceneKey = {
   OrangeOnBlue: 'orangeOnBlue',
   MagentaOnBlack: 'magentaOnBlack',
   GreenOnBlack: 'greenOnBlack',
-  ShipBlueprintEditor: 'shipBlueprintEditor',
   ShipView: 'shipView',
   RouteNavigation: 'routeNavigation',
 } as const

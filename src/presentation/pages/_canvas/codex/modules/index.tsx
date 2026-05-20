@@ -5,7 +5,7 @@ import { MENU_ANIMATIONS_ENABLED, MENU_EXIT_BUFFER_MS, MENU_ITEM_DURATION_MS, ME
 import { SceneKey } from '@/shared/scene-key'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
-import { MODULE_ICON_BY_ID, resolveModuleIcon } from './module-icons'
+import { MODULE_ICON_BY_ID, resolveModuleIcon } from './-module-icons'
 
 const EXIT_STAGGER_MS = MENU_ITEM_STAGGER_MS
 const EXIT_DURATION_MS = MENU_ITEM_DURATION_MS

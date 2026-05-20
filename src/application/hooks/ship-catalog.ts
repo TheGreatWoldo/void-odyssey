@@ -8,16 +8,17 @@ import vexillumPng from '@/assets/ships/vexillum/vexillum.map.png'
 import vexillumRooms from '@/assets/ships/vexillum/vexillum.rooms.json'
 import zelotesPng from '@/assets/ships/zelotes/zelotes.map.png'
 import zelotesRooms from '@/assets/ships/zelotes/zelotes.rooms.json'
-import type { RoomsLayoutData } from '@/shared/ship-blueprint-editor'
+import { DoorState, SectionSide, type Door, type RoomsLayout } from '@/domain/models/ship/rooms-layout'
+import { ShipClass } from '@/domain/models/ship/ship-class'
 
 export interface ShipEntry {
     id: string
     name: string
     description: string
-    shipClass: string
+    shipClass: ShipClass
     mapPng: string
     roomCount: number
-    layout: RoomsLayoutData
+    layout: RoomsLayout
     /** Natural pixel width of the generated map PNG */
     naturalWidth: number
     /** Natural pixel height of the generated map PNG */
@@ -34,55 +35,84 @@ function naturalSize(rooms: { mapSize: { width: number; height: number }; mapSec
     }
 }
 
+/**
+ * The .rooms.json files were generated with doors as {left, right, top, bottom: boolean}.
+ * The domain and shared types expect doors as Door[] = {side, state}[].
+ * Convert at import time.
+ */
+type RawDoors = { left: boolean; right: boolean; top: boolean; bottom: boolean }
+
+function convertDoors(raw: RawDoors): Door[] {
+    const doors: Door[] = []
+    if (raw.left)   doors.push({ side: SectionSide.Left,   state: DoorState.Closed })
+    if (raw.right)  doors.push({ side: SectionSide.Right,  state: DoorState.Closed })
+    if (raw.top)    doors.push({ side: SectionSide.Top,    state: DoorState.Closed })
+    if (raw.bottom) doors.push({ side: SectionSide.Bottom, state: DoorState.Closed })
+    return doors
+}
+
+function convertRoomsJson(raw: typeof donutRooms): RoomsLayout {
+    return {
+        ...raw,
+        rooms: raw.rooms.map((room) => ({
+            ...room,
+            sections: room.sections.map((section) => ({
+                ...section,
+                doors: convertDoors(section.doors as unknown as RawDoors),
+            })),
+        })),
+    }
+}
+
 export const SHIP_ENTRIES: readonly ShipEntry[] = [
     {
         id: 'donut',
         name: 'Donut',
         description: '',
-        shipClass: 'Shuttle',
+        shipClass: ShipClass.Shuttle,
         mapPng: donutPng,
         roomCount: donutRooms.rooms.length,
-        layout: donutRooms as unknown as RoomsLayoutData,
+        layout: convertRoomsJson(donutRooms),
         ...naturalSize(donutRooms),
     },
     {
         id: 'lictor',
         name: 'Lictor',
         description: '',
-        shipClass: 'Frigate',
+        shipClass: ShipClass.Frigate,
         mapPng: lictorPng,
         roomCount: lictorRooms.rooms.length,
-        layout: lictorRooms as unknown as RoomsLayoutData,
+        layout: convertRoomsJson(lictorRooms as typeof donutRooms),
         ...naturalSize(lictorRooms),
     },
     {
         id: 'maledictus',
         name: 'Maledictus',
         description: '',
-        shipClass: 'Destroyer',
+        shipClass: ShipClass.Destroyer,
         mapPng: maledictusP,
         roomCount: maledictusRooms.rooms.length,
-        layout: maledictusRooms as unknown as RoomsLayoutData,
+        layout: convertRoomsJson(maledictusRooms as typeof donutRooms),
         ...naturalSize(maledictusRooms),
     },
     {
         id: 'vexillum',
         name: 'Vexillum',
         description: '',
-        shipClass: 'Carrier',
+        shipClass: ShipClass.Carrier,
         mapPng: vexillumPng,
         roomCount: vexillumRooms.rooms.length,
-        layout: vexillumRooms as unknown as RoomsLayoutData,
+        layout: convertRoomsJson(vexillumRooms as typeof donutRooms),
         ...naturalSize(vexillumRooms),
     },
     {
         id: 'zelotes',
         name: 'Zelotes',
         description: '',
-        shipClass: 'Corvette',
+        shipClass: ShipClass.Corvette,
         mapPng: zelotesPng,
         roomCount: zelotesRooms.rooms.length,
-        layout: zelotesRooms as unknown as RoomsLayoutData,
+        layout: convertRoomsJson(zelotesRooms as typeof donutRooms),
         ...naturalSize(zelotesRooms),
     },
 ]

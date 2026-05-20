@@ -15,39 +15,12 @@ const MAX_PRESEED_SPAWNS = 180;
 const PRESEED_VIEWPORT_MARGIN_PX = 256;
 const MIN_EFFECTIVE_SPEED_PX_PER_S = 24;
 const DEFAULT_VIEWPORT = new BoundingBox(0, 0, 1920, 1080);
-const BACKGROUND_PROFILE_ENABLED = import.meta.env.DEV;
-const BACKGROUND_PROFILE_LOG_INTERVAL_MS = 2_000;
-
-type BackgroundProfilerStats = {
-  updateSamples: number;
-  updateTimeMs: number;
-  spawnCalls: number;
-  spawnedFromCatchup: number;
-  spawnTimeMs: number;
-  preseedSteps: number;
-  preseedTimeMs: number;
-  elapsedSinceLastLogMs: number;
-};
-
-function createBackgroundProfilerStats(): BackgroundProfilerStats {
-  return {
-    updateSamples: 0,
-    updateTimeMs: 0,
-    spawnCalls: 0,
-    spawnedFromCatchup: 0,
-    spawnTimeMs: 0,
-    preseedSteps: 0,
-    preseedTimeMs: 0,
-    elapsedSinceLastLogMs: 0,
-  };
-}
 
 export class BackgroundScene extends Scene {
   private elapsed = 0;
   private spawnIntervalMs: number;
   private rng: RandomNumberGenerator = Math.random;
   private currentViewport: BoundingBox = DEFAULT_VIEWPORT;
-  private readonly profilerStats = createBackgroundProfilerStats();
   sceneArgs: BackgroundSceneArgs;
   protected readonly strategies: BackgroundStrategies;
 
@@ -71,7 +44,6 @@ export class BackgroundScene extends Scene {
   }
 
   override onPreUpdate(engine: Engine, delta: number): void {
-    const updateStartMs = BACKGROUND_PROFILE_ENABLED ? performance.now() : 0;
     this.currentViewport = engine.getWorldBounds();
     this.elapsed += delta;
 
@@ -97,12 +69,6 @@ export class BackgroundScene extends Scene {
       }
     }
 
-    if (BACKGROUND_PROFILE_ENABLED) {
-      this.profilerStats.updateSamples += 1;
-      this.profilerStats.updateTimeMs += performance.now() - updateStartMs;
-      this.profilerStats.elapsedSinceLastLogMs += delta;
-      this.flushProfilerLogIfNeeded();
-    }
   }
 
   setSceneArgs(sceneArgs: BackgroundSceneArgs): void {
@@ -137,15 +103,8 @@ export class BackgroundScene extends Scene {
       Math.floor(preSeedWindowMs / this.spawnIntervalMs),
       MAX_PRESEED_SPAWNS,
     );
-    const preseedStartMs = BACKGROUND_PROFILE_ENABLED ? performance.now() : 0;
-
     for (let i = 1; i <= steps; i++) {
       this.spawnActor(i * this.spawnIntervalMs);
-    }
-
-    if (BACKGROUND_PROFILE_ENABLED) {
-      this.profilerStats.preseedSteps += steps;
-      this.profilerStats.preseedTimeMs += performance.now() - preseedStartMs;
     }
   }
 
@@ -167,7 +126,6 @@ export class BackgroundScene extends Scene {
   }
 
   private spawnActor(timeAlreadyElapsedMs = 0): void {
-    const spawnStartMs = BACKGROUND_PROFILE_ENABLED ? performance.now() : 0;
     const args = defaultBackgroundActorArgs();
 
     args.viewport = this.currentViewport;
@@ -200,51 +158,6 @@ export class BackgroundScene extends Scene {
 
     args.position = placement.startingPosition.add(direction.scale(offset));
     this.add(new BackgroundActor(args));
-
-    if (BACKGROUND_PROFILE_ENABLED) {
-      this.profilerStats.spawnCalls += 1;
-      if (timeAlreadyElapsedMs > 0) {
-        this.profilerStats.spawnedFromCatchup += 1;
-      }
-      this.profilerStats.spawnTimeMs += performance.now() - spawnStartMs;
-    }
   }
 
-  private flushProfilerLogIfNeeded(): void {
-    if (this.profilerStats.elapsedSinceLastLogMs < BACKGROUND_PROFILE_LOG_INTERVAL_MS) {
-      return;
-    }
-
-    const updateAvgMs = this.profilerStats.updateSamples > 0
-      ? this.profilerStats.updateTimeMs / this.profilerStats.updateSamples
-      : 0;
-    const spawnAvgMs = this.profilerStats.spawnCalls > 0
-      ? this.profilerStats.spawnTimeMs / this.profilerStats.spawnCalls
-      : 0;
-    const activeActors = this.actors.filter((actor) => actor instanceof BackgroundActor).length;
-
-    console.debug('[BackgroundScene:perf]', {
-      scene: this.sceneArgs,
-      activeActors,
-      updateAvgMs: Number(updateAvgMs.toFixed(4)),
-      spawnAvgMs: Number(spawnAvgMs.toFixed(4)),
-      spawnCalls: this.profilerStats.spawnCalls,
-      spawnedFromCatchup: this.profilerStats.spawnedFromCatchup,
-      preseedSteps: this.profilerStats.preseedSteps,
-      preseedTimeMs: Number(this.profilerStats.preseedTimeMs.toFixed(4)),
-      viewport: {
-        width: Math.round(this.currentViewport.width),
-        height: Math.round(this.currentViewport.height),
-      },
-    });
-
-    this.profilerStats.updateSamples = 0;
-    this.profilerStats.updateTimeMs = 0;
-    this.profilerStats.spawnCalls = 0;
-    this.profilerStats.spawnedFromCatchup = 0;
-    this.profilerStats.spawnTimeMs = 0;
-    this.profilerStats.preseedSteps = 0;
-    this.profilerStats.preseedTimeMs = 0;
-    this.profilerStats.elapsedSinceLastLogMs = 0;
-  }
 }

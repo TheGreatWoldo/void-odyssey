@@ -4,17 +4,18 @@ import { createResource, ResourceType } from '@/domain/models/resources/resource
 import type { RoomsLayout } from '@/domain/models/ship/rooms-layout';
 import type { ShipCapability } from '@/domain/models/ship/ship-capability';
 import { aggregateShipCapabilities } from '@/domain/models/ship/ship-capability';
+import { type ShipClass } from '@/domain/models/ship/ship-class';
 import { ShipState, type ShipState as ShipStateType } from '@/domain/models/ship/ship-state';
 import type { PowerSystem } from '@/domain/models/systems/power-system';
 import type { ProductionSystem } from '@/domain/models/systems/production-system';
 import { createDomainEventCollector } from '@/shared/domain-event';
-import { err, ok, type Result } from '@/shared/result';
 import { generateId } from '@/shared/id-utils';
+import { err, ok, type Result } from '@/shared/result';
 
 export interface ShipOptions {
   id?: string;
   name: string;
-  class: string;
+  class: ShipClass;
   productionSystem: ProductionSystem;
   inventory: Inventory;
   layout: RoomsLayout;
@@ -54,7 +55,7 @@ export interface ShipOptions {
 export interface Ship {
   readonly id: string;
   readonly name: string;
-  readonly class: string;
+  readonly class: ShipClass;
 
   /** Structural layout: rooms, sections, doors. */
   readonly layout: RoomsLayout;
@@ -136,7 +137,7 @@ export interface Ship {
   drainEvents(): readonly ShipEvent[];
 }
 
-export function createShip(options: ShipOptions): Ship {
+export function createShip(options: ShipOptions): Result<Ship, string> {
   const {
     id = generateId(),
     name,
@@ -155,18 +156,18 @@ export function createShip(options: ShipOptions): Ship {
 
   // Validate initial options
   if (initialHull <= 0) {
-    throw new Error('initialHull must be greater than 0');
+    return err('initialHull must be greater than 0');
   }
   if (!productionSystem) {
-    throw new Error('productionSystem is required');
+    return err('productionSystem is required');
   }
   if (!inventory) {
-    throw new Error('inventory is required');
+    return err('inventory is required');
   }
 
   // Validate initial state — a new ship can only start in Docked state
   if (initialState !== ShipState.Docked) {
-    throw new Error(`A new ship must start in ${ShipState.Docked} state, not ${initialState}`);
+    return err(`A new ship must start in ${ShipState.Docked} state, not ${initialState}`);
   }
 
   // Initialize Hull resource in inventory
@@ -296,7 +297,7 @@ export function createShip(options: ShipOptions): Ship {
     return ok(void 0);
   }
 
-  return {
+  return ok({
     id,
     name,
     class: shipClass,
@@ -317,5 +318,5 @@ export function createShip(options: ShipOptions): Ship {
     isOperational,
     isHealthy,
     drainEvents: () => eventCollector.drain(),
-  };
+  });
 }

@@ -1,7 +1,8 @@
-import type { IGameEngineFacade } from '@/application/ports/IGameEngineFacade'
+import type { RoomsLayout } from '@/domain/models/ship/rooms-layout'
+import type { IGameEngineFacade } from '@/domain/ports/IGameEngineFacade'
 import type { IGameService } from '@/shared/game-service'
+import { err, ok, type Result } from '@/shared/result'
 import type { SceneKey } from '@/shared/scene-key'
-import type { RoomsLayoutData } from '@/shared/ship-blueprint-editor'
 
 export class GameService implements IGameService {
   private started = false
@@ -20,18 +21,19 @@ export class GameService implements IGameService {
     this.engine.setCanvasInteractive(interactive)
   }
 
-  async start(): Promise<void> {
+  async start(): Promise<Result<void, Error>> {
     if (this.disposed) {
       console.warn('GameService.start() called after dispose — ignoring')
-      return
+      return ok(undefined)
     }
-    if (this.started) return
+    if (this.started) return ok(undefined)
     this.started = true
     try {
       await this.engine.startEngine()
+      return ok(undefined)
     } catch (e) {
       this.started = false
-      throw e
+      return err(e instanceof Error ? e : new Error(String(e)))
     }
   }
 
@@ -45,11 +47,7 @@ export class GameService implements IGameService {
     return this.engine.goToScene(key)
   }
 
-  loadRoomsLayout(layout: RoomsLayoutData): void {
-    this.engine.loadRoomsLayout(layout)
-  }
-
-  loadShipView(layout: RoomsLayoutData): void {
+  loadShipView(layout: RoomsLayout): void {
     this.engine.loadShipView(layout)
   }
 }

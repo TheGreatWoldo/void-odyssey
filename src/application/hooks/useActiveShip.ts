@@ -24,9 +24,12 @@ export function useActiveShip(): {
 
         if (existing) return existing
 
-        const newShip = initialiseShip(entry)
-        setShip(newShip)
-        return newShip
+        const result = initialiseShip(entry)
+
+        if (!result.ok) throw new Error(`Failed to initialise ship: ${result.error}`)
+
+        setShip(result.value)
+        return result.value
     }
 
     return { ship, selectedShipId, initialise }

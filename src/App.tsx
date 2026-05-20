@@ -2,8 +2,8 @@ import { ZustandRouteActorStateAdapter } from '@/application/adapters/zustand-ro
 import { GameService } from '@/application/services/GameService'
 import { GamePhase, useGameStore } from '@/application/store/gameStore'
 import { ExcaliburEngineFacade } from '@/infrastructure/engine/engine'
-import { createAppRouter } from '@/presentation/router/router'
 import { GameCanvasAndProvider } from '@/presentation/components/GameCanvasAndProvider'
+import { createAppRouter } from '@/presentation/router/router'
 import { SceneKey } from '@/shared/scene-key'
 import { RouterProvider } from '@tanstack/react-router'
 import { useCallback } from 'react'
@@ -18,7 +18,12 @@ function App() {
       const facade = new ExcaliburEngineFacade(canvas, new ZustandRouteActorStateAdapter())
       const service = new GameService(facade)
 
-      await service.start()
+      const startResult = await service.start()
+      if (!startResult.ok) {
+        console.error('Engine failed to start:', startResult.error)
+        return service
+      }
+
       await service.goToScene(SceneKey.OrangeOnBlack)
 
       setPhase(GamePhase.Menu)

@@ -15,15 +15,14 @@ function ShipPage() {
     useEffect(() => {
         initialise(entry)
 
+        service.setCanvasInteractive(true)
         service.loadShipView(entry.layout)
         service.goToScene(SceneKey.ShipView).catch((err: unknown) => {
             console.error('goToScene failed:', err)
         })
 
         return () => {
-            service.goToScene(SceneKey.OrangeOnBlack).catch((err: unknown) => {
-                console.error('goToScene cleanup failed:', err)
-            })
+            service.setCanvasInteractive(false)
         }
 
         // eslint-disable-next-line react-hooks/exhaustive-deps
